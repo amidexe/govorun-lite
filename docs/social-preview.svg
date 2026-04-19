@@ -6,16 +6,16 @@
     </linearGradient>
   </defs>
 
-  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" rx="32" fill="url(#bg)"/>
 
   <!-- Soft tonal container behind the logo -->
-  <circle cx="340" cy="320" r="215" fill="#E8DEF8" opacity="0.75"/>
+  <circle cx="340" cy="320" r="215" fill="#E8DEF8" opacity="0.9"/>
 
   <!-- Bird mark (same vector as the launcher icon, 24x24 viewport) -->
-  <g transform="translate(144 136) scale(16)" stroke="#6750A4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(144 136) scale(16)" stroke="#1D192B" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <path stroke-width="0.4" d="M21.5,10.5 L17.5,9 C14.5,5.5 9,5.5 6,9.5 L3,8.5 L4,12.5 C5.5,15.5 9,17.5 13,17.5 C16,17.5 18,15.5 18,13 L21.5,11.5 Z"/>
     <path stroke-width="0.3" d="M7.5,11.5 C9.5,13.5 12,14.5 15,14"/>
-    <circle cx="15.2" cy="9" r="0.7" fill="#6750A4" stroke="none"/>
+    <circle cx="15.2" cy="9" r="0.7" fill="#1D192B" stroke="none"/>
   </g>
 
   <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
