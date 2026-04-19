@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Политика конфиденциальности — Говорун Lite</title>
+<style>
+  :root {
+    --bg: #FEFBFF;
+    --surface: #F6F0FF;
+    --on-surface: #1D192B;
+    --on-surface-variant: #49454F;
+    --primary: #6750A4;
+    --outline-variant: #CAC4D0;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--on-surface);
+    line-height: 1.6;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+  }
+  header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.3px;
+  }
+  header .meta {
+    color: var(--on-surface-variant);
+    font-size: 14px;
+  }
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 32px 0 12px;
+  }
+  p, li { font-size: 16px; margin: 0 0 12px; }
+  ul { padding-left: 20px; }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .lead {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin: 24px 0 32px;
+  }
+  .lead p { margin: 0; }
+  footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--outline-variant);
+    color: var(--on-surface-variant);
+    font-size: 14px;
+  }
+  footer a { color: var(--on-surface-variant); }
+  @media (max-width: 480px) {
+    .container { padding: 32px 20px 64px; }
+    header h1 { font-size: 24px; }
+    h2 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<main class="container">
+
+  <header>
+    <h1>Политика конфиденциальности</h1>
+    <div class="meta">Приложение «Говорун Lite» · Версия политики 1.0 · 19 апреля 2026</div>
+  </header>
+
+  <div class="lead">
+    <p><strong>Главное:</strong> приложение работает полностью на вашем устройстве. Мы не собираем, не храним и не передаём никакие ваши данные. Распознавание речи происходит офлайн, звук никуда не отправляется.</p>
+  </div>
+
+  <h2>Какие данные собираем</h2>
+  <p>Никаких. В приложении нет аналитики, телеметрии, систем сбора ошибок и рекламных SDK. У нас нет сервера, нет базы данных, нет аккаунтов. Мы не знаем, кто пользуется приложением и как часто.</p>
+
+  <h2>Что обрабатывается на устройстве</h2>
+  <ul>
+    <li><strong>Запись с микрофона</strong> — превращается в текст прямо на телефоне и вставляется в поле ввода. Аудио нигде не сохраняется, в том числе на самом устройстве.</li>
+    <li><strong>Распознанный текст</strong> — существует только в памяти во время работы и в том поле, куда вставлен. Приложение его не сохраняет.</li>
+    <li><strong>Настройки приложения</strong> — хранятся локально и не покидают устройство.</li>
+  </ul>
+
+  <h2>Разрешения</h2>
+  <ul>
+    <li><strong>Микрофон</strong> — для записи голоса, который вы диктуете.</li>
+    <li><strong>Специальные возможности</strong> — чтобы вставлять распознанный текст в поле ввода в любом приложении.</li>
+    <li><strong>Интернет</strong> — используется один раз при первом запуске для скачивания модели распознавания (~327 МБ). После этого приложение работает без интернета.</li>
+    <li><strong>Вибрация</strong> — лёгкая тактильная отдача при старте и остановке записи.</li>
+  </ul>
+
+  <h2>Модель распознавания</h2>
+  <p>При первом запуске приложение скачивает модель GigaAM v3 с нашего публичного <a href="https://github.com/amidexe/govorun-lite/releases">GitHub Release</a>. Сервер GitHub при этом может логировать стандартную информацию о HTTP-запросе (IP-адрес, дата, тип клиента) — мы на это не влияем и этих логов не получаем. После скачивания модель хранится локально; дальнейшая работа приложения интернет не использует.</p>
+
+  <h2>Сторонние сервисы</h2>
+  <p>Приложение не использует сторонние сервисы аналитики, рекламы, crash-репортинга и backend-API. Нет зависимостей от Google Play Services. Единственный внешний ресурс — указанный выше GitHub Release для скачивания модели при первом запуске.</p>
+
+  <h2>Дети</h2>
+  <p>Приложение не предназначено специально для детей и не собирает данные каких-либо пользователей, включая детей младше 13 лет.</p>
+
+  <h2>Изменения политики</h2>
+  <p>Новые версии этой политики публикуются по тому же URL. Дата последнего обновления указана в начале страницы.</p>
+
+  <h2>Контакт</h2>
+  <p>Вопросы по политике конфиденциальности — на <a href="mailto:govorun@i-lo.org">govorun@i-lo.org</a>.</p>
+  <p>Исходный код приложения открыт: <a href="https://github.com/amidexe/govorun-lite">github.com/amidexe/govorun-lite</a>. Там же можно оставить Issue.</p>
+
+  <footer>
+    Говорун Lite · <a href="https://github.com/amidexe/govorun-lite">GitHub</a>
+  </footer>
+
+</main>
+</body>
+</html>
