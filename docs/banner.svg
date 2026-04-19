@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" width="1280" height="400" role="img" aria-label="Говорун Lite — голосовой ввод на русском без интернета">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F6F0FF"/>
+      <stop offset="100%" stop-color="#EDE7F6"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="400" fill="url(#bg)"/>
+
+  <!-- Soft tonal container behind the logo -->
+  <circle cx="230" cy="200" r="155" fill="#E8DEF8" opacity="0.75"/>
+
+  <!-- Bird mark (same vector as the launcher icon, scaled from a 24x24 viewport) -->
+  <g transform="translate(80 62) scale(12)" stroke="#6750A4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="0.4" d="M21.5,10.5 L17.5,9 C14.5,5.5 9,5.5 6,9.5 L3,8.5 L4,12.5 C5.5,15.5 9,17.5 13,17.5 C16,17.5 18,15.5 18,13 L21.5,11.5 Z"/>
+    <path stroke-width="0.3" d="M7.5,11.5 C9.5,13.5 12,14.5 15,14"/>
+    <circle cx="15.2" cy="9" r="0.7" fill="#6750A4" stroke="none"/>
+  </g>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+    <!-- Title -->
+    <text x="470" y="180" font-size="76" font-weight="700" letter-spacing="-1" fill="#1D192B">Говорун Lite</text>
+
+    <!-- Subtitle -->
+    <text x="472" y="232" font-size="26" fill="#49454F">Голосовой ввод на русском без интернета</text>
+
+    <!-- Pill badges -->
+    <g transform="translate(470 280)" font-size="15" fill="#49454F">
+      <g>
+        <rect width="138" height="36" rx="18" fill="none" stroke="#CAC4D0" stroke-width="1.5"/>
+        <text x="69" y="23.5" text-anchor="middle">Android 13+</text>
+      </g>
+      <g transform="translate(154 0)">
+        <rect width="130" height="36" rx="18" fill="none" stroke="#CAC4D0" stroke-width="1.5"/>
+        <text x="65" y="23.5" text-anchor="middle">arm64-v8a</text>
+      </g>
+      <g transform="translate(300 0)">
+        <rect width="90" height="36" rx="18" fill="none" stroke="#CAC4D0" stroke-width="1.5"/>
+        <text x="45" y="23.5" text-anchor="middle">MIT</text>
+      </g>
+    </g>
+  </g>
+</svg>
