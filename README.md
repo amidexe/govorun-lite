@@ -13,10 +13,12 @@
 
 ## Установка
 
-Готовую сборку можно поставить из RuStore:
-**[rustore.ru/catalog/app/com.govorun.lite](https://www.rustore.ru/catalog/app/com.govorun.lite)**
+<a href="https://www.rustore.ru/catalog/app/com.govorun.lite">
+  <img src="docs/rustore-badge.svg" alt="Скачать в RuStore" height="56">
+</a>
 
-Или собрать самостоятельно из исходников — см. раздел ниже.
+Готовую сборку можно поставить из RuStore — или собрать самостоятельно
+из исходников (см. раздел ниже).
 
 ## Как это работает
 
