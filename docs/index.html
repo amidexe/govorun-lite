@@ -52,15 +52,22 @@
   }
   .links a:hover { background: var(--surface-hover); }
   .banner { width: 100%; height: auto; border-radius: 16px; margin-bottom: 32px; }
+  .rustore-cta {
+    display: flex;
+    justify-content: center;
+    margin: 8px 0 40px;
+  }
   .rustore-btn {
     display: inline-block;
-    margin: 0 0 32px;
-    transition: transform 120ms ease, box-shadow 120ms ease;
+    transition: transform 150ms ease, filter 150ms ease;
   }
-  .rustore-btn img { display: block; width: 222px; height: auto; }
+  .rustore-btn img { display: block; width: 360px; height: auto; }
   .rustore-btn:hover {
-    transform: translateY(-1px);
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
+    transform: translateY(-2px);
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.18));
+  }
+  @media (max-width: 480px) {
+    .rustore-btn img { width: 280px; }
   }
 </style>
 </head>
@@ -69,9 +76,11 @@
   <img class="banner" src="banner.svg" alt="Говорун Lite — голосовой ввод на русском без интернета">
   <h1>Говорун Lite</h1>
   <p class="tagline">Голосовой ввод на русском для Android. Работает прямо на телефоне — без интернета и без аккаунтов.</p>
-  <a class="rustore-btn" href="https://www.rustore.ru/catalog/app/com.govorun.lite" aria-label="Скачать в RuStore">
-    <img src="rustore-badge.svg" alt="Скачать в RuStore">
-  </a>
+  <div class="rustore-cta">
+    <a class="rustore-btn" href="https://www.rustore.ru/catalog/app/com.govorun.lite" aria-label="Скачать в RuStore">
+      <img src="rustore-badge.svg" alt="Скачать в RuStore">
+    </a>
+  </div>
   <ul class="links">
     <li><a href="https://github.com/amidexe/govorun-lite">Исходный код на GitHub</a></li>
     <li><a href="privacy.html">Политика конфиденциальности</a></li>

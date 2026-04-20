@@ -13,9 +13,11 @@
 
 ## Установка
 
-<a href="https://www.rustore.ru/catalog/app/com.govorun.lite">
-  <img src="docs/rustore-badge.svg" alt="Скачать в RuStore" height="56">
-</a>
+<p align="center">
+  <a href="https://www.rustore.ru/catalog/app/com.govorun.lite">
+    <img src="docs/rustore-badge.svg" alt="Скачать в RuStore" width="320">
+  </a>
+</p>
 
 Готовую сборку можно поставить из RuStore — или собрать самостоятельно
 из исходников (см. раздел ниже).
