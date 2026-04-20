@@ -4,11 +4,14 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
+import android.database.ContentObserver
+import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
+import android.provider.Settings
 import android.view.View
-import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -17,13 +20,12 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.textview.MaterialTextView
+
 import com.govorun.lite.R
-import com.govorun.lite.model.GigaAmModel
 import com.govorun.lite.stats.StatsStore
-import com.govorun.lite.ui.onboarding.OnboardingStep
 import com.govorun.lite.util.AccessibilityHelper
 
 /**
@@ -31,8 +33,10 @@ import com.govorun.lite.util.AccessibilityHelper
  *
  *  - AppBar with overflow menu: Настройки / Pro-версия / О программе
  *  - Headline / subline adapt: ready / needs setup / just finished
- *  - Status card appears only when something is off; single «Исправить»
- *    button re-enters onboarding at the first broken step
+ *  - Per-problem cards (mic / service / battery) show only when their specific
+ *    check fails, each with a dedicated deep-link button
+ *  - Last-try memento card surfaces the text from the onboarding demo
+ *  - Shortcut advisory card warns about the small accessibility button
  *  - Stats card always visible (shows empty-state hint before first use)
  *  - Promo card links to FuturePlansActivity
  */
@@ -40,18 +44,33 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var headline: MaterialTextView
     private lateinit var subline: MaterialTextView
-    private lateinit var statusMic: View
-    private lateinit var statusService: View
-    private lateinit var statusModel: View
-    private lateinit var statusBattery: View
-    private lateinit var fixAllButton: MaterialButton
-    private lateinit var statusCard: View
+
+    private lateinit var cardMicMissing: MaterialCardView
+    private lateinit var cardMicButton: MaterialButton
+    private lateinit var cardServiceMissing: MaterialCardView
+    private lateinit var cardServiceButton: MaterialButton
+    private lateinit var cardBatteryMissing: MaterialCardView
+    private lateinit var cardBatteryButton: MaterialButton
+
+    private lateinit var shortcutCard: View
+    private lateinit var shortcutCardButton: MaterialButton
+    private lateinit var statsCard: View
     private lateinit var statsRow: View
     private lateinit var statsWordsNumber: MaterialTextView
     private lateinit var statsMinutesNumber: MaterialTextView
     private lateinit var statsEmpty: MaterialTextView
+    private lateinit var promoCard: View
     private lateinit var toolbar: MaterialToolbar
     private var showJustFinished: Boolean = false
+
+    // Observes accessibility-related Secure settings so the per-problem cards
+    // refresh the instant the user toggles the service OR taps the little
+    // shortcut button on top of our bubble — no need to leave MainActivity.
+    private val accessibilityObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            refreshStatuses()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -89,18 +108,34 @@ class MainActivity : AppCompatActivity() {
 
         headline = findViewById(R.id.mainHeadline)
         subline = findViewById(R.id.mainSubline)
-        statusMic = findViewById(R.id.statusMic)
-        statusService = findViewById(R.id.statusService)
-        statusModel = findViewById(R.id.statusModel)
-        statusBattery = findViewById(R.id.statusBattery)
-        fixAllButton = findViewById(R.id.statusFixAll)
-        statusCard = findViewById(R.id.statusCard)
+
+        cardMicMissing = findViewById(R.id.cardMicMissing)
+        cardMicButton = findViewById(R.id.cardMicButton)
+        cardMicButton.setOnClickListener { openAppDetails() }
+
+        cardServiceMissing = findViewById(R.id.cardServiceMissing)
+        cardServiceButton = findViewById(R.id.cardServiceButton)
+        cardServiceButton.setOnClickListener {
+            AccessibilityHelper.openAccessibilitySettings(this)
+        }
+
+        cardBatteryMissing = findViewById(R.id.cardBatteryMissing)
+        cardBatteryButton = findViewById(R.id.cardBatteryButton)
+        cardBatteryButton.setOnClickListener { requestIgnoreBatteryOptimizations() }
+
+        shortcutCard = findViewById(R.id.shortcutCard)
+        shortcutCardButton = findViewById(R.id.shortcutCardButton)
+        shortcutCardButton.setOnClickListener {
+            AccessibilityHelper.openAccessibilitySettings(this)
+        }
+        statsCard = findViewById(R.id.statsCard)
         statsRow = findViewById(R.id.statsRow)
         statsWordsNumber = findViewById(R.id.statsWordsNumber)
         statsMinutesNumber = findViewById(R.id.statsMinutesNumber)
         statsEmpty = findViewById(R.id.statsEmpty)
 
-        findViewById<View>(R.id.promoCard).setOnClickListener {
+        promoCard = findViewById(R.id.promoCard)
+        promoCard.setOnClickListener {
             startActivity(Intent(this, FuturePlansActivity::class.java))
         }
 
@@ -108,9 +143,8 @@ class MainActivity : AppCompatActivity() {
             // Long-press the stats card to seed a realistic "power user" total,
             // so we can eyeball the big-number layout without having to dictate
             // for an hour. Short-press (long press again) clears.
-            val statsCard = findViewById<View>(R.id.statsCard)
-            statsCard?.setOnLongClickListener {
-                val prefs = getSharedPreferences("govorun_lite_prefs", MODE_PRIVATE)
+            statsCard.setOnLongClickListener {
+                val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
                 val hasDemo = prefs.getLong("stats_words_total", 0L) >= 3000L
                 if (hasDemo) {
                     prefs.edit().putLong("stats_words_total", 0L).putLong("stats_seconds_total", 0L).apply()
@@ -134,6 +168,24 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         refreshStatuses()
         refreshStats()
+        val cr = contentResolver
+        cr.registerContentObserver(
+            Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
+            false, accessibilityObserver,
+        )
+        cr.registerContentObserver(
+            Settings.Secure.getUriFor("accessibility_button_targets"),
+            false, accessibilityObserver,
+        )
+        cr.registerContentObserver(
+            Settings.Secure.getUriFor("accessibility_shortcut_target_service"),
+            false, accessibilityObserver,
+        )
+    }
+
+    override fun onPause() {
+        contentResolver.unregisterContentObserver(accessibilityObserver)
+        super.onPause()
     }
 
     private fun refreshStats() {
@@ -165,17 +217,21 @@ class MainActivity : AppCompatActivity() {
             this, Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED
         val serviceOk = AccessibilityHelper.isLiteServiceEnabled(this)
-        val modelOk = GigaAmModel.isInstalled(this)
         val batteryOk = run {
             val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
             pm?.isIgnoringBatteryOptimizations(packageName) == true
         }
-        val allOk = micOk && serviceOk && modelOk && batteryOk
+        // The accessibility shortcut places an extra small floating button next
+        // to our bubble that disables the service when tapped — count it as a
+        // setup problem so the headline and promo card honestly reflect state.
+        val shortcutOn = AccessibilityHelper.isLiteShortcutEnabled(this)
+        val allOk = micOk && serviceOk && batteryOk && !shortcutOn
 
-        // Headline + subline always at the top. The wording adapts:
-        //  - just finished onboarding → celebratory "Всё готово!"
-        //  - everything ok → calmer "Всё готово" (toolbar already says "Говорун", so no duplication)
-        //  - something missing → "Нужна настройка" + nudge to the status card
+        // Only surface the shortcut card when the service is on — otherwise
+        // the user is still in "enable me first" mode and the extra advisory
+        // would be noise.
+        shortcutCard.visibility = if (serviceOk && shortcutOn) View.VISIBLE else View.GONE
+
         when {
             showJustFinished && allOk -> {
                 headline.setText(R.string.main_just_finished)
@@ -191,56 +247,47 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (allOk) {
-            statusCard.visibility = View.GONE
-            return
-        }
-
-        statusCard.visibility = View.VISIBLE
-        bindRow(statusMic, micOk, R.string.main_status_mic_ok, R.string.main_status_mic_missing)
-        bindRow(statusService, serviceOk, R.string.main_status_service_ok, R.string.main_status_service_missing)
-        bindRow(statusModel, modelOk, R.string.main_status_model_ok, R.string.main_status_model_missing)
-        bindRow(statusBattery, batteryOk, R.string.main_status_battery_ok, R.string.main_status_battery_missing)
-
-        val firstBrokenStep = when {
-            !micOk -> OnboardingStep.MIC
-            !serviceOk -> OnboardingStep.ACCESSIBILITY
-            !modelOk -> OnboardingStep.MODEL
-            else -> OnboardingStep.BATTERY
-        }
-        fixAllButton.visibility = View.VISIBLE
-        fixAllButton.setOnClickListener { reenterOnboarding(firstBrokenStep) }
+        cardMicMissing.visibility = if (micOk) View.GONE else View.VISIBLE
+        cardServiceMissing.visibility = if (serviceOk) View.GONE else View.VISIBLE
+        cardBatteryMissing.visibility = if (batteryOk) View.GONE else View.VISIBLE
+        // Stats and promo both hide while there are setup problems, so the
+        // screen doesn't split attention between "fix this" cards and nice-
+        // to-have surfaces. Matches the "needs setup" headline state.
+        statsCard.visibility = if (allOk) View.VISIBLE else View.GONE
+        promoCard.visibility = if (allOk) View.VISIBLE else View.GONE
     }
 
-    private fun bindRow(row: View, ok: Boolean, okLabel: Int, missingLabel: Int) {
-        val icon = row.findViewById<ImageView>(R.id.statusIcon)
-        val label = row.findViewById<MaterialTextView>(R.id.statusLabel)
-
-        if (ok) {
-            icon.setImageResource(R.drawable.ic_check_circle_24)
-            icon.imageTintList = ColorStateList.valueOf(
-                MaterialColors.getColor(row, com.google.android.material.R.attr.colorPrimary)
-            )
-            label.setText(okLabel)
-        } else {
-            icon.setImageResource(R.drawable.ic_warning_24)
-            icon.imageTintList = ColorStateList.valueOf(
-                MaterialColors.getColor(row, com.google.android.material.R.attr.colorError)
-            )
-            label.setText(missingLabel)
+    private fun openAppDetails() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", packageName, null)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            startActivity(intent)
+        } catch (_: Exception) {
         }
     }
 
-    private fun reenterOnboarding(startAt: OnboardingStep) {
-        getSharedPreferences("govorun_lite_prefs", MODE_PRIVATE).edit()
-            .putBoolean("onboarding_done", false)
-            .putString("onboarding_step", startAt.name)
-            .apply()
-        startActivity(Intent(this, OnboardingActivity::class.java))
-        finish()
+    @SuppressWarnings("BatteryLife")
+    private fun requestIgnoreBatteryOptimizations() {
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.fromParts("package", packageName, null)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            startActivity(intent)
+        } catch (_: Exception) {
+            // Fallback to plain battery settings if the direct dialog isn't handled.
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } catch (_: Exception) {
+            }
+        }
     }
 
     companion object {
         const val EXTRA_JUST_FINISHED = "just_finished"
+        private const val PREFS = "govorun_lite_prefs"
     }
 }

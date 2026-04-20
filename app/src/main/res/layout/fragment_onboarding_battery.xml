@@ -20,7 +20,7 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
             android:contentDescription="@null"
-            android:src="@drawable/ic_battery_24"
+            android:src="@drawable/logo_bird"
             android:tint="?attr/colorPrimary" />
 
         <com.google.android.material.textview.MaterialTextView

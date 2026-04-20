@@ -3,7 +3,6 @@ package com.govorun.lite.util
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.provider.Settings
 import android.text.TextUtils
 import com.govorun.lite.service.LiteAccessibilityService
@@ -58,35 +57,24 @@ object AccessibilityHelper {
     }
 
     /**
-     * Tries to open the settings page for our service directly so the user can
-     * toggle the Shortcut off without hunting. Falls back to the global
-     * Accessibility list if the direct intent isn't handled or is blocked.
+     * Opens the top-level system Accessibility Settings screen (the list of
+     * all accessibility services).
      *
-     * ACTION_ACCESSIBILITY_DETAILS_SETTINGS requires the signature permission
-     * OPEN_ACCESSIBILITY_DETAILS_SETTINGS on some builds, so a bare try/catch
-     * on ActivityNotFoundException isn't enough — we also need to swallow
-     * SecurityException to stop the app from crashing.
+     * We deliberately DO NOT use `ACCESSIBILITY_DETAILS_SETTINGS` here: on
+     * Android 13+ when the install came from a sideloaded APK, that intent
+     * gets rewritten by the OS into the App Details page (with the "Allow
+     * restricted settings" overflow) instead of the per-service details page
+     * — so the button would bounce the user back to where they already were,
+     * never reaching the toggle. The plain ACTION_ACCESSIBILITY_SETTINGS is
+     * boring but always lands on the actual list.
      */
     fun openAccessibilitySettings(context: Context) {
-        val component = ComponentName(context, LiteAccessibilityService::class.java).flattenToString()
-        val detail = Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS").apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            putExtra("android.intent.extra.COMPONENT_NAME", component)
-            putExtra(":settings:fragment_args_key", component)
-            putExtra(":settings:show_fragment_args", Bundle().apply {
-                putString(":settings:fragment_args_key", component)
-            })
-        }
-        val fallback = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
-            context.startActivity(detail)
+            context.startActivity(intent)
         } catch (_: Exception) {
-            try {
-                context.startActivity(fallback)
-            } catch (_: Exception) {
-                // Nothing else we can do — settings app missing/locked.
-            }
+            // Settings app missing/locked — nothing else to do.
         }
     }
 }

@@ -51,6 +51,11 @@
     font-weight: 500;
   }
   .links a:hover { background: var(--surface-hover); }
+  .links a.primary {
+    background: var(--on-surface);
+    color: var(--bg);
+  }
+  .links a.primary:hover { background: var(--on-surface-variant); }
   .banner { width: 100%; height: auto; border-radius: 16px; margin-bottom: 32px; }
 </style>
 </head>
@@ -60,6 +65,7 @@
   <h1>Говорун Lite</h1>
   <p class="tagline">Голосовой ввод на русском для Android. Работает прямо на телефоне — без интернета и без аккаунтов.</p>
   <ul class="links">
+    <li><a class="primary" href="https://www.rustore.ru/catalog/app/com.govorun.lite">Скачать в RuStore</a></li>
     <li><a href="https://github.com/amidexe/govorun-lite">Исходный код на GitHub</a></li>
     <li><a href="privacy.html">Политика конфиденциальности</a></li>
   </ul>

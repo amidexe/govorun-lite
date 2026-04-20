@@ -20,6 +20,7 @@ keystore.properties
 
 # Large native deps downloaded by script
 app/libs/*.aar
+app/src/main/assets/models/
 
 # Logs
 *.log

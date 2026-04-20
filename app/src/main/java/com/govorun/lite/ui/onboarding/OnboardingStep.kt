@@ -7,9 +7,7 @@ package com.govorun.lite.ui.onboarding
  */
 enum class OnboardingStep {
     WELCOME,
-    MIC,
+    TRY_IT,
     ACCESSIBILITY,
-    BATTERY,
-    MODEL,
-    TEST
+    BATTERY
 }

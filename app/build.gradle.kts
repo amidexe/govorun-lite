@@ -22,8 +22,8 @@ android {
         applicationId = "com.govorun.lite"
         minSdk = 33
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1"
+        versionCode = 3
+        versionName = "1.0.2"
         ndk {
             abiFilters += "arm64-v8a"
         }
@@ -54,6 +54,15 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+
+    // Bundled GigaAM .onnx files are already highly-compressed tensor data;
+    // compressing them in the APK adds ~5% at best and forces a full unpack
+    // to /data/app_extracted on install. Skipping compression lets the PM
+    // store them uncompressed and means our filesDir copy can use plain
+    // buffered IO without extra decompression.
+    androidResources {
+        noCompress += listOf("onnx")
     }
 
     compileOptions {

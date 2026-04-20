@@ -11,6 +11,13 @@
 от Сбера (лицензия MIT) через [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx).
 Речевая активность ловится офлайновым [Silero VAD](https://github.com/snakers4/silero-vad).
 
+## Установка
+
+Готовую сборку можно поставить из RuStore:
+**[rustore.ru/catalog/app/com.govorun.lite](https://www.rustore.ru/catalog/app/com.govorun.lite)**
+
+Или собрать самостоятельно из исходников — см. раздел ниже.
+
 ## Как это работает
 
 1. Включаете в настройках специальных возможностей службу Говоруна.
@@ -26,15 +33,18 @@
 
 - Минимальная версия Android: 13 (API 33)
 - Архитектура: `arm64-v8a`
-- Модель GigaAM v3 — ~327 МБ, скачивается один раз при первом запуске
+- Модель GigaAM v3 — ~327 МБ, входит в APK (интернет не нужен)
 - Silero VAD — 629 КБ, зашит в APK
 - Пакет: `com.govorun.lite`
 
 ## Сборка из исходников
 
 ```bash
-# Один раз — скачать нативный рантайм sherpa-onnx (~47 МБ, в репо не лежит)
+# Один раз — нативный рантайм sherpa-onnx (~47 МБ, в репо не лежит)
 ./scripts/download-sherpa-onnx.sh
+
+# Один раз — ONNX-модель GigaAM v3 (~327 МБ, в репо не лежит)
+./scripts/download-model.sh
 
 # Создать local.properties с путём к Android SDK
 echo "sdk.dir=/path/to/android-sdk" > local.properties

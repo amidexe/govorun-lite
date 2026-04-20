@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Говорун</string>
-    <string name="app_full_name">Говорун: Голосовой ввод на базе Giga</string>
 
     <!-- Accessibility service -->
     <string name="accessibility_service_label">Говорун — голосовой ввод</string>
@@ -20,60 +19,45 @@
     <string name="action_done">Готово</string>
 
     <!-- Onboarding: welcome -->
-    <string name="onb_welcome_title">Добро пожаловать в Говорун</string>
-    <string name="onb_welcome_body">Говорун превращает живую речь в грамотный текст — с заглавными буквами, запятыми, точками и абзацами. Никаких кнопок «поставить точку»: просто говорите, как привыкли. Всё работает прямо на телефоне, без интернета и аккаунтов.</string>
-    <string name="onb_welcome_note">Перед первым запуском нужно пройти несколько коротких шагов — разрешить микрофон, включить службу и скачать модель распознавания.</string>
-
-    <!-- Onboarding: microphone permission -->
-    <string name="onb_mic_title">Доступ к микрофону</string>
-    <string name="onb_mic_body">Говоруну нужен микрофон, чтобы слышать вас. Звук обрабатывается прямо на телефоне и никуда не отправляется.</string>
-    <string name="onb_mic_grant">Разрешить доступ</string>
-    <string name="onb_mic_choose_hint">Когда появится системное окно, выберите «При использовании приложения». Вариант «Только в этот раз» придётся подтверждать заново при каждом запуске.</string>
-    <string name="onb_mic_granted">Микрофон разрешён</string>
-    <string name="onb_mic_denied_hint">Чтобы разрешить микрофон, откройте настройки приложения и включите доступ вручную.</string>
-    <string name="onb_mic_open_settings">Открыть настройки приложения</string>
+    <string name="onb_welcome_title">Привет! Я — Говорун</string>
+    <string name="onb_welcome_body">Превращаю речь в текст. Без интернета, без аккаунтов.</string>
+    <string name="onb_welcome_note">Пара коротких шагов — и поехали.</string>
 
     <!-- Onboarding: accessibility service -->
-    <string name="onb_accessibility_title">Служба Говоруна</string>
-    <string name="onb_accessibility_body_pending">Включите сервис «Говорун — голосовой ввод».</string>
-    <string name="onb_accessibility_body_enabled">Служба Говоруна включена</string>
-    <string name="onb_accessibility_open">Открыть настройки</string>
-    <string name="onb_accessibility_hint_warning_title">Не включайте «Быстрый запуск»</string>
-    <string name="onb_accessibility_hint">Нужен только один тумблер — сам сервис. «Быстрый запуск» оставьте выключенным.</string>
+    <string name="onb_accessibility_title">Разрешите Говоруну использовать специальные возможности</string>
+    <string name="onb_accessibility_body_pending">Без них Говорун не сможет вставлять текст в другие программы.</string>
+    <string name="onb_accessibility_body_enabled">Готово — Говорун может работать в других программах</string>
+    <string name="onb_accessibility_open">Разрешить специальные возможности</string>
+    <string name="onb_accessibility_do_row">Говорун — голосовой ввод (включить)</string>
+    <string name="onb_accessibility_dont_row">Быстрый запуск (не включать)</string>
 
-    <!-- Accessibility shortcut conflict (the system auto-toggled shortcut) -->
-    <string name="onb_accessibility_shortcut_title">Выключите «Быстрый запуск»</string>
-    <string name="onb_accessibility_shortcut_body">Откройте настройки, найдите Говорун и выключите «Быстрый запуск». Основной тумблер сервиса оставьте включённым.</string>
-    <string name="onb_accessibility_shortcut_open">Открыть и выключить</string>
+    <!-- Onboarding: inline "try it" demo right after mic permission.
+         Gives the user (and the RuStore moderator) an immediate reward:
+         tap a button, say something, see the transcribed text. Proves the
+         app is real before sending them into the more involved accessibility
+         setup. Borrowed UX idea from Whisper Flow. -->
+    <string name="onb_try_title">Попробуйте</string>
+    <string name="onb_try_tap_to_start">Нажмите птичку и попробуйте набрать текст голосом</string>
+    <string name="onb_try_tap_to_grant">Нажмите птичку и попробуйте набрать текст голосом</string>
+    <string name="onb_try_denied">Доступ к микрофону закрыт</string>
+    <string name="onb_try_open_settings">Открыть настройки</string>
+    <string name="onb_try_tap_to_stop">Говорите…</string>
+    <string name="onb_try_preparing">Готовим распознавание…</string>
+    <string name="onb_try_result_placeholder">Здесь появится текст</string>
 
-    <!-- Main screen: shortcut status -->
-    <string name="main_status_shortcut_ok">«Быстрый запуск» выключен</string>
-    <string name="main_status_shortcut_on">Выключите «Быстрый запуск» у Говоруна</string>
+    <!-- Main screen: advisory card shown when Android auto-enabled the
+         system accessibility shortcut for us, which places an extra small
+         floating button next to our bubble that would disable the service
+         when tapped. -->
+    <string name="main_shortcut_card_body">Перейдите в <b>специальные возможности</b> → <b>«Говорун — голосовой ввод»</b> → выключите <b>«Быстрый запуск»</b>.</string>
+    <string name="main_shortcut_card_button">Открыть специальные возможности</string>
 
     <!-- Onboarding: battery optimization (optional) -->
-    <string name="onb_battery_title">Работа в фоне</string>
-    <string name="onb_battery_body">Android может останавливать приложения в фоне для экономии батареи — тогда Говорун пропадает. Можно попросить систему этого не делать.</string>
-    <string name="onb_battery_body_done">Работа в фоне уже разрешена. Можно нажать «Далее».</string>
+    <string name="onb_battery_title">Почти у цели — работа в фоне</string>
+    <string name="onb_battery_body">Android может останавливать приложения в фоне для экономии батареи — тогда Говорун пропадает в самый неподходящий момент. Можно попросить систему этого не делать. Это последний шаг.</string>
+    <string name="onb_battery_body_done">Работа в фоне уже разрешена. Можно нажать «Готово».</string>
     <string name="onb_battery_open">Разрешить работу в фоне</string>
-    <string name="onb_battery_skip_note">Шаг не обязательный — можно сразу нажать «Далее» и настроить позже.</string>
-
-    <!-- Onboarding: model download -->
-    <string name="onb_model_title">Модель распознавания</string>
-    <string name="onb_model_body">Для работы нужно один раз установить модель распознавания GigaAM v3. Дальше Говорун работает прямо на телефоне — без интернета и трафика.</string>
-    <string name="onb_model_start">Установить модель</string>
-    <string name="onb_model_retry">Повторить</string>
-    <string name="onb_model_cancel">Отменить</string>
-    <string name="onb_model_installed">Модель установлена</string>
-    <string name="onb_model_wifi_hint">Для установки потребуется около 327 МБ — лучше подключиться к Wi-Fi. Если закроете приложение, установка остановится.</string>
-    <string name="onb_model_progress">%1$d%% · %2$s из %3$s</string>
-    <string name="onb_model_failed_prefix">Не удалось установить: %1$s</string>
-
-    <!-- Onboarding: test -->
-    <string name="onb_test_title">Проверка</string>
-    <string name="onb_test_body">Нажмите на поле ниже, чтобы оно стало активным. Справа появится Говорун — нажмите на него и скажите что-нибудь. Текст придёт сюда сам.</string>
-    <string name="onb_test_field_hint">Скажите что-нибудь сюда</string>
-    <string name="onb_test_done">Отлично, текст появился — всё работает!</string>
-    <string name="onb_test_no_bubble_hint">Если Говорун не появился, проверьте, что служба Говоруна включена в настройках специальных возможностей.</string>
+    <string name="onb_battery_skip_note">Шаг не обязательный — можно сразу нажать «Готово» и настроить позже.</string>
 
     <string name="onb_step_soon">Этот шаг будет достроен в ближайших обновлениях. Пока просто нажмите «Далее».</string>
     <string name="onb_open_app_settings">Открыть настройки приложения</string>
@@ -81,23 +65,22 @@
     <!-- Main screen -->
     <string name="main_ready">Всё готово</string>
     <string name="main_needs_setup">Нужна настройка</string>
-    <string name="main_needs_setup_sub">Не все разрешения включены. Откройте карточку ниже и нажмите «Исправить».</string>
     <string name="main_just_finished">Всё готово!</string>
     <string name="main_just_finished_sub">Откройте любое поле ввода — справа появится Говорун. Нажмите на него — и говорите.</string>
     <string name="main_hint">Можете отключить интернет — Говорун продолжит распознавать речь прямо на телефоне.</string>
     <string name="main_engine_credit">Движок — GigaAM v3 от Сбера, лицензия MIT.</string>
-    <string name="main_status_title">Что включено</string>
-    <string name="main_status_mic_ok">Микрофон разрешён</string>
-    <string name="main_status_mic_missing">Микрофон не разрешён</string>
-    <string name="main_status_service_ok">Служба Говоруна работает</string>
-    <string name="main_status_service_missing">Служба Говоруна выключена</string>
-    <string name="main_status_model_ok">Модель распознавания установлена</string>
-    <string name="main_status_model_missing">Модель не установлена</string>
-    <string name="main_status_battery_ok">Работа в фоне разрешена</string>
-    <string name="main_status_battery_missing">Работа в фоне не разрешена</string>
-    <string name="main_status_fix_all">Исправить</string>
+    <string name="main_card_mic_title">Доступ к микрофону</string>
+    <string name="main_card_mic_body">Без микрофона Говорун не услышит, что вы говорите.</string>
+    <string name="main_card_mic_button">Открыть настройки приложения</string>
+    <string name="main_card_service_title">Включите Говоруна</string>
+    <string name="main_card_service_body">Птичка не появится в других программах, пока вы не включили «Говорун — голосовой ввод» в специальных возможностях.</string>
+    <string name="main_card_service_button">Разрешить специальные возможности</string>
+    <string name="main_card_battery_title">Разрешите работу в фоне</string>
+    <string name="main_card_battery_body">Иначе Андроид выгрузит Говоруна, и вам придётся включать его заново.</string>
+    <string name="main_card_battery_button">Разрешить</string>
+    <string name="main_needs_setup_sub">Несколько мелочей надо подкрутить — карточки ниже подскажут, что и где.</string>
     <string name="main_disable_service">Выключить Говоруна</string>
-    <string name="main_disable_service_hint">Служба выключится. Чтобы снова включить — зайдите в «Настройки приложения» → «Специальные возможности».</string>
+    <string name="main_disable_service_hint">Говорун выключится. Чтобы снова включить — зайдите в «Настройки приложения» → «Специальные возможности».</string>
 
     <!-- Main screen: usage stats -->
     <string name="main_stats_title">Ваша статистика</string>
@@ -160,7 +143,7 @@
     <string name="about_author_body">Сделал Дмитрий Киселев. Если Говорун пригодился — оставьте тёплое слово в RuStore. Баги и предложения удобнее оставлять в Issues на GitHub.</string>
 
     <!-- About: compatibility + recognition-limits notes shown as plain muted text -->
-    <string name="about_devices_body">Приложение проверено на устройствах Google Pixel (6 и новее) на чистом Android 13–15. На смартфонах Xiaomi, Huawei и других производителях с агрессивной экономией батареи может потребоваться вручную добавить Говорун в «Автозапуск» и снять ограничения для службы специальных возможностей.</string>
+    <string name="about_devices_body">Приложение проверено на устройствах Google Pixel (6 и новее) на чистом Android 13–15. На смартфонах Xiaomi, Huawei и других производителях с агрессивной экономией батареи может потребоваться вручную добавить Говорун в «Автозапуск» и снять ограничения для Говоруна в специальных возможностях.</string>
     <string name="about_disclaimer_body">Распознавание речи выполняется нейросетевой моделью и может содержать ошибки и неточности. Автор и приложение не несут ответственности за неверную интерпретацию распознанного текста и его последующее использование. Перед отправкой важных сообщений всегда перечитывайте результат.</string>
 
     <!-- About: footer -->

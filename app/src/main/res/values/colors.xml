@@ -4,4 +4,9 @@
     <!-- Standard amber for the "rate us" star. Stays consistent in light/dark
          themes — RuStore/Play associate this colour with ratings. -->
     <color name="star_amber">#FFC107</color>
+    <!-- Semantic "do this" green used on the accessibility step's checklist.
+         Balances the colorError red on the "don't enable" row so both
+         instructions are equally scannable. We don't rely on colorPrimary
+         because Dynamic Colors can make it any hue (pink, blue, yellow…). -->
+    <color name="success_green">#2E7D32</color>
 </resources>

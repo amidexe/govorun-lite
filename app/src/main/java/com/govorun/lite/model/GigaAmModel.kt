@@ -8,12 +8,14 @@ import java.io.File
  * End-to-end Russian ASR with punctuation and capitalization. WER ~8.4%.
  *
  * Upstream source: github.com/salute-developers/GigaAM
- * sherpa-onnx conversion originally by Smirnov75 on HuggingFace, mirrored
- * unchanged to our own GitHub Release so app installs don't depend on a
- * third-party host.
  *
- * SHA-256 values pinned below — ModelDownloader verifies every downloaded
- * file against them before the model is considered installed.
+ * Model files ship inside the APK as assets (total ~310 MB). On first launch,
+ * [ensureInstalled] copies them to [modelDir] under filesDir because
+ * sherpa-onnx wants real file paths, not AssetManager descriptors. The
+ * bundle-and-copy pattern replaced an earlier remote-download flow that
+ * routinely timed out — GitHub now serves release assets via Azure Blob,
+ * which is painfully slow from Russia, and RuStore moderators kept failing
+ * the download step.
  */
 object GigaAmModel {
 
@@ -22,27 +24,15 @@ object GigaAmModel {
     const val JOINER  = "gigaam_v3_e2e_rnnt_joint.onnx"
     const val TOKENS  = "gigaam_v3_e2e_rnnt_tokens.txt"
 
-    data class ModelFile(val name: String, val url: String, val sizeBytes: Long, val sha256: String? = null)
+    data class ModelFile(val name: String, val sizeBytes: Long)
 
-    private const val BASE = "https://github.com/amidexe/govorun-lite/releases/download/model-gigaam-v3"
+    private const val ASSETS_SUBDIR = "models/gigaam-v3"
 
     val FILES = listOf(
-        ModelFile(
-            ENCODER, "$BASE/$ENCODER", 318_995_997L,
-            sha256 = "2cac62d0c270bd128f898f2be1a2d34780d524a6e9483888ebac7b00f97410f1"
-        ),
-        ModelFile(
-            DECODER, "$BASE/$DECODER", 4_600_058L,
-            sha256 = "781971998e6a355d6a714f6932a30eab295e7ba0d14fd7e0f78c83b87e811860"
-        ),
-        ModelFile(
-            JOINER,  "$BASE/$JOINER",  2_712_896L,
-            sha256 = "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c"
-        ),
-        ModelFile(
-            TOKENS,  "$BASE/$TOKENS",  13_353L,
-            sha256 = "7ddf22514c42c531358182c81446a8159771e9921019f09ae743ea622d40221d"
-        ),
+        ModelFile(ENCODER, 318_995_997L),
+        ModelFile(DECODER, 4_600_058L),
+        ModelFile(JOINER,  2_712_896L),
+        ModelFile(TOKENS,  13_353L),
     )
 
     val TOTAL_BYTES: Long = FILES.sumOf { it.sizeBytes }
@@ -56,6 +46,29 @@ object GigaAmModel {
         return FILES.all {
             val f = File(dir, it.name)
             f.exists() && f.length() == it.sizeBytes
+        }
+    }
+
+    /**
+     * Copies bundled model files from APK assets to internal storage if
+     * they aren't there yet. Safe to call on any thread but blocks for the
+     * duration of the copy (~5-15s on first install, ~0ms afterwards).
+     *
+     * Copy errors are thrown to the caller so a background crash-report can
+     * surface the issue rather than silently leaving the model missing.
+     */
+    fun ensureInstalled(context: Context) {
+        if (isInstalled(context)) return
+        val dir = modelDir(context)
+        val assets = context.assets
+        for (file in FILES) {
+            val target = File(dir, file.name)
+            if (target.exists() && target.length() == file.sizeBytes) continue
+            assets.open("$ASSETS_SUBDIR/${file.name}").use { input ->
+                target.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
         }
     }
 }
