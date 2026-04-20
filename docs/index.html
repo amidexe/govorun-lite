@@ -28,10 +28,18 @@
     margin: 0 auto;
     padding: 64px 24px;
   }
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 16px 0 8px;
+  }
   h1 {
     font-size: 32px;
     font-weight: 700;
-    margin: 16px 0 8px;
+    margin: 0;
     letter-spacing: -0.5px;
   }
   .tagline {
@@ -52,32 +60,28 @@
   }
   .links a:hover { background: var(--surface-hover); }
   .banner { width: 100%; height: auto; border-radius: 16px; margin-bottom: 32px; }
-  .rustore-cta {
-    display: flex;
-    justify-content: center;
-    margin: 8px 0 40px;
-  }
   .rustore-btn {
     display: inline-block;
+    flex-shrink: 0;
     transition: transform 150ms ease, filter 150ms ease;
   }
-  .rustore-btn img { display: block; width: 180px; height: auto; }
+  .rustore-btn img { display: block; width: 140px; height: auto; }
   .rustore-btn:hover {
-    transform: translateY(-2px);
-    filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.15));
+    transform: translateY(-1px);
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
   }
 </style>
 </head>
 <body>
 <main class="container">
   <img class="banner" src="banner.svg" alt="Говорун Lite — голосовой ввод на русском без интернета">
-  <h1>Говорун Lite</h1>
-  <p class="tagline">Голосовой ввод на русском для Android. Работает прямо на телефоне — без интернета и без аккаунтов.</p>
-  <div class="rustore-cta">
+  <div class="title-row">
+    <h1>Говорун Lite</h1>
     <a class="rustore-btn" href="https://www.rustore.ru/catalog/app/com.govorun.lite" aria-label="Скачать в RuStore">
       <img src="rustore-badge.svg" alt="Скачать в RuStore">
     </a>
   </div>
+  <p class="tagline">Голосовой ввод на русском для Android. Работает прямо на телефоне — без интернета и без аккаунтов.</p>
   <ul class="links">
     <li><a href="https://github.com/amidexe/govorun-lite">Исходный код на GitHub</a></li>
     <li><a href="privacy.html">Политика конфиденциальности</a></li>
