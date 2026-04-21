@@ -17,6 +17,9 @@ import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
+import androidx.appcompat.view.ContextThemeWrapper
+import com.google.android.material.color.DynamicColors
+import com.govorun.lite.R
 import com.govorun.lite.model.GigaAmModel
 import com.govorun.lite.overlay.BubbleView
 import com.govorun.lite.stats.StatsStore
@@ -86,7 +89,6 @@ class LiteAccessibilityService : AccessibilityService() {
         Log.i(TAG, "Accessibility service connected")
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        bubbleView = BubbleView(this)
 
         bubbleParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -100,44 +102,7 @@ class LiteAccessibilityService : AccessibilityService() {
             x = 16
         }
 
-        val dragThresholdPx = DRAG_THRESHOLD_DP * resources.displayMetrics.density
-        bubbleView!!.setOnTouchListener(object : View.OnTouchListener {
-            private var initialY = 0
-            private var initialTouchY = 0f
-            private var dragged = false
-
-            override fun onTouch(v: View, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        initialY = bubbleParams!!.y
-                        initialTouchY = event.rawY
-                        dragged = false
-                        return true
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        if (Math.abs(event.rawY - initialTouchY) > dragThresholdPx) {
-                            dragged = true
-                            bubbleParams!!.y = initialY + (event.rawY - initialTouchY).toInt()
-                            windowManager?.updateViewLayout(bubbleView, bubbleParams)
-                        }
-                        return true
-                    }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                        if (dragged) return true
-                        if (isVadActive) stopVadRecording() else startVadRecording()
-                        return true
-                    }
-                }
-                return false
-            }
-        })
-
-        bubbleView!!.visibility = View.GONE
-        try {
-            windowManager?.addView(bubbleView, bubbleParams)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to add bubble view", e)
-        }
+        attachFreshBubble(initiallyVisible = false)
 
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
 
@@ -264,6 +229,85 @@ class LiteAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {}
+
+    /**
+     * Services don't get DynamicColors applied automatically (that helper is
+     * activity-scoped). Wrapping explicitly here is what makes the bubble
+     * pick up the user's wallpaper accent — without this, colorPrimary*
+     * resolves to the static M3 defaults and the bubble reads as grey even
+     * when Gboard/System UI are clearly using the dynamic palette.
+     */
+    private fun bubbleContext(): Context {
+        val themed = ContextThemeWrapper(this, R.style.Theme_GovorunLite)
+        return DynamicColors.wrapContextIfAvailable(themed)
+    }
+
+    /**
+     * Reinstall a fresh BubbleView — used on first connect and whenever we
+     * need to rebind to a DC-wrapped context (wallpaper colour change,
+     * transparency pref change triggered from Settings via refreshBubble()).
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun attachFreshBubble(initiallyVisible: Boolean) {
+        val wm = windowManager ?: return
+        bubbleView?.let {
+            try { wm.removeView(it) } catch (_: Exception) {}
+        }
+        val fresh = BubbleView(bubbleContext()).apply {
+            setIdleAlpha(Prefs.getBubbleAlpha(this@LiteAccessibilityService))
+            visibility = if (initiallyVisible) View.VISIBLE else View.GONE
+        }
+        val dragThresholdPx = DRAG_THRESHOLD_DP * resources.displayMetrics.density
+        fresh.setOnTouchListener(object : View.OnTouchListener {
+            private var initialY = 0
+            private var initialTouchY = 0f
+            private var dragged = false
+            override fun onTouch(v: View, event: MotionEvent): Boolean {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        initialY = bubbleParams!!.y
+                        initialTouchY = event.rawY
+                        dragged = false
+                        return true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        if (Math.abs(event.rawY - initialTouchY) > dragThresholdPx) {
+                            dragged = true
+                            bubbleParams!!.y = initialY + (event.rawY - initialTouchY).toInt()
+                            windowManager?.updateViewLayout(bubbleView, bubbleParams)
+                        }
+                        return true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        if (dragged) return true
+                        if (isVadActive) stopVadRecording() else startVadRecording()
+                        return true
+                    }
+                }
+                return false
+            }
+        })
+        try { wm.addView(fresh, bubbleParams) } catch (e: Exception) {
+            Log.e(TAG, "Failed to add bubble view", e)
+        }
+        bubbleView = fresh
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Wallpaper colour changes arrive here on API 31+. Rebuild the bubble
+        // with a fresh DC-wrapped context so the new accent takes effect
+        // without the user having to toggle the service.
+        attachFreshBubble(initiallyVisible = isImeVisible)
+    }
+
+    /**
+     * Called from Settings after the user moves the transparency slider — the
+     * existing BubbleView picks up the new alpha immediately; no rebuild.
+     */
+    fun applyBubbleAlphaFromPrefs() {
+        bubbleView?.setIdleAlpha(Prefs.getBubbleAlpha(this))
+    }
 
     override fun onDestroy() {
         instance = null

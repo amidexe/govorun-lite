@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- «слово / слова / слов» — Russian needs all four quantity buckets
+         because the plural rule branches on last-digit AND last-two-digits.
+         %1$s carries a pre-formatted thousands-separated number so the
+         plural consumer doesn't need to know the formatting details. -->
+    <plurals name="words_count">
+        <item quantity="one">%1$s слово</item>
+        <item quantity="few">%1$s слова</item>
+        <item quantity="many">%1$s слов</item>
+        <item quantity="other">%1$s слова</item>
+    </plurals>
+
+    <plurals name="main_stats_today">
+        <item quantity="one">Сегодня %1$s слово</item>
+        <item quantity="few">Сегодня %1$s слова</item>
+        <item quantity="many">Сегодня %1$s слов</item>
+        <item quantity="other">Сегодня %1$s слова</item>
+    </plurals>
+</resources>

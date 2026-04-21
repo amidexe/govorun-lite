@@ -37,11 +37,12 @@
          app is real before sending them into the more involved accessibility
          setup. Borrowed UX idea from Whisper Flow. -->
     <string name="onb_try_title">Попробуйте</string>
-    <string name="onb_try_tap_to_start">Нажмите птичку и попробуйте набрать текст голосом</string>
-    <string name="onb_try_tap_to_grant">Нажмите птичку и попробуйте набрать текст голосом</string>
+    <string name="onb_try_tap_to_start">Нажмите на птичку и попробуйте набрать текст голосом</string>
+    <string name="onb_try_tap_to_grant">Нажмите на птичку и попробуйте набрать текст голосом</string>
     <string name="onb_try_denied">Доступ к микрофону закрыт</string>
     <string name="onb_try_open_settings">Открыть настройки</string>
     <string name="onb_try_tap_to_stop">Говорите…</string>
+    <string name="onb_try_done">Отлично! У Вас получилось! Нажмите «Далее» для продолжения настройки</string>
     <string name="onb_try_preparing">Готовим распознавание…</string>
     <string name="onb_try_result_placeholder">Здесь появится текст</string>
 
@@ -49,6 +50,7 @@
          system accessibility shortcut for us, which places an extra small
          floating button next to our bubble that would disable the service
          when tapped. -->
+    <string name="main_shortcut_card_title">Выключите быстрый запуск</string>
     <string name="main_shortcut_card_body">Перейдите в <b>специальные возможности</b> → <b>«Говорун — голосовой ввод»</b> → выключите <b>«Быстрый запуск»</b>.</string>
     <string name="main_shortcut_card_button">Открыть специальные возможности</string>
 
@@ -80,13 +82,29 @@
     <string name="main_card_battery_button">Разрешить</string>
     <string name="main_needs_setup_sub">Несколько мелочей надо подкрутить — карточки ниже подскажут, что и где.</string>
     <string name="main_disable_service">Выключить Говоруна</string>
-    <string name="main_disable_service_hint">Говорун выключится. Чтобы снова включить — зайдите в «Настройки приложения» → «Специальные возможности».</string>
+    <string name="main_disable_service_title">Выключить Говоруна?</string>
+    <string name="main_disable_service_hint">Птичка пропадёт из всех программ. Чтобы вернуть её, заново включите Говоруна в специальных возможностях Android.</string>
+
+    <!-- Settings: tapping the switch while Говорун is OFF opens this dialog
+         so the user isn't left without a way back into the accessibility
+         settings screen. -->
+    <string name="main_enable_service_title">Говорун сейчас выключен</string>
+    <string name="main_enable_service_body">Чтобы снова видеть птичку над клавиатурой, включите Говоруна в специальных возможностях Android.</string>
+    <string name="main_open_accessibility">Открыть специальные возможности</string>
 
     <!-- Main screen: usage stats -->
     <string name="main_stats_title">Ваша статистика</string>
     <string name="main_stats_words_label">слов распознано</string>
     <string name="main_stats_minutes_label">минут диктовки</string>
     <string name="main_stats_empty">Ещё ничего не наговорили — попробуйте открыть любое поле ввода и нажать на Говоруна.</string>
+    <!-- Share-from-stats: tapping the small share icon on the stats card
+         pre-fills an Intent.ACTION_SEND with the user's current total
+         baked in, so the recipient sees the bragging number first and
+         can install with one tap from the link. If RuStore URL moves,
+         update main_pro_review_url AND this string in lockstep. -->
+    <string name="main_share_chooser">Рассказать о Говоруне</string>
+    <string name="main_share_button">Поделиться статистикой</string>
+    <string name="main_share_stats_fmt">Наговорил через Говоруна уже %1$s. Офлайн голосовой ввод без интернета, прямо над клавиатурой.\n\nhttps://apps.rustore.ru/app/com.govorun.lite</string>
 
     <!-- Main toolbar: overflow menu -->
     <string name="menu_settings">Настройки</string>
@@ -95,8 +113,14 @@
 
     <!-- Settings screen -->
     <string name="settings_title">Настройки</string>
-    <string name="settings_haptics_title">Вибрация Говоруна</string>
+    <string name="settings_section_bubble">Птичка</string>
+    <string name="settings_section_service">Говорун</string>
+    <string name="settings_transparency_title">Прозрачность</string>
+    <string name="settings_transparency_body">Насколько бабл просвечивает фон приложения, поверх которого он появляется.</string>
+    <string name="settings_haptics_title">Вибрация</string>
     <string name="settings_haptics_body">Короткая вибрация, когда запись начинается и заканчивается.</string>
+    <string name="settings_show_service_title">Показывать Говоруна</string>
+    <string name="settings_show_service_body">Птичка появляется над клавиатурой в любой программе.</string>
     <string name="settings_disable_body">Говорун перестанет появляться над клавиатурой.</string>
 
     <!-- Main screen: promo card -->
@@ -123,7 +147,7 @@
     <string name="about_row_source_title">Открытый исходный код</string>
     <string name="about_row_source_body">Приложение бесплатное — код можно изучать и собирать самому</string>
     <string name="about_row_updates_title">Обновления через RuStore</string>
-    <string name="about_row_updates_body">Или вручную с GitHub, если ставили APK-файлом</string>
+    <string name="about_row_updates_body">Говорун сам предложит обновиться, когда выйдет новая версия</string>
 
     <!-- About: GitHub action row -->
     <string name="about_action_github_title">Исходный код на GitHub</string>
@@ -140,7 +164,11 @@
 
     <!-- About: author -->
     <string name="about_author_title">Автор</string>
-    <string name="about_author_body">Сделал Дмитрий Киселев. Если Говорун пригодился — оставьте тёплое слово в RuStore. Баги и предложения удобнее оставлять в Issues на GitHub.</string>
+    <string name="about_author_body">Дмитрий Киселев. Если Говорун пригодился — оставьте отзыв в RuStore, это лучший способ сказать спасибо. Баги и предложения удобнее присылать в Issues на GitHub.</string>
+
+    <!-- About: thanks -->
+    <string name="about_thanks_title">Благодарности</string>
+    <string name="about_thanks_body">Спасибо моему сыну Максиму — за идею и за помощь с тестированием.</string>
 
     <!-- About: compatibility + recognition-limits notes shown as plain muted text -->
     <string name="about_devices_body">Приложение проверено на устройствах Google Pixel (6 и новее) на чистом Android 13–15. На смартфонах Xiaomi, Huawei и других производителях с агрессивной экономией батареи может потребоваться вручную добавить Говорун в «Автозапуск» и снять ограничения для Говоруна в специальных возможностях.</string>

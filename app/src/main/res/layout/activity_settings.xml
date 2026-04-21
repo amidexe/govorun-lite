@@ -36,6 +36,59 @@
             android:orientation="vertical"
             android:paddingVertical="8dp">
 
+            <!-- Section: Птичка -->
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="20dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="4dp"
+                android:text="@string/settings_section_bubble"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary" />
+
+            <LinearLayout
+                android:id="@+id/transparencyRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="72dp"
+                android:orientation="vertical"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="12dp">
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_transparency_title"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/settings_transparency_body"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/transparencySlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:stepSize="0.05"
+                    android:valueFrom="0.4"
+                    android:valueTo="1.0" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginVertical="8dp"
+                android:background="?attr/colorOutlineVariant" />
+
             <LinearLayout
                 android:id="@+id/hapticsRow"
                 android:layout_width="match_parent"
@@ -77,16 +130,21 @@
                     android:layout_marginStart="16dp" />
             </LinearLayout>
 
-            <View
-                android:id="@+id/disableDivider"
+            <!-- Section: Говорун (visible only while the accessibility service
+                 is on — the toggle below it has no meaning otherwise). -->
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/serviceSectionHeader"
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginVertical="8dp"
-                android:background="?attr/colorOutlineVariant" />
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="20dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="4dp"
+                android:text="@string/settings_section_service"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary" />
 
             <LinearLayout
-                android:id="@+id/disableRow"
+                android:id="@+id/showServiceRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackground"
@@ -94,24 +152,43 @@
                 android:focusable="true"
                 android:gravity="center_vertical"
                 android:minHeight="72dp"
-                android:orientation="vertical"
+                android:orientation="horizontal"
                 android:paddingHorizontal="20dp"
                 android:paddingVertical="12dp">
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="match_parent"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/main_disable_service"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="?attr/colorError" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="match_parent"
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_show_service_title"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/settings_show_service_body"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                <!-- The switch itself is non-interactive: the row click
+                     triggers a confirmation dialog because turning Говорун off
+                     also revokes the accessibility permission and is
+                     destructive. Re-enabling has to happen from system
+                     settings, so the switch only ever goes on → off. -->
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/showServiceSwitch"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/settings_disable_body"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:layout_marginStart="16dp"
+                    android:clickable="false"
+                    android:focusable="false" />
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

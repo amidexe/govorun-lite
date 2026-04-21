@@ -58,7 +58,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statsRow: View
     private lateinit var statsWordsNumber: MaterialTextView
     private lateinit var statsMinutesNumber: MaterialTextView
+    private lateinit var statsToday: MaterialTextView
     private lateinit var statsEmpty: MaterialTextView
+    private lateinit var statsActionRow: View
+    private lateinit var statsShareButton: MaterialButton
     private lateinit var promoCard: View
     private lateinit var toolbar: MaterialToolbar
     private var showJustFinished: Boolean = false
@@ -132,28 +135,15 @@ class MainActivity : AppCompatActivity() {
         statsRow = findViewById(R.id.statsRow)
         statsWordsNumber = findViewById(R.id.statsWordsNumber)
         statsMinutesNumber = findViewById(R.id.statsMinutesNumber)
+        statsToday = findViewById(R.id.statsToday)
         statsEmpty = findViewById(R.id.statsEmpty)
+        statsActionRow = findViewById(R.id.statsActionRow)
+        statsShareButton = findViewById(R.id.statsShareButton)
+        statsShareButton.setOnClickListener { shareAppLink() }
 
         promoCard = findViewById(R.id.promoCard)
         promoCard.setOnClickListener {
             startActivity(Intent(this, FuturePlansActivity::class.java))
-        }
-
-        if (com.govorun.lite.BuildConfig.DEBUG) {
-            // Long-press the stats card to seed a realistic "power user" total,
-            // so we can eyeball the big-number layout without having to dictate
-            // for an hour. Short-press (long press again) clears.
-            statsCard.setOnLongClickListener {
-                val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-                val hasDemo = prefs.getLong("stats_words_total", 0L) >= 3000L
-                if (hasDemo) {
-                    prefs.edit().putLong("stats_words_total", 0L).putLong("stats_seconds_total", 0L).apply()
-                } else {
-                    prefs.edit().putLong("stats_words_total", 3000L).putLong("stats_seconds_total", 3600L).apply()
-                }
-                refreshStats()
-                true
-            }
         }
 
         showJustFinished = intent.getBooleanExtra(EXTRA_JUST_FINISHED, false)
@@ -192,17 +182,58 @@ class MainActivity : AppCompatActivity() {
         val words = StatsStore.getWords(this)
         val voiceSeconds = StatsStore.getSeconds(this)
         val voiceMinutes = voiceSeconds / 60L
+        val wordsToday = StatsStore.getWordsToday(this)
 
         if (words <= 0L) {
             statsRow.visibility = View.GONE
+            statsActionRow.visibility = View.GONE
             statsEmpty.visibility = View.VISIBLE
             return
         }
         statsRow.visibility = View.VISIBLE
+        statsActionRow.visibility = View.VISIBLE
         statsEmpty.visibility = View.GONE
 
         statsWordsNumber.text = formatThousands(words)
         statsMinutesNumber.text = voiceMinutes.toString()
+
+        // «Сегодня» line only materialises after the user has dictated
+        // something today — empty days should not shout "Сегодня 0 слов".
+        if (wordsToday > 0L) {
+            statsToday.text = resources.getQuantityString(
+                R.plurals.main_stats_today,
+                wordsToday.toPluralSelector(),
+                formatThousands(wordsToday),
+            )
+            statsToday.visibility = View.VISIBLE
+        } else {
+            statsToday.visibility = View.GONE
+        }
+    }
+
+    // Russian plural rule branches on last-digit AND last-two-digits, both
+    // well-defined for any Long. Cast to Int is safe because we only need
+    // the low-order digits to select the bucket — the formatted number is
+    // passed separately as a string.
+    private fun Long.toPluralSelector(): Int =
+        (this % 100L).toInt().let { if (it < 0) -it else it }
+
+    private fun shareAppLink() {
+        val totalWords = StatsStore.getWords(this)
+        val wordsPhrase = resources.getQuantityString(
+            R.plurals.words_count,
+            totalWords.toPluralSelector(),
+            formatThousands(totalWords),
+        )
+        val text = getString(R.string.main_share_stats_fmt, wordsPhrase)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        try {
+            startActivity(Intent.createChooser(intent, getString(R.string.main_share_chooser)))
+        } catch (_: Exception) {
+        }
     }
 
     private fun formatThousands(value: Long): String {

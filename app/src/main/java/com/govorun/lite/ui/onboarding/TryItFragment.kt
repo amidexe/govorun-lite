@@ -50,6 +50,7 @@ class TryItFragment : OnboardingStepFragment() {
     private lateinit var hint: MaterialTextView
     private lateinit var resultScroll: ScrollView
     private lateinit var resultText: MaterialTextView
+    private lateinit var doneLabel: MaterialTextView
     private lateinit var openSettingsLink: MaterialTextView
 
     private val permissionLauncher = registerForActivityResult(
@@ -70,6 +71,11 @@ class TryItFragment : OnboardingStepFragment() {
     @Volatile private var isRecording = false
     private var accumulated = StringBuilder()
     private var recordStartMs: Long = 0L
+    // Resets every time the view is (re)created, i.e. every fresh visit to
+    // this step — swipe away + back, leave and relaunch, rotation. Within
+    // one visit the halo still stops the moment the first word is
+    // recognised (see appendSegment), which is the original bug fix.
+    private var hasCompletedDemo = false
 
     private val cursorChar = "▏"
     private var cursorVisible = true
@@ -94,7 +100,16 @@ class TryItFragment : OnboardingStepFragment() {
         hint = view.findViewById(R.id.tryHint)
         resultScroll = view.findViewById(R.id.tryResultScroll)
         resultText = view.findViewById(R.id.tryResult)
+        doneLabel = view.findViewById(R.id.tryDoneLabel)
         openSettingsLink = view.findViewById(R.id.tryOpenSettings)
+
+        // Each fresh view = a fresh visit to this step. FragmentStateAdapter
+        // keeps the fragment instance alive across swipes so a field-level
+        // flag would persist and the halo would never come back; resetting
+        // here guarantees the "tap me" cue reappears every time.
+        hasCompletedDemo = false
+        accumulated = StringBuilder()
+        doneLabel.visibility = View.GONE
 
         setStepComplete(hasMicPermission())
 
@@ -109,11 +124,12 @@ class TryItFragment : OnboardingStepFragment() {
         refreshModelState()
         renderResult()
         startCursorBlink()
-        // Feature-highlight ring uses the same red as the recording halo,
-        // so the idle "tap me" cue and the active-recording cue share a
-        // visual language. No colorPrimary tint — that produced muddy
-        // results on dynamic-colour palettes.
-        bubble.setIdlePulse(true)
+        // Halo runs only until the user has proven to themselves that the
+        // bubble works — the first recognised segment disables it (see
+        // appendSegment). This avoids the old bug where the halo kept
+        // pulsing forever after mic permission was granted and the test
+        // had clearly succeeded.
+        if (!hasCompletedDemo) bubble.setIdlePulse(true)
     }
 
     override fun onResume() {
@@ -163,10 +179,9 @@ class TryItFragment : OnboardingStepFragment() {
     }
 
     private fun refreshHint() {
-        // isRecording wins over everything: the permission-dialog flow can
-        // trigger onResume AFTER the grant callback's startRecording(), and
-        // the old version would silently revert "Говорите…" back to the
-        // idle CTA while recording was actually running.
+        // Top hint stays focused on what to do RIGHT NOW — success feedback
+        // lives in doneLabel below the result card, so this line never has
+        // to compete with the "Отлично!" message.
         val res = when {
             isRecording -> R.string.onb_try_tap_to_stop
             hasMicPermission() -> R.string.onb_try_tap_to_start
@@ -211,7 +226,7 @@ class TryItFragment : OnboardingStepFragment() {
         recorder?.stop()
         recorder = null
         bubble.setRecording(false)
-        hint.setText(R.string.onb_try_tap_to_start)
+        refreshHint()
         bubble.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         // Contribute the recording duration to the dashboard "minutes" counter.
         // Word counts are added per-segment in appendSegment as text arrives.
@@ -226,9 +241,21 @@ class TryItFragment : OnboardingStepFragment() {
         if (text.isBlank()) return
         val trimmed = text.trim()
         withContext(Dispatchers.Main) {
-            if (accumulated.isNotEmpty()) accumulated.append(' ')
+            val isFirstSegment = accumulated.isEmpty()
+            if (!isFirstSegment) accumulated.append(' ')
             accumulated.append(trimmed)
             renderResult()
+            if (isFirstSegment) {
+                // Persistent success confirmation below the result card — once
+                // the user has proven the demo works, the «Далее» prompt sticks
+                // around for the rest of this visit so it's visible whether
+                // they stop and start another recording or not.
+                doneLabel.visibility = View.VISIBLE
+                if (!hasCompletedDemo) {
+                    hasCompletedDemo = true
+                    bubble.setIdlePulse(false)
+                }
+            }
             // Feed the dashboard counter straight from the onboarding demo —
             // that way the main screen's "Ваша статистика" card already shows
             // real numbers the moment the user lands on it.

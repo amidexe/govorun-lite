@@ -34,7 +34,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:gravity="center_horizontal"
+            android:gravity="center"
+            android:minLines="2"
             android:text="@string/onb_try_tap_to_grant"
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="?attr/colorOnSurface" />
@@ -65,6 +66,21 @@
                     android:textColor="?attr/colorOnSurfaceVariant" />
             </ScrollView>
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- Appears after the first recognised segment in this visit. Lives
+             below the result card so it doesn't fight with the top hint
+             («Говорите…»), which stays focused on what the user should
+             physically do right now. -->
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tryDoneLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="@string/onb_try_done"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?attr/colorPrimary"
+            android:visibility="gone" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/tryOpenSettings"

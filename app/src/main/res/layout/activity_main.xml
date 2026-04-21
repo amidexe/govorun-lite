@@ -64,27 +64,14 @@
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
-                <!-- Decorative Говорун watermark, small, tucked into the
-                     top-right corner. Tinted with on-primary-container so
-                     it follows the card surface in all themes. -->
-                <ImageView
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:layout_gravity="top|end"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginEnd="12dp"
-                    android:alpha="0.22"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/logo_bird"
-                    app:tint="?attr/colorOnPrimaryContainer" />
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingHorizontal="20dp"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
                     android:paddingTop="20dp"
-                    android:paddingBottom="20dp">
+                    android:paddingBottom="8dp">
 
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
@@ -97,7 +84,7 @@
                         android:id="@+id/statsRow"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="20dp"
                         android:orientation="horizontal">
 
                         <LinearLayout
@@ -158,11 +145,48 @@
                         </LinearLayout>
                     </LinearLayout>
 
+                    <!-- Bottom action row: «Сегодня N слов» on the left,
+                         share button tucked into the far-right corner. M3
+                         card-actions convention — affordance sits at the
+                         natural "done reading, do something" spot, not in
+                         the title bar. -->
+                    <FrameLayout
+                        android:id="@+id/statsActionRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/statsToday"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:alpha="0.85"
+                            android:paddingEnd="48dp"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorOnPrimaryContainer"
+                            android:visibility="gone"
+                            tools:text="Сегодня 342 слова"
+                            tools:visibility="visible" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/statsShareButton"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_gravity="end|center_vertical"
+                            android:contentDescription="@string/main_share_button"
+                            app:icon="@drawable/ic_share_24"
+                            app:iconSize="18dp"
+                            app:iconTint="?attr/colorOnPrimaryContainer" />
+                    </FrameLayout>
+
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/statsEmpty"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"
                         android:text="@string/main_stats_empty"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnPrimaryContainer"
@@ -245,7 +269,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="top"
+                        android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <ImageView
@@ -256,14 +280,21 @@
                             app:tint="?attr/colorError" />
 
                         <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:text="@string/main_shortcut_card_body"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:text="@string/main_shortcut_card_title"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
                             android:textColor="?attr/colorOnSecondaryContainer" />
                     </LinearLayout>
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/main_shortcut_card_body"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSecondaryContainer" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/shortcutCardButton"
@@ -446,6 +477,7 @@
                         app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
