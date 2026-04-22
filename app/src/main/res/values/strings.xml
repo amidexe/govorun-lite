@@ -175,7 +175,7 @@
     <string name="about_disclaimer_body">Распознавание речи выполняется нейросетевой моделью и может содержать ошибки и неточности. Автор и приложение не несут ответственности за неверную интерпретацию распознанного текста и его последующее использование. Перед отправкой важных сообщений всегда перечитывайте результат.</string>
 
     <!-- About: footer -->
-    <string name="about_footer_fmt">Говорун Lite · %1$s</string>
+    <string name="about_footer_fmt">Говорун · %1$s</string>
 
     <!-- Future plans screen / RuStore review CTA -->
     <string name="main_pro_title">Новые функции</string>
