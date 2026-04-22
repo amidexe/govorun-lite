@@ -93,7 +93,7 @@ Debug даёт логи в logcat, быстрее собирается. Release 
 - **minSdk:** 26 (Android 8.0)
 - **targetSdk:** 35
 - **Архитектура:** только `arm64-v8a`
-- **Модель GigaAM v3:** ~327 МБ, качается при первом запуске. Источник — HuggingFace `Smirnov75/GigaAM-v3-sherpa-onnx` (до перехода на свой GitHub Releases)
+- **Модель GigaAM v3:** ~312 МБ, **вшита в APK** (`app/src/main/assets/models/gigaam-v3/`). Ничего не качается — ни при установке, ни при первом запуске. Разрешение `INTERNET` в манифесте не заявлено. Файлы были сконвертированы под sherpa-onnx из официальных исходников `github.com/salute-developers/GigaAM` (MIT)
 - **Silero VAD:** 629 КБ, в `app/src/main/assets/silero_vad.onnx`
 - **sherpa-onnx.aar:** 47 МБ, gitignored, качается скриптом
 - **Accessibility config:** `flagInputMethodEditor` обязателен для `commitText` на Android 13+
