@@ -317,8 +317,12 @@ class LiteAccessibilityService : AccessibilityService() {
     private fun stopVadRecording(silent: Boolean = false) {
         if (!isVadActive) return
         isVadActive = false
-        // No StatsStore.addSeconds here anymore — speech time is accounted
-        // per VAD segment via the onSpeechSeconds callback above.
+        // Speech time is accounted per VAD segment via the onSpeechMillis
+        // callback above — we don't add anything here. Any sub-second
+        // remainder in speechMillisRemainder (<1000ms) is lost on stop;
+        // accepted, since the alternative (carrying it across sessions)
+        // would couple the counter to service lifecycle in a way users
+        // would find confusing.
         // Signal the recorder to exit its read loop. Its finally block will flush
         // VAD's buffer and send any tail audio through the transcriber pipeline
         // before releasing the mic, so the last phrase isn't lost on quick taps.
