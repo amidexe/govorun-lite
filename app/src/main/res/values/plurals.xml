@@ -11,4 +11,21 @@
         <item quantity="other">%1$s слова</item>
     </plurals>
 
+    <!-- Subtitle under the «minutes» stat. Switches to hours when the
+         counter crosses 60 minutes — keeps the displayed number compact
+         and stops «21600» from ever appearing. -->
+    <plurals name="minutes_label">
+        <item quantity="one">минута диктовки</item>
+        <item quantity="few">минуты диктовки</item>
+        <item quantity="many">минут диктовки</item>
+        <item quantity="other">минут диктовки</item>
+    </plurals>
+
+    <plurals name="hours_label">
+        <item quantity="one">час диктовки</item>
+        <item quantity="few">часа диктовки</item>
+        <item quantity="many">часов диктовки</item>
+        <item quantity="other">часов диктовки</item>
+    </plurals>
+
 </resources>

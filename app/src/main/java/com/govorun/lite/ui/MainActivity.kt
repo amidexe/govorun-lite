@@ -64,6 +64,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statsRow: View
     private lateinit var statsWordsNumber: MaterialTextView
     private lateinit var statsMinutesNumber: MaterialTextView
+    private lateinit var statsMinutesLabel: MaterialTextView
     private lateinit var statsEmpty: MaterialTextView
     private lateinit var statsShareButton: MaterialButton
     private lateinit var promoCard: View
@@ -146,6 +147,7 @@ class MainActivity : AppCompatActivity() {
         statsRow = findViewById(R.id.statsRow)
         statsWordsNumber = findViewById(R.id.statsWordsNumber)
         statsMinutesNumber = findViewById(R.id.statsMinutesNumber)
+        statsMinutesLabel = findViewById(R.id.statsMinutesLabel)
         statsEmpty = findViewById(R.id.statsEmpty)
         statsShareButton = findViewById(R.id.statsShareButton)
         statsShareButton.setOnClickListener { shareAppLink() }
@@ -213,7 +215,24 @@ class MainActivity : AppCompatActivity() {
         statsEmpty.visibility = View.GONE
 
         statsWordsNumber.text = formatThousands(words)
-        statsMinutesNumber.text = voiceMinutes.toString()
+        // Switch to hours when the counter passes 60 minutes — keeps the
+        // number compact (e.g. «360» instead of «21600») and matches how
+        // people read time. Sub-hour: «47 минут диктовки». Hour-plus:
+        // «10 часов диктовки» / «360 часов диктовки» (for power users).
+        if (voiceMinutes < 60L) {
+            statsMinutesNumber.text = voiceMinutes.toString()
+            statsMinutesLabel.text = resources.getQuantityString(
+                R.plurals.minutes_label,
+                voiceMinutes.toPluralSelector(),
+            )
+        } else {
+            val hours = voiceMinutes / 60L
+            statsMinutesNumber.text = formatThousands(hours)
+            statsMinutesLabel.text = resources.getQuantityString(
+                R.plurals.hours_label,
+                hours.toPluralSelector(),
+            )
+        }
     }
 
     // Russian plural rule branches on last-digit AND last-two-digits, both
