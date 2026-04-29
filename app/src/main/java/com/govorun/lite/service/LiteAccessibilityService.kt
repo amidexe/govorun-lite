@@ -153,8 +153,16 @@ class LiteAccessibilityService : AccessibilityService() {
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            // HARDWARE_ACCELERATED added: TYPE_ACCESSIBILITY_OVERLAY by
+            // default may render through the software path, which on
+            // Android 16 + Pixel 10 + Gboard creates visible drag lag
+            // when the bubble crosses the IME surface (the compositor
+            // has to recomposite the IME under the overlay every move).
+            // GPU rendering avoids that hot path. On older OS / hardware
+            // this is a no-op or a small win.
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = bubbleHorizontalGravity() or Gravity.CENTER_VERTICAL
@@ -391,6 +399,11 @@ class LiteAccessibilityService : AccessibilityService() {
         val fresh = BubbleView(bubbleContext()).apply {
             setIdleAlpha(Prefs.getBubbleAlpha(this@LiteAccessibilityService))
             visibility = if (initiallyVisible) View.VISIBLE else View.GONE
+            // Force GPU layer for the bubble itself so its draw passes
+            // never fall back to software rendering. Combined with the
+            // HARDWARE_ACCELERATED window flag above, this keeps the
+            // overlay on the GPU end-to-end during drag.
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
         }
         val dragThresholdPx = DRAG_THRESHOLD_DP * resources.displayMetrics.density
         val holdMovementSlopPx = HOLD_MOVEMENT_SLOP_DP * resources.displayMetrics.density
