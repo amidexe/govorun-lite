@@ -11,7 +11,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
-import android.os.SystemClock
 import android.view.HapticFeedbackConstants
 import android.util.Log
 import android.view.Gravity
@@ -95,7 +94,14 @@ class LiteAccessibilityService : AccessibilityService() {
     @Volatile private var isVadActive = false
 
     private var accessibilityInputMethod: InputMethod? = null
-    private var vadStartElapsedMs: Long = 0L
+
+    // Accumulates sub-second speech durations from VAD callbacks. We only
+    // store whole seconds in StatsStore (the UI shows minutes), but throwing
+    // away every <1s segment would lose all the «ага», «понятно», «нет»-style
+    // quick phrases — and the running counter would massively undercount
+    // for users with chatty conversational dictation. Lives for the process
+    // lifetime; on service restart we lose at most 999ms of remainder.
+    @Volatile private var speechMillisRemainder: Long = 0L
 
     // Was a wrapper around View.performHapticFeedback with predefined HID
     // constants — see util/Haptics.kt for why we abandoned that approach
@@ -274,7 +280,6 @@ class LiteAccessibilityService : AccessibilityService() {
         }
         AppLog.log(this, "Service: VAD start (useVad=$useVad)")
         isVadActive = true
-        vadStartElapsedMs = SystemClock.elapsedRealtime()
         vibrateStart()
         bubbleView?.setRecording(true)
         bubbleParams?.flags = bubbleParams!!.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
@@ -289,6 +294,21 @@ class LiteAccessibilityService : AccessibilityService() {
             scope = scope,
             transcriberProvider = { OfflineTranscriber.getInstance(this@LiteAccessibilityService) },
             onSegment = { text -> pasteText(text) },
+            // Per-segment speech time in milliseconds. Replaces the old
+            // "session length" counter that added tap-to-tap elapsed time
+            // (including silence and forgotten-on records). We accumulate
+            // millisecond fractions across segments before rolling whole
+            // seconds into StatsStore — otherwise short utterances like
+            // «ага» (~700ms) would round to zero and disappear, and the
+            // displayed minutes would still undercount by a lot.
+            onSpeechMillis = { millis ->
+                speechMillisRemainder += millis
+                val whole = speechMillisRemainder / 1000L
+                if (whole > 0L) {
+                    StatsStore.addSeconds(this@LiteAccessibilityService, whole)
+                    speechMillisRemainder -= whole * 1000L
+                }
+            },
             useVad = useVad,
         )
         Log.i(TAG, "VAD recording started")
@@ -297,8 +317,8 @@ class LiteAccessibilityService : AccessibilityService() {
     private fun stopVadRecording(silent: Boolean = false) {
         if (!isVadActive) return
         isVadActive = false
-        val elapsedSec = (SystemClock.elapsedRealtime() - vadStartElapsedMs) / 1000L
-        StatsStore.addSeconds(this, elapsedSec)
+        // No StatsStore.addSeconds here anymore — speech time is accounted
+        // per VAD segment via the onSpeechSeconds callback above.
         // Signal the recorder to exit its read loop. Its finally block will flush
         // VAD's buffer and send any tail audio through the transcriber pipeline
         // before releasing the mic, so the last phrase isn't lost on quick taps.
@@ -497,12 +517,26 @@ class LiteAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Quick Settings Tile read-out. True when the bubble is currently visible
-     * on screen (IME up, not blocked by lockscreen/password). The Tile uses
-     * this for its active/inactive state.
+     * True when the bubble is currently painted on screen — IME is up and
+     * the user hasn't hidden it. Used internally; not what the QS tile
+     * reads (see [isBubbleEnabled] for that).
      */
     fun isBubbleVisible(): Boolean =
         !manualHide && bubbleView?.visibility == View.VISIBLE
+
+    /**
+     * Quick Settings Tile read-out. Reflects the user's *intent* (manualHide
+     * flag) rather than the bubble's actual on-screen state. This matters
+     * because the bubble might not be visible yet (no text field focused),
+     * but the tile should still toggle visibly so the user sees their tap
+     * was registered.
+     *
+     * Without this, tapping the tile while no IME is up did nothing visible
+     * — toggleBubbleVisibility() flipped manualHide, but isBubbleVisible()
+     * stayed false (no IME, so no painted bubble), so the tile state didn't
+     * change. Users reasonably concluded the tile was broken.
+     */
+    fun isBubbleEnabled(): Boolean = !manualHide
 
     /**
      * Quick Settings Tile action. Toggles the bubble's user-controlled

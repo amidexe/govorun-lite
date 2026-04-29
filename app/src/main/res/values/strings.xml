@@ -259,8 +259,12 @@
     <string name="settings_pause_hint_medium">Чуть больше времени на размышления между предложениями.</string>
     <string name="settings_pause_hint_long">Долгие задумчивые паузы не обрывают предложение.</string>
 
+    <string name="stats_reset_title">Сбросить счётчик?</string>
+    <string name="stats_reset_message">Счётчик слов и время диктовки обнулятся. Это нельзя отменить.</string>
+    <string name="stats_reset_action">Сбросить</string>
+
     <string name="tile_label">Говорун</string>
-    <string name="tile_subtitle_visible">Птичка показана</string>
-    <string name="tile_subtitle_hidden">Птичка скрыта</string>
+    <string name="tile_subtitle_enabled">Птичка включена</string>
+    <string name="tile_subtitle_disabled">Птичка выключена</string>
     <string name="tile_subtitle_service_off">Включите в спец-возможностях</string>
 </resources>

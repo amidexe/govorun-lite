@@ -2,6 +2,7 @@ package com.govorun.lite.ui
 
 import android.Manifest
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.ContentObserver
@@ -22,6 +23,8 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 
 import com.govorun.lite.R
@@ -146,6 +149,16 @@ class MainActivity : AppCompatActivity() {
         statsEmpty = findViewById(R.id.statsEmpty)
         statsShareButton = findViewById(R.id.statsShareButton)
         statsShareButton.setOnClickListener { shareAppLink() }
+        // Long-press to reset the running counter. Hidden on purpose —
+        // there's no visible button because the action is destructive
+        // and rarely needed; the gesture + confirmation dialog is enough
+        // for the few users who actually want a clean slate (e.g. after
+        // the 1.0.9 counter-accuracy change made historical numbers a
+        // mix of session-time and speech-time).
+        statsCard.setOnLongClickListener {
+            confirmStatsReset()
+            true
+        }
 
         promoCard = findViewById(R.id.promoCard)
         promoCard.setOnClickListener {
@@ -209,6 +222,28 @@ class MainActivity : AppCompatActivity() {
     // passed separately as a string.
     private fun Long.toPluralSelector(): Int =
         (this % 100L).toInt().let { if (it < 0) -it else it }
+
+    /**
+     * Long-press on the stats card → confirm + wipe all counters. Destructive
+     * but trivial to recover from (counters just start at zero again), so a
+     * single confirm dialog is enough — we don't need a multi-step flow.
+     * The Reset button is tinted colorError to match the existing pattern
+     * used by «Выключить Говоруна» in Settings.
+     */
+    private fun confirmStatsReset() {
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.stats_reset_title)
+            .setMessage(R.string.stats_reset_message)
+            .setPositiveButton(R.string.stats_reset_action) { _, _ ->
+                StatsStore.reset(this)
+                refreshStats()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
+            MaterialColors.getColor(statsCard, com.google.android.material.R.attr.colorError)
+        )
+    }
 
     private fun shareAppLink() {
         val totalWords = StatsStore.getWords(this)

@@ -127,6 +127,12 @@ class VadRecorder(private val context: Context) {
         scope: CoroutineScope,
         transcriberProvider: suspend () -> Transcriber,
         onSegment: suspend (String) -> Unit,
+        // Called once per VAD-detected speech segment with that segment's
+        // duration in MILLISECONDS. Caller is responsible for accumulating
+        // and rolling over to seconds (a 700ms «ага» would otherwise round
+        // to 0 and disappear from the counter). Used to feed StatsStore —
+        // pure speech time, not session time.
+        onSpeechMillis: (Long) -> Unit = {},
         // useVad=true (default): Silero splits audio into segments on
         // pauses, each segment transcribed and pasted independently —
         // the right behaviour for tap-toggle dictation where the user
@@ -197,6 +203,13 @@ class VadRecorder(private val context: Context) {
                             if (!segmentChannel.trySend(pcm).isSuccess) {
                                 Log.w(TAG, "Raw segment queue full — dropped")
                             }
+                            // Hold-mode: count the whole captured PCM as speech.
+                            // The user was actively holding their finger down, so
+                            // by definition they intended to be speaking the whole
+                            // time — no spurious silence to filter out.
+                            // bytes/2 = shorts (16-bit mono); * 1000 / SAMPLE_RATE = ms.
+                            val millis = pcm.size.toLong() / 2 * 1000L / SAMPLE_RATE
+                            if (millis > 0L) onSpeechMillis(millis)
                         } else {
                             Log.w(TAG, "Raw mode: tail too short (${rawBuffer.size()}B) — nothing to transcribe")
                         }
@@ -232,6 +245,13 @@ class VadRecorder(private val context: Context) {
                         // to now is safely in the transcriber pipeline. Drop the tail.
                         tailBuffer.reset()
                         segmentsEmitted++
+
+                        // Report this segment's duration in milliseconds. Short
+                        // phrases (~700ms «ага») would round to 0 seconds and
+                        // disappear if we converted here — accumulator on the
+                        // caller side preserves them.
+                        val millis = segment.samples.size * 1000L / SAMPLE_RATE
+                        if (millis > 0L) onSpeechMillis(millis)
                     }
                 }
 

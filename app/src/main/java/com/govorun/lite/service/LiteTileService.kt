@@ -68,13 +68,18 @@ class LiteTileService : TileService() {
                 tile.state = Tile.STATE_INACTIVE
                 tile.subtitle = getString(R.string.tile_subtitle_service_off)
             }
-            service.isBubbleVisible() -> {
+            // Reflects the user's intent (manualHide flag), not whether the
+            // bubble is currently painted. Tapping the tile with no IME up
+            // still flips state — the user sees their tap "took effect" in
+            // the shade, even though no bubble appears until they open a
+            // text field.
+            service.isBubbleEnabled() -> {
                 tile.state = Tile.STATE_ACTIVE
-                tile.subtitle = getString(R.string.tile_subtitle_visible)
+                tile.subtitle = getString(R.string.tile_subtitle_enabled)
             }
             else -> {
                 tile.state = Tile.STATE_INACTIVE
-                tile.subtitle = getString(R.string.tile_subtitle_hidden)
+                tile.subtitle = getString(R.string.tile_subtitle_disabled)
             }
         }
         tile.updateTile()

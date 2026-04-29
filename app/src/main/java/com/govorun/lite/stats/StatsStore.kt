@@ -59,4 +59,21 @@ object StatsStore {
         if (text.isBlank()) return 0
         return text.trim().split(Regex("\\s+")).count { it.isNotEmpty() }
     }
+
+    /**
+     * Wipe everything: total words, total seconds, today's tally and the
+     * stored date marker. Triggered by long-press + confirmation dialog on
+     * the main screen stats card. Useful after the 1.0.9 counter-accuracy
+     * change, where the historical value is a mix of "session time" (old
+     * 1.0.8 behaviour) and "speech time" (new) — not a clean number.
+     */
+    fun reset(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .remove(KEY_WORDS)
+            .remove(KEY_SECONDS)
+            .remove(KEY_WORDS_TODAY)
+            .remove(KEY_TODAY_DATE)
+            .apply()
+    }
 }
