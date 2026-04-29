@@ -263,8 +263,12 @@
     <string name="stats_reset_message">Счётчик слов и время диктовки обнулятся. Это нельзя отменить.</string>
     <string name="stats_reset_action">Сбросить</string>
 
-    <string name="tile_label">Говорун</string>
-    <string name="tile_subtitle_enabled">Птичка включена</string>
-    <string name="tile_subtitle_disabled">Птичка выключена</string>
+    <string name="tile_label">Говорун: всегда</string>
+    <string name="tile_subtitle_always">Птичка показана всегда</string>
+    <string name="tile_subtitle_default">Стандартный режим</string>
     <string name="tile_subtitle_service_off">Включите в спец-возможностях</string>
+
+    <string name="tile_silence_label">Говорун</string>
+    <string name="tile_silence_subtitle_on">Птичка временно выключена</string>
+    <string name="tile_silence_subtitle_off">Птичка работает</string>
 </resources>

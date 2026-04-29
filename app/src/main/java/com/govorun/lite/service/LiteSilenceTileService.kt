@@ -9,22 +9,19 @@ import android.service.quicksettings.TileService
 import com.govorun.lite.R
 
 /**
- * Quick Settings Tile — three behaviours rolled into one tap target:
+ * Quick Settings Tile that silences Говорун — bubble stops appearing even
+ * when an IME is up. Symmetric toggle: one tap silences, one tap wakes.
+ * Doesn't disable the AccessibilityService itself, just hides the bubble
+ * via the manualSilence flag on the service.
  *
- *  1. Service alive + bubble visible → tap hides the bubble (manual override).
- *  2. Service alive + bubble hidden  → tap shows it again.
- *  3. Service dead (killed by OEM / disabled by user) → tap routes the user
- *     to system Accessibility settings, where they can flip our service
- *     back on. We can't programmatically re-enable an AccessibilityService
- *     for security reasons, so this is the best a tile can do.
+ * Useful at night, in meetings, in libraries — anywhere the user wants
+ * voice input out of the way without going through Settings.
  *
- * Useful for: people who find the bubble distracting in some apps and want
- * a quick on/off without digging into Settings; users on aggressive OEMs
- * (Tecno HiOS, OxygenOS) where the service occasionally dies and the tile
- * gives a one-tap path back into the Accessibility screen instead of
- * opening our app and hunting for the right row.
+ * Lives next to [LiteTileService] (always-show toggle) in the shade as a
+ * separate tile with a different icon, so the user can drop both into
+ * Quick Settings if they want both controls.
  */
-class LiteTileService : TileService() {
+class LiteSilenceTileService : TileService() {
 
     override fun onStartListening() {
         super.onStartListening()
@@ -37,7 +34,7 @@ class LiteTileService : TileService() {
         if (service == null) {
             openAccessibilitySettings()
         } else {
-            service.toggleAlwaysShow()
+            service.toggleSilence()
             refreshTileState()
         }
     }
@@ -46,8 +43,7 @@ class LiteTileService : TileService() {
         val intent = com.govorun.lite.util.AccessibilityHelper
             .buildOpenAccessibilityIntent(this)
         // TileService → startActivityAndCollapse is mandatory on Android
-        // 14+ (background-activity-start restrictions); plain startActivity
-        // silently no-ops there.
+        // 14+ (background-activity-start restrictions).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val pending = PendingIntent.getActivity(
                 this, 0, intent, PendingIntent.FLAG_IMMUTABLE
@@ -67,15 +63,18 @@ class LiteTileService : TileService() {
                 tile.state = Tile.STATE_INACTIVE
                 tile.subtitle = getString(R.string.tile_subtitle_service_off)
             }
-            // ACTIVE = always-show mode (bubble stays even without IME).
-            // INACTIVE = standard mode (bubble follows the keyboard).
-            service.isAlwaysShowEnabled() -> {
+            // Inverted: power-icon semantics match the Wi-Fi/Bluetooth
+            // pattern — ACTIVE means the function is ON (bubble works),
+            // INACTIVE means it's been temporarily silenced. Without this
+            // inversion the icon felt backwards: lit when the bubble was
+            // hidden, off when it was working.
+            !service.isSilenceEnabled() -> {
                 tile.state = Tile.STATE_ACTIVE
-                tile.subtitle = getString(R.string.tile_subtitle_always)
+                tile.subtitle = getString(R.string.tile_silence_subtitle_off)
             }
             else -> {
                 tile.state = Tile.STATE_INACTIVE
-                tile.subtitle = getString(R.string.tile_subtitle_default)
+                tile.subtitle = getString(R.string.tile_silence_subtitle_on)
             }
         }
         tile.updateTile()

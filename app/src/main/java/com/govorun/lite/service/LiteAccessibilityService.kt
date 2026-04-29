@@ -83,11 +83,21 @@ class LiteAccessibilityService : AccessibilityService() {
     private var keyguardManager: KeyguardManager? = null
     private var bubbleParams: WindowManager.LayoutParams? = null
 
-    // User-controlled "hide bubble" override, toggled via the Quick Settings
+    // User-controlled "always show" override, toggled via the Quick Settings
     // tile. Runtime-only (not persisted) — service restart resets to false.
-    // When true, updateImeVisibility() forces the bubble hidden regardless
-    // of IME state. See toggleBubbleVisibility().
-    @Volatile private var manualHide: Boolean = false
+    // When true, updateImeVisibility() forces the bubble visible regardless
+    // of IME state — useful when the user wants to dictate without the
+    // keyboard taking up half the screen (Notion, Google Docs, text editors
+    // with their own toolbar). See toggleAlwaysShow().
+    @Volatile private var manualAlwaysShow: Boolean = false
+
+    // User-controlled "silence" override, toggled via a separate Quick
+    // Settings tile (the «sleeping bird» one). When true, the bubble stays
+    // hidden even if an IME is up — the metaphor is «voice input is asleep»,
+    // useful at night, in meetings, in libraries. Runtime-only; resets on
+    // service restart. Symmetrical toggle (one tap on, one tap off) — does
+    // NOT actually disable the AccessibilityService, just hides the bubble.
+    @Volatile private var manualSilence: Boolean = false
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var vadRecorder: VadRecorder? = null
@@ -213,15 +223,25 @@ class LiteAccessibilityService : AccessibilityService() {
         val passwordField = InputFieldFilter.isPasswordField(accessibilityInputMethod)
         val shouldShow = imeVisible && !locked && !passwordField
 
-        if (shouldShow == isImeVisible) return
+        // In always-show mode the bubble stays on screen even when no IME
+        // is up — the user explicitly opted into "voice-only" workflow via
+        // the Quick Settings tile. Recording still stops on real focus loss
+        // so the mic isn't held forever, but the bubble itself sticks.
+        val visibilityChanged = shouldShow != isImeVisible
+        if (!visibilityChanged && !manualAlwaysShow) return
+        if (visibilityChanged && !shouldShow) stopVadRecording(silent = true)
         isImeVisible = shouldShow
-        if (!shouldShow) stopVadRecording(silent = true)
-        // Manual-hide override (Quick Settings tile) wins over the
-        // IME-driven default — if the user explicitly hid the bubble,
-        // keep it gone even when a text field gets focus.
-        val effectiveVisibility = if (shouldShow && !manualHide) View.VISIBLE else View.GONE
+
+        // Silence override beats everything — if the user explicitly put
+        // the bird to sleep, keep it hidden no matter what.
+        val effectiveVisibility = when {
+            manualSilence -> View.GONE
+            manualAlwaysShow && !locked && !passwordField -> View.VISIBLE
+            shouldShow -> View.VISIBLE
+            else -> View.GONE
+        }
         bubbleView?.post { bubbleView?.visibility = effectiveVisibility }
-        AppLog.log(this, "Service: bubbleShow=$shouldShow ime=$imeVisible locked=$locked password=$passwordField manualHide=$manualHide pkg=$pkg")
+        AppLog.log(this, "Service: bubbleShow=$shouldShow ime=$imeVisible locked=$locked password=$passwordField alwaysShow=$manualAlwaysShow silence=$manualSilence pkg=$pkg")
     }
 
     private fun pasteText(text: String) {
@@ -521,42 +541,64 @@ class LiteAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * True when the bubble is currently painted on screen — IME is up and
-     * the user hasn't hidden it. Used internally; not what the QS tile
-     * reads (see [isBubbleEnabled] for that).
+     * True when the bubble is currently painted on screen.
      */
-    fun isBubbleVisible(): Boolean =
-        !manualHide && bubbleView?.visibility == View.VISIBLE
+    fun isBubbleVisible(): Boolean = bubbleView?.visibility == View.VISIBLE
 
     /**
-     * Quick Settings Tile read-out. Reflects the user's *intent* (manualHide
-     * flag) rather than the bubble's actual on-screen state. This matters
-     * because the bubble might not be visible yet (no text field focused),
-     * but the tile should still toggle visibly so the user sees their tap
-     * was registered.
+     * Quick Settings Tile read-out. True when the user has opted into
+     * always-show mode (bubble stays on screen even without an active IME).
+     * Default is false (standard behaviour: bubble follows the keyboard).
+     */
+    fun isAlwaysShowEnabled(): Boolean = manualAlwaysShow
+
+    /**
+     * Quick Settings Tile action. Toggles the always-show mode. When turned
+     * on, the bubble stays visible even if there's no active text field —
+     * lets the user dictate while the keyboard is collapsed (more screen
+     * real estate for the actual text). When turned off, standard behaviour
+     * resumes (bubble appears with the IME, hides when it goes away).
      *
-     * Without this, tapping the tile while no IME is up did nothing visible
-     * — toggleBubbleVisibility() flipped manualHide, but isBubbleVisible()
-     * stayed false (no IME, so no painted bubble), so the tile state didn't
-     * change. Users reasonably concluded the tile was broken.
+     * Runtime-only flag; resets on service restart. Locked-screen and
+     * password-field protections still apply — we don't paint the bubble
+     * over keyguard or password prompts even in always-show mode.
      */
-    fun isBubbleEnabled(): Boolean = !manualHide
+    fun toggleAlwaysShow() {
+        manualAlwaysShow = !manualAlwaysShow
+        applyVisibilityNow()
+    }
+
+    /** Quick Settings Tile read-out for the silence tile. */
+    fun isSilenceEnabled(): Boolean = manualSilence
 
     /**
-     * Quick Settings Tile action. Toggles the bubble's user-controlled
-     * "manual hide" override. When true, updateImeVisibility() will keep
-     * the bubble hidden even if the IME is up — the user explicitly asked
-     * for it to disappear. Override is runtime-only; a service restart
-     * resets it to false (the default behaviour resumes).
+     * Quick Settings Tile action for the «sleeping bird» tile. When turned
+     * on, the bubble stays hidden even if an IME is up — voice input is
+     * asleep until the user taps the tile again. Symmetrical: one tap to
+     * silence, one tap to wake. Doesn't disable the service.
      */
-    fun toggleBubbleVisibility() {
-        manualHide = !manualHide
-        // Force-evaluate visibility right now so the user sees the change
-        // immediately on the next frame, not on the next IME event.
-        if (manualHide) {
-            bubbleView?.post { bubbleView?.visibility = View.GONE }
-        } else if (isImeVisible) {
-            bubbleView?.post { bubbleView?.visibility = View.VISIBLE }
+    fun toggleSilence() {
+        manualSilence = !manualSilence
+        applyVisibilityNow()
+    }
+
+    /**
+     * Recomputes effective bubble visibility from current flags + IME state
+     * and applies it on the view's looper. Used by both tile toggles so the
+     * shade tap is visually instant rather than waiting for the next IME
+     * event.
+     */
+    private fun applyVisibilityNow() {
+        bubbleView?.post {
+            val locked = keyguardManager?.isKeyguardLocked == true
+            val passwordField = InputFieldFilter.isPasswordField(accessibilityInputMethod)
+            bubbleView?.visibility = when {
+                manualSilence -> View.GONE
+                locked || passwordField -> View.GONE
+                manualAlwaysShow -> View.VISIBLE
+                isImeVisible -> View.VISIBLE
+                else -> View.GONE
+            }
         }
     }
 
