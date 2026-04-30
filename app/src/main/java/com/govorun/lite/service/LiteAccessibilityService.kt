@@ -10,21 +10,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.graphics.PixelFormat
-import android.view.HapticFeedbackConstants
 import android.util.Log
-import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
-import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
-import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
-import com.google.android.material.color.DynamicColors
-import com.govorun.lite.R
 import com.govorun.lite.model.GigaAmModel
-import com.govorun.lite.overlay.BubbleView
 import com.govorun.lite.stats.StatsStore
 import com.govorun.lite.transcriber.OfflineTranscriber
 import com.govorun.lite.transcriber.VadRecorder
@@ -33,7 +24,6 @@ import com.govorun.lite.util.AccessibilityFrameworkCrashGuard
 import com.govorun.lite.util.AppLog
 import com.govorun.lite.util.Haptics
 import com.govorun.lite.util.MicConflictDetector
-import com.govorun.lite.util.Prefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -58,16 +48,6 @@ class LiteAccessibilityService : AccessibilityService() {
         var instance: LiteAccessibilityService? = null
             private set
         private const val TAG = "LiteAccessibility"
-        private const val DRAG_THRESHOLD_DP = 10f
-        // Press duration after which a touch is treated as "hold-to-talk"
-        // instead of a tap-toggle. 250 ms is comfortably longer than a
-        // normal tap (~50–100 ms) and shorter than a deliberate long-press.
-        private const val HOLD_DELAY_MS = 250L
-        // Smaller-than-drag slop used to detect *intentional* finger
-        // movement during the hold-wait window — without it, slow back-edge
-        // swipes (which haven't crossed the 10dp drag threshold yet by the
-        // time HOLD_DELAY_MS elapses) trigger a brief recording flash.
-        private const val HOLD_MOVEMENT_SLOP_DP = 5f
 
         /**
          * Used by [com.govorun.lite.util.Haptics] to dispatch haptic
@@ -75,14 +55,12 @@ class LiteAccessibilityService : AccessibilityService() {
          * whenever the bubble is on screen, regardless of whether a
          * caller has an Activity context handy.
          */
-        fun getBubbleViewIfAttached(): View? = instance?.bubbleView
+        fun getBubbleViewIfAttached(): View? = instance?.bubbleOverlay?.getView()
     }
 
     private var isImeVisible = false
-    private var bubbleView: BubbleView? = null
-    private var windowManager: WindowManager? = null
     private var keyguardManager: KeyguardManager? = null
-    private var bubbleParams: WindowManager.LayoutParams? = null
+    private var bubbleOverlay: BubbleOverlayController? = null
 
     // User-controlled "always show" override, toggled via the Quick Settings
     // tile. Runtime-only (not persisted) — service restart resets to false.
@@ -157,42 +135,18 @@ class LiteAccessibilityService : AccessibilityService() {
         instance = this
         Log.i(TAG, "Accessibility service connected")
 
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
 
-        bubbleParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            // HARDWARE_ACCELERATED added: TYPE_ACCESSIBILITY_OVERLAY by
-            // default may render through the software path, which on
-            // Android 16 + Pixel 10 + Gboard creates visible drag lag
-            // when the bubble crosses the IME surface (the compositor
-            // has to recomposite the IME under the overlay every move).
-            // GPU rendering avoids that hot path. On older OS / hardware
-            // this is a no-op or a small win.
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = bubbleHorizontalGravity() or Gravity.CENTER_VERTICAL
-            x = 16
-            // Restore the user's last drag position. Without this, every
-            // time Android restarts our service (memory pressure, OEM
-            // battery-saver killing the process, accessibility unbind/rebind
-            // cycle) the bubble snaps back to vertical centre.
-            y = Prefs.getBubbleY(this@LiteAccessibilityService)
+        bubbleOverlay = BubbleOverlayController(this, bubbleCallbacks).also {
+            it.create(initiallyVisible = false)
         }
-
-        attachFreshBubble(initiallyVisible = false)
 
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
         registerReceiver(userPresentReceiver, IntentFilter(Intent.ACTION_USER_PRESENT))
 
         // Initial check — if the service starts while a keyboard is already up,
         // we'd otherwise wait for the next windows-changed event.
-        bubbleView?.post { updateImeVisibility() }
+        bubbleOverlay?.getView()?.post { updateImeVisibility() }
 
         // Warm up the GigaAM recognizer and Silero VAD in the background so the
         // first user tap doesn't race against model load. Without this, the
@@ -259,7 +213,7 @@ class LiteAccessibilityService : AccessibilityService() {
             shouldShow -> View.VISIBLE
             else -> View.GONE
         }
-        bubbleView?.post { bubbleView?.visibility = effectiveVisibility }
+        bubbleOverlay?.setVisibility(effectiveVisibility)
         AppLog.log(this, "Service: bubbleShow=$shouldShow ime=$imeVisible locked=$locked password=$passwordField alwaysShow=$manualAlwaysShow silence=$manualSilence pkg=$pkg")
     }
 
@@ -299,9 +253,7 @@ class LiteAccessibilityService : AccessibilityService() {
         AppLog.log(this, "Service: VAD start (useVad=$useVad)")
         isVadActive = true
         vibrateStart()
-        bubbleView?.setRecording(true)
-        bubbleParams?.flags = bubbleParams!!.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-        windowManager?.updateViewLayout(bubbleView, bubbleParams)
+        bubbleOverlay?.setRecording(true)
 
         // Build + start the recorder SYNCHRONOUSLY on the main thread. Dispatching
         // through scope.launch added ~50-200 ms of latency that swallowed the first
@@ -362,9 +314,7 @@ class LiteAccessibilityService : AccessibilityService() {
         vadRecorder?.stop()
         vadRecorder = null
         if (!silent) vibrateStop()
-        bubbleView?.setRecording(false)
-        bubbleParams?.flags = bubbleParams!!.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON.inv()
-        windowManager?.updateViewLayout(bubbleView, bubbleParams)
+        bubbleOverlay?.setRecording(false)
         Log.i(TAG, "VAD recording stopped")
     }
 
@@ -378,159 +328,17 @@ class LiteAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {}
 
-    /**
-     * Services don't get DynamicColors applied automatically (that helper is
-     * activity-scoped). Wrapping explicitly here is what makes the bubble
-     * pick up the user's wallpaper accent — without this, colorPrimary*
-     * resolves to the static M3 defaults and the bubble reads as grey even
-     * when Gboard/System UI are clearly using the dynamic palette.
-     */
-    private fun bubbleContext(): Context {
-        val themed = ContextThemeWrapper(this, R.style.Theme_GovorunLite)
-        return DynamicColors.wrapContextIfAvailable(themed)
-    }
-
-    /**
-     * Reinstall a fresh BubbleView — used on first connect and whenever we
-     * need to rebind to a DC-wrapped context (wallpaper colour change,
-     * transparency pref change triggered from Settings via refreshBubble()).
-     */
-    @SuppressLint("ClickableViewAccessibility")
-    private fun attachFreshBubble(initiallyVisible: Boolean) {
-        val wm = windowManager ?: return
-        bubbleView?.let {
-            try { wm.removeView(it) } catch (_: Exception) {}
+    /** Glue between BubbleOverlayController's gesture detection and the
+     *  service's recording lifecycle. Hold-to-talk uses raw-PCM mode so
+     *  the whole utterance reaches GigaAM in one contextual pass instead
+     *  of being split by VAD on internal pauses. */
+    private val bubbleCallbacks = object : BubbleOverlayController.Callbacks {
+        override fun onTap() {
+            if (isVadActive) stopVadRecording() else startVadRecording()
         }
-        val fresh = BubbleView(bubbleContext()).apply {
-            setIdleAlpha(Prefs.getBubbleAlpha(this@LiteAccessibilityService))
-            visibility = if (initiallyVisible) View.VISIBLE else View.GONE
-            // Force GPU layer for the bubble itself so its draw passes
-            // never fall back to software rendering. Combined with the
-            // HARDWARE_ACCELERATED window flag above, this keeps the
-            // overlay on the GPU end-to-end during drag.
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
-        }
-        val dragThresholdPx = DRAG_THRESHOLD_DP * resources.displayMetrics.density
-        val holdMovementSlopPx = HOLD_MOVEMENT_SLOP_DP * resources.displayMetrics.density
-        fresh.setOnTouchListener(object : View.OnTouchListener {
-            private var initialY = 0
-            private var initialTouchY = 0f
-            private var initialTouchX = 0f
-            private var lastTouchX = 0f
-            private var lastTouchY = 0f
-            private var dragged = false
-            private var holdStarted = false
-            private val holdHandler = android.os.Handler(android.os.Looper.getMainLooper())
-            // Posted on DOWN, fires after HOLD_DELAY_MS. Only promotes the
-            // gesture to hold-to-talk if the finger is genuinely still —
-            // the "still" check uses HOLD_MOVEMENT_SLOP_DP (5dp), tighter
-            // than the 10dp drag threshold, so a slow back-edge swipe that
-            // hasn't yet tripped drag mode doesn't accidentally start
-            // recording with a brief red flash before being cancelled.
-            private val holdRunnable = Runnable {
-                if (dragged || holdStarted) return@Runnable
-                val movedX = Math.abs(lastTouchX - initialTouchX)
-                val movedY = Math.abs(lastTouchY - initialTouchY)
-                if (movedX > holdMovementSlopPx || movedY > holdMovementSlopPx) {
-                    // Finger is in slow motion — treat as the start of a
-                    // gesture, not a hold. Don't start recording.
-                    return@Runnable
-                }
-                holdStarted = true
-                // Hold-to-talk uses raw-PCM mode: the whole utterance goes to
-                // GigaAM in one shot so phrases with internal pauses stay as a
-                // single contextual recognition, instead of being split by VAD
-                // and concatenated.
-                startVadRecording(useVad = false)
-            }
-            override fun onTouch(v: View, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        initialY = bubbleParams!!.y
-                        initialTouchY = event.rawY
-                        initialTouchX = event.rawX
-                        lastTouchX = event.rawX
-                        lastTouchY = event.rawY
-                        dragged = false
-                        holdStarted = false
-                        holdHandler.postDelayed(holdRunnable, HOLD_DELAY_MS)
-                        return true
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        lastTouchX = event.rawX
-                        lastTouchY = event.rawY
-                        // Once hold-recording started, the bubble is locked
-                        // in place. Any finger movement is ignored — release
-                        // (UP) is the only way to stop. Without this, the
-                        // bubble would drag along with the user's tiny finger
-                        // adjustments while they're talking.
-                        if (holdStarted) return true
-                        val dy = event.rawY - initialTouchY
-                        val dx = event.rawX - initialTouchX
-                        // ANY-direction threshold check: a back-edge swipe
-                        // that crosses the bubble is mostly horizontal —
-                        // before this fix it never tripped the (vertical-only)
-                        // drag flag, so on UP it looked like a tap and
-                        // started/stopped recording.
-                        if (Math.abs(dy) > dragThresholdPx || Math.abs(dx) > dragThresholdPx) {
-                            if (!dragged) {
-                                dragged = true
-                                holdHandler.removeCallbacks(holdRunnable)
-                            }
-                            // Bubble itself only moves vertically — horizontal
-                            // delta just blocks tap activation, doesn't drag.
-                            if (Math.abs(dy) > dragThresholdPx) {
-                                bubbleParams!!.y = initialY + dy.toInt()
-                                windowManager?.updateViewLayout(bubbleView, bubbleParams)
-                            }
-                        }
-                        return true
-                    }
-                    MotionEvent.ACTION_UP -> {
-                        holdHandler.removeCallbacks(holdRunnable)
-                        if (dragged) {
-                            // Persist final Y so the bubble lands in the same
-                            // place after the next service restart.
-                            Prefs.setBubbleY(this@LiteAccessibilityService, bubbleParams!!.y)
-                            return true
-                        }
-                        if (holdStarted) {
-                            // Hold-to-talk: releasing the finger stops the
-                            // recording (and triggers VAD pipeline → paste).
-                            stopVadRecording()
-                            return true
-                        }
-                        // Quick tap before HOLD_DELAY_MS — same toggle
-                        // behaviour we've always had (start, then tap again
-                        // to stop).
-                        if (isVadActive) stopVadRecording() else startVadRecording()
-                        return true
-                    }
-                    MotionEvent.ACTION_CANCEL -> {
-                        // CANCEL means the gesture was aborted by the system
-                        // — usually because the finger left the view bounds
-                        // mid-touch (back-edge swipe across the bubble is
-                        // the typical cause). Do NOT treat this as a tap or
-                        // hold-release; just clean up. Without this branch,
-                        // any swipe over the bubble triggered a phantom
-                        // recording start because CANCEL fell through to the
-                        // toggle path.
-                        holdHandler.removeCallbacks(holdRunnable)
-                        if (holdStarted) stopVadRecording(silent = true)
-                        if (dragged) Prefs.setBubbleY(
-                            this@LiteAccessibilityService,
-                            bubbleParams!!.y
-                        )
-                        return true
-                    }
-                }
-                return false
-            }
-        })
-        try { wm.addView(fresh, bubbleParams) } catch (e: Exception) {
-            Log.e(TAG, "Failed to add bubble view", e)
-        }
-        bubbleView = fresh
+        override fun onHoldStart() = startVadRecording(useVad = false)
+        override fun onHoldStop(silent: Boolean) = stopVadRecording(silent = silent)
+        override fun isVadActive(): Boolean = this@LiteAccessibilityService.isVadActive
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
@@ -538,7 +346,7 @@ class LiteAccessibilityService : AccessibilityService() {
         // Wallpaper colour changes arrive here on API 31+. Rebuild the bubble
         // with a fresh DC-wrapped context so the new accent takes effect
         // without the user having to toggle the service.
-        attachFreshBubble(initiallyVisible = isImeVisible)
+        bubbleOverlay?.rebuild(initiallyVisible = isImeVisible)
     }
 
     /**
@@ -546,7 +354,7 @@ class LiteAccessibilityService : AccessibilityService() {
      * existing BubbleView picks up the new alpha immediately; no rebuild.
      */
     fun applyBubbleAlphaFromPrefs() {
-        bubbleView?.setIdleAlpha(Prefs.getBubbleAlpha(this))
+        bubbleOverlay?.applyAlpha()
     }
 
     /**
@@ -555,13 +363,13 @@ class LiteAccessibilityService : AccessibilityService() {
      * wallpaper-colour reaction) instead of trying to re-layout in place.
      */
     fun applyBubbleSizeFromPrefs() {
-        attachFreshBubble(initiallyVisible = isImeVisible)
+        bubbleOverlay?.applySize(initiallyVisible = isImeVisible)
     }
 
     /**
      * True when the bubble is currently painted on screen.
      */
-    fun isBubbleVisible(): Boolean = bubbleView?.visibility == View.VISIBLE
+    fun isBubbleVisible(): Boolean = bubbleOverlay?.isVisible() == true
 
     /**
      * Quick Settings Tile read-out. True when the user has opted into
@@ -607,17 +415,16 @@ class LiteAccessibilityService : AccessibilityService() {
      * event.
      */
     private fun applyVisibilityNow() {
-        bubbleView?.post {
-            val locked = keyguardManager?.isKeyguardLocked == true
-            val passwordField = InputFieldFilter.isPasswordField(accessibilityInputMethod)
-            bubbleView?.visibility = when {
-                manualSilence -> View.GONE
-                locked || passwordField -> View.GONE
-                manualAlwaysShow -> View.VISIBLE
-                isImeVisible -> View.VISIBLE
-                else -> View.GONE
-            }
+        val locked = keyguardManager?.isKeyguardLocked == true
+        val passwordField = InputFieldFilter.isPasswordField(accessibilityInputMethod)
+        val effective = when {
+            manualSilence -> View.GONE
+            locked || passwordField -> View.GONE
+            manualAlwaysShow -> View.VISIBLE
+            isImeVisible -> View.VISIBLE
+            else -> View.GONE
         }
+        bubbleOverlay?.setVisibility(effective)
     }
 
     /**
@@ -626,13 +433,8 @@ class LiteAccessibilityService : AccessibilityService() {
      * without a rebuild.
      */
     fun applyBubbleSideFromPrefs() {
-        val params = bubbleParams ?: return
-        params.gravity = bubbleHorizontalGravity() or Gravity.CENTER_VERTICAL
-        try { windowManager?.updateViewLayout(bubbleView, params) } catch (_: Exception) {}
+        bubbleOverlay?.applySide()
     }
-
-    private fun bubbleHorizontalGravity(): Int =
-        if (Prefs.getBubbleSide(this) == Prefs.BUBBLE_SIDE_LEFT) Gravity.START else Gravity.END
 
     override fun onDestroy() {
         instance = null
@@ -640,7 +442,8 @@ class LiteAccessibilityService : AccessibilityService() {
         scope.cancel()
         try { unregisterReceiver(screenOffReceiver) } catch (_: Exception) {}
         try { unregisterReceiver(userPresentReceiver) } catch (_: Exception) {}
-        bubbleView?.let { windowManager?.removeView(it) }
+        bubbleOverlay?.destroy()
+        bubbleOverlay = null
         super.onDestroy()
     }
 }
