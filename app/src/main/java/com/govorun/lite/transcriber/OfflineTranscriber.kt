@@ -149,7 +149,12 @@ class OfflineTranscriber private constructor(
             result.text.trim()
         }
 
-        Log.i(TAG, "Offline transcript: '$text'")
+        // Privacy: log only the length, never the recognised text content.
+        // logcat is visible to anyone who runs `adb logcat` while the app is
+        // active and persists in the system ring buffer; even though it's
+        // volatile, leaking the user's dictated text there violates the
+        // "nothing leaves the device" promise that's the project's main USP.
+        Log.i(TAG, "Offline transcript: ${text.length} chars")
         text
     }
 

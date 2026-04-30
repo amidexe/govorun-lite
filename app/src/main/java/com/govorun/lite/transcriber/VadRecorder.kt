@@ -359,7 +359,10 @@ class VadRecorder(private val context: Context) {
                         transcriber.sendAudioChunk(segPcm)
                         val text = transcriber.stopAudioAndGetTranscript()
                         val dt = SystemClock.elapsedRealtime() - t0
-                        Log.i(TAG, "Transcribed ${segPcm.size}B (~${segMs}ms audio) in ${dt}ms → '${text}'")
+                        // Privacy: never write the recognised text to logcat
+                        // (visible to anyone with adb access). See OfflineTranscriber
+                        // for the same reasoning. Length only.
+                        Log.i(TAG, "Transcribed ${segPcm.size}B (~${segMs}ms audio) in ${dt}ms → ${text.length} chars")
                         if (text.isNotBlank()) {
                             withContext(Dispatchers.Main) { onSegment(text) }
                         }
