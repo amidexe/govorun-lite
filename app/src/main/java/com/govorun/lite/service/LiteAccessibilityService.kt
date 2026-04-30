@@ -11,7 +11,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
-import android.os.Bundle
 import android.view.HapticFeedbackConstants
 import android.util.Log
 import android.view.Gravity
@@ -19,7 +18,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
@@ -28,13 +26,13 @@ import com.govorun.lite.R
 import com.govorun.lite.model.GigaAmModel
 import com.govorun.lite.overlay.BubbleView
 import com.govorun.lite.stats.StatsStore
-import com.govorun.lite.transcriber.Dictionary
 import com.govorun.lite.transcriber.OfflineTranscriber
 import com.govorun.lite.transcriber.VadRecorder
 import com.govorun.lite.ui.MainActivity
 import com.govorun.lite.util.AccessibilityFrameworkCrashGuard
 import com.govorun.lite.util.AppLog
 import com.govorun.lite.util.Haptics
+import com.govorun.lite.util.MicConflictDetector
 import com.govorun.lite.util.Prefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -105,6 +103,7 @@ class LiteAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var vadRecorder: VadRecorder? = null
     @Volatile private var isVadActive = false
+    private var micConflictDetector: MicConflictDetector? = null
 
     private var accessibilityInputMethod: LiteAccessibilityInputMethod? = null
 
@@ -264,121 +263,14 @@ class LiteAccessibilityService : AccessibilityService() {
         AppLog.log(this, "Service: bubbleShow=$shouldShow ime=$imeVisible locked=$locked password=$passwordField alwaysShow=$manualAlwaysShow silence=$manualSilence pkg=$pkg")
     }
 
-    private fun pasteText(text: String) {
-        if (text.isBlank()) return
-        // Apply user dictionary BEFORE commitText. This is a lexical
-        // post-pass — fixing jargon, abbreviations, proper-noun spellings
-        // the recogniser doesn't know. Empty dictionary returns the text
-        // unchanged, so this costs nothing for users who don't set one up.
-        val replaced = Dictionary.applyReplacements(this, text)
-        if (replaced != text) {
-            AppLog.log(this, "Dictionary applied: '${text.take(40)}' → '${replaced.take(40)}'")
-        }
-        val connection = accessibilityInputMethod?.currentInputConnection
-        if (connection != null) {
-            // Zombie-binding probe: when Telegram (and similar apps) recycle
-            // their input field, Android still hands us a fresh-looking
-            // InputConnection but it's actually bound to the destroyed
-            // EditText. commitText on it returns "success" silently and the
-            // text never reaches the visible field. getSurroundingText
-            // returns null on such a binding — that's the cheapest reliable
-            // sync probe we have. Confirmed against repro on Telegram.
-            val surrounding = try { connection.getSurroundingText(1, 0, 0) } catch (_: Exception) { null }
-            if (surrounding != null) {
-                val spacedText = prependSpaceIfNeeded(replaced, connection)
-                connection.commitText(spacedText, 1, null)
-                AppLog.log(this, "Paste: commitText len=${spacedText.length}")
-                StatsStore.addWords(this, StatsStore.countWords(replaced))
-                return
-            }
-        }
-        // Fallback: bypass the IME pipeline entirely and write text via
-        // ACTION_SET_TEXT on the focused editable node. This works even
-        // when the IME binding is dead, because we resolve the target
-        // node fresh from the accessibility tree on each call. No
-        // clipboard involved, so no "App pasted from clipboard" toast.
-        if (setTextOnFocusedEditable(replaced)) {
-            StatsStore.addWords(this, StatsStore.countWords(replaced))
-        } else {
-            AppLog.log(this, "Paste: SET_TEXT fallback failed — dropping '${replaced.take(40)}'")
-        }
+    /** Lazily created on first IME bind — TextInserter needs the service
+     *  reference to compile-time but the IME instance only after Android
+     *  calls onCreateInputMethod, so we look it up via lambda each time. */
+    private val textInserter by lazy {
+        TextInserter(this) { accessibilityInputMethod }
     }
 
-    /**
-     * Last-resort text insertion when the IME binding is dead. Walks the
-     * active accessibility tree, finds the focused editable node, splices
-     * our text into its current contents, and commits via ACTION_SET_TEXT
-     * + ACTION_SET_SELECTION. Returns true on success.
-     *
-     * Hint-text handling matters: an empty EditText that's showing a
-     * placeholder ("Сообщение" in Telegram) returns the placeholder string
-     * from node.text on some Android versions. Without isShowingHintText
-     * AND text != hintText guards we'd splice user text after the
-     * placeholder and SET_TEXT would commit "Сообщение наш текст".
-     */
-    private fun setTextOnFocusedEditable(text: String): Boolean {
-        val root = rootInActiveWindow ?: return false
-        val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-            ?.takeIf { it.isEditable } ?: return false
-        val hint = node.hintText?.toString() ?: ""
-        val rawText = node.text?.toString() ?: ""
-        // Several different ways an input can be "logically empty" but
-        // still expose a non-empty text getter:
-        //  1. isShowingHintText explicitly set (modern Android hint API)
-        //  2. text == hintText (some apps set both to the placeholder)
-        //  3. text non-empty but cursor at position 0 with no selection —
-        //     this is the signature of Telegram-style placeholders, where
-        //     the field returns its placeholder string from text but no
-        //     real cursor has been placed yet (textSelectionStart/End
-        //     stay at 0 instead of moving to the end of "real" content).
-        // The third condition has a theoretical false-positive on a field
-        // that genuinely has real text and the user happened to put their
-        // cursor at position 0 — but that's uncommon and the cost
-        // (text replaced instead of prepended) is much smaller than the
-        // alternative of literally splicing "Сообщение" into messages.
-        val placeholderByCursor = rawText.isNotEmpty() &&
-            node.textSelectionStart <= 0 && node.textSelectionEnd <= 0
-        val isPlaceholderShowing = node.isShowingHintText ||
-            (hint.isNotEmpty() && rawText == hint) ||
-            placeholderByCursor
-        val current = if (isPlaceholderShowing) "" else rawText
-        val rawCursor = node.textSelectionEnd
-        val cursor = if (rawCursor in 0..current.length) rawCursor else current.length
-        val before = current.substring(0, cursor)
-        val after = current.substring(cursor)
-        val needsLeadingSpace = before.isNotEmpty() && !before.last().isWhitespace()
-        val toInsert = if (needsLeadingSpace) " $text" else text
-        val newText = before + toInsert + after
-        val setArgs = Bundle().apply {
-            putCharSequence(
-                AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-                newText
-            )
-        }
-        if (!node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, setArgs)) {
-            return false
-        }
-        // Move the caret to the end of what we just inserted so the next
-        // commit (or the user's typing) continues naturally instead of
-        // landing back at the original cursor position.
-        val newCursor = cursor + toInsert.length
-        val selArgs = Bundle().apply {
-            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, newCursor)
-            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, newCursor)
-        }
-        node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selArgs)
-        AppLog.log(this, "Paste: SET_TEXT len=${toInsert.length}")
-        return true
-    }
-
-    private fun prependSpaceIfNeeded(
-        text: String,
-        connection: InputMethod.AccessibilityInputConnection
-    ): String {
-        val surrounding = connection.getSurroundingText(1, 0, 0)
-        val lastChar = surrounding?.text?.toString()?.lastOrNull()
-        return if (lastChar != null && !lastChar.isWhitespace()) " $text" else text
-    }
+    private fun pasteText(text: String) = textInserter.insert(text)
 
     @SuppressLint("MissingPermission")
     private fun startVadRecording(useVad: Boolean = true) {
@@ -438,11 +330,26 @@ class LiteAccessibilityService : AccessibilityService() {
             useVad = useVad,
         )
         Log.i(TAG, "VAD recording started")
+        // Watch for foreign mic clients (phone calls, Telegram voice
+        // messages, recorder apps). If any starts while we're recording,
+        // stop ourselves silently — see MicConflictDetector for the
+        // privacy and audio-routing reasoning. The session ID is set
+        // synchronously by VadRecorder.start before it returns.
+        val sessionId = recorder.audioSessionId
+        if (sessionId >= 0) {
+            val detector = MicConflictDetector(this) {
+                stopVadRecording(silent = true)
+            }
+            micConflictDetector = detector
+            detector.start(sessionId)
+        }
     }
 
     private fun stopVadRecording(silent: Boolean = false) {
         if (!isVadActive) return
         isVadActive = false
+        micConflictDetector?.stop()
+        micConflictDetector = null
         // Speech time is accounted per VAD segment via the onSpeechMillis
         // callback above — we don't add anything here. Any sub-second
         // remainder in speechMillisRemainder (<1000ms) is lost on stop;
