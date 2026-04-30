@@ -30,6 +30,7 @@ import com.govorun.lite.transcriber.Dictionary
 import com.govorun.lite.transcriber.OfflineTranscriber
 import com.govorun.lite.transcriber.VadRecorder
 import com.govorun.lite.ui.MainActivity
+import com.govorun.lite.util.AccessibilityFrameworkCrashGuard
 import com.govorun.lite.util.AppLog
 import com.govorun.lite.util.Haptics
 import com.govorun.lite.util.Prefs
@@ -143,6 +144,12 @@ class LiteAccessibilityService : AccessibilityService() {
     @SuppressLint("ClickableViewAccessibility")
     override fun onServiceConnected() {
         super.onServiceConnected()
+        // Install before anything else: the framework can throw NPE inside
+        // its own startInput / invalidateInput bookkeeping during this
+        // very call sequence on some devices/Android versions, and we want
+        // to be alive afterwards regardless. See the guard's class doc for
+        // exactly which framework crashes are covered and why.
+        AccessibilityFrameworkCrashGuard.install()
         instance = this
         Log.i(TAG, "Accessibility service connected")
 
