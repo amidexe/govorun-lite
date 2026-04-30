@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
+import android.os.Bundle
 import android.view.HapticFeedbackConstants
 import android.util.Log
 import android.view.Gravity
@@ -18,6 +19,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
@@ -104,7 +106,7 @@ class LiteAccessibilityService : AccessibilityService() {
     private var vadRecorder: VadRecorder? = null
     @Volatile private var isVadActive = false
 
-    private var accessibilityInputMethod: InputMethod? = null
+    private var accessibilityInputMethod: LiteAccessibilityInputMethod? = null
 
     // Accumulates sub-second speech durations from VAD callbacks. We only
     // store whole seconds in StatsStore (the UI shows minutes), but throwing
@@ -138,7 +140,10 @@ class LiteAccessibilityService : AccessibilityService() {
     }
 
     override fun onCreateInputMethod(): InputMethod {
-        return super.onCreateInputMethod().also { accessibilityInputMethod = it }
+        // Override the default to instantiate our subclass: it tracks
+        // onStartInput / onFinishInput callback counts so pasteText can
+        // detect zombie InputConnection state before committing.
+        return LiteAccessibilityInputMethod(this).also { accessibilityInputMethod = it }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -270,14 +275,100 @@ class LiteAccessibilityService : AccessibilityService() {
             AppLog.log(this, "Dictionary applied: '${text.take(40)}' → '${replaced.take(40)}'")
         }
         val connection = accessibilityInputMethod?.currentInputConnection
-        if (connection == null) {
-            AppLog.log(this, "Paste: InputConnection=null — dropping '${replaced.take(40)}'")
-            return
+        if (connection != null) {
+            // Zombie-binding probe: when Telegram (and similar apps) recycle
+            // their input field, Android still hands us a fresh-looking
+            // InputConnection but it's actually bound to the destroyed
+            // EditText. commitText on it returns "success" silently and the
+            // text never reaches the visible field. getSurroundingText
+            // returns null on such a binding — that's the cheapest reliable
+            // sync probe we have. Confirmed against repro on Telegram.
+            val surrounding = try { connection.getSurroundingText(1, 0, 0) } catch (_: Exception) { null }
+            if (surrounding != null) {
+                val spacedText = prependSpaceIfNeeded(replaced, connection)
+                connection.commitText(spacedText, 1, null)
+                AppLog.log(this, "Paste: commitText len=${spacedText.length}")
+                StatsStore.addWords(this, StatsStore.countWords(replaced))
+                return
+            }
         }
-        val spacedText = prependSpaceIfNeeded(replaced, connection)
-        connection.commitText(spacedText, 1, null)
-        AppLog.log(this, "Paste: commitText len=${spacedText.length}")
-        StatsStore.addWords(this, StatsStore.countWords(replaced))
+        // Fallback: bypass the IME pipeline entirely and write text via
+        // ACTION_SET_TEXT on the focused editable node. This works even
+        // when the IME binding is dead, because we resolve the target
+        // node fresh from the accessibility tree on each call. No
+        // clipboard involved, so no "App pasted from clipboard" toast.
+        if (setTextOnFocusedEditable(replaced)) {
+            StatsStore.addWords(this, StatsStore.countWords(replaced))
+        } else {
+            AppLog.log(this, "Paste: SET_TEXT fallback failed — dropping '${replaced.take(40)}'")
+        }
+    }
+
+    /**
+     * Last-resort text insertion when the IME binding is dead. Walks the
+     * active accessibility tree, finds the focused editable node, splices
+     * our text into its current contents, and commits via ACTION_SET_TEXT
+     * + ACTION_SET_SELECTION. Returns true on success.
+     *
+     * Hint-text handling matters: an empty EditText that's showing a
+     * placeholder ("Сообщение" in Telegram) returns the placeholder string
+     * from node.text on some Android versions. Without isShowingHintText
+     * AND text != hintText guards we'd splice user text after the
+     * placeholder and SET_TEXT would commit "Сообщение наш текст".
+     */
+    private fun setTextOnFocusedEditable(text: String): Boolean {
+        val root = rootInActiveWindow ?: return false
+        val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            ?.takeIf { it.isEditable } ?: return false
+        val hint = node.hintText?.toString() ?: ""
+        val rawText = node.text?.toString() ?: ""
+        // Several different ways an input can be "logically empty" but
+        // still expose a non-empty text getter:
+        //  1. isShowingHintText explicitly set (modern Android hint API)
+        //  2. text == hintText (some apps set both to the placeholder)
+        //  3. text non-empty but cursor at position 0 with no selection —
+        //     this is the signature of Telegram-style placeholders, where
+        //     the field returns its placeholder string from text but no
+        //     real cursor has been placed yet (textSelectionStart/End
+        //     stay at 0 instead of moving to the end of "real" content).
+        // The third condition has a theoretical false-positive on a field
+        // that genuinely has real text and the user happened to put their
+        // cursor at position 0 — but that's uncommon and the cost
+        // (text replaced instead of prepended) is much smaller than the
+        // alternative of literally splicing "Сообщение" into messages.
+        val placeholderByCursor = rawText.isNotEmpty() &&
+            node.textSelectionStart <= 0 && node.textSelectionEnd <= 0
+        val isPlaceholderShowing = node.isShowingHintText ||
+            (hint.isNotEmpty() && rawText == hint) ||
+            placeholderByCursor
+        val current = if (isPlaceholderShowing) "" else rawText
+        val rawCursor = node.textSelectionEnd
+        val cursor = if (rawCursor in 0..current.length) rawCursor else current.length
+        val before = current.substring(0, cursor)
+        val after = current.substring(cursor)
+        val needsLeadingSpace = before.isNotEmpty() && !before.last().isWhitespace()
+        val toInsert = if (needsLeadingSpace) " $text" else text
+        val newText = before + toInsert + after
+        val setArgs = Bundle().apply {
+            putCharSequence(
+                AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                newText
+            )
+        }
+        if (!node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, setArgs)) {
+            return false
+        }
+        // Move the caret to the end of what we just inserted so the next
+        // commit (or the user's typing) continues naturally instead of
+        // landing back at the original cursor position.
+        val newCursor = cursor + toInsert.length
+        val selArgs = Bundle().apply {
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, newCursor)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, newCursor)
+        }
+        node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selArgs)
+        AppLog.log(this, "Paste: SET_TEXT len=${toInsert.length}")
+        return true
     }
 
     private fun prependSpaceIfNeeded(
