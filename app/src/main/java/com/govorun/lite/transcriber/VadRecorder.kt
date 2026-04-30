@@ -118,11 +118,6 @@ class VadRecorder(private val context: Context) {
 
     @Volatile var isActive = false
         private set
-    /** AudioRecord session ID for the currently-active recording, or -1
-     *  when not recording. Exposed so the service can pass it to a
-     *  MicConflictDetector that watches for foreign mic clients. */
-    @Volatile var audioSessionId: Int = -1
-        private set
     private var job: kotlinx.coroutines.Job? = null
     @Volatile private var audioRecord: AudioRecord? = null
     @Volatile private var stopAtMs: Long = Long.MAX_VALUE
@@ -178,7 +173,6 @@ class VadRecorder(private val context: Context) {
             return
         }
         this.audioRecord = audioRecord
-        this.audioSessionId = audioRecord.audioSessionId
         audioRecord.startRecording()
         Log.i(TAG, "VAD recording started (mic capturing)")
 
@@ -353,7 +347,6 @@ class VadRecorder(private val context: Context) {
                 try { audioRecord.stop() } catch (_: Exception) {}
                 audioRecord.release()
                 this@VadRecorder.audioRecord = null
-                this@VadRecorder.audioSessionId = -1
                 return@launch
             }
 
@@ -382,7 +375,6 @@ class VadRecorder(private val context: Context) {
                 try { audioRecord.stop() } catch (_: Exception) {}
                 audioRecord.release()
                 this@VadRecorder.audioRecord = null
-                this@VadRecorder.audioSessionId = -1
                 this@VadRecorder.isActive = false
                 stopAtMs = Long.MAX_VALUE
                 // Keep sharedVad alive — it's reused across sessions.

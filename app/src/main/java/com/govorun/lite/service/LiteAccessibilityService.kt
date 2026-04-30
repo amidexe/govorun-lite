@@ -23,7 +23,6 @@ import com.govorun.lite.ui.MainActivity
 import com.govorun.lite.util.AccessibilityFrameworkCrashGuard
 import com.govorun.lite.util.AppLog
 import com.govorun.lite.util.Haptics
-import com.govorun.lite.util.MicConflictDetector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -81,7 +80,6 @@ class LiteAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var vadRecorder: VadRecorder? = null
     @Volatile private var isVadActive = false
-    private var micConflictDetector: MicConflictDetector? = null
 
     private var accessibilityInputMethod: LiteAccessibilityInputMethod? = null
 
@@ -282,26 +280,11 @@ class LiteAccessibilityService : AccessibilityService() {
             useVad = useVad,
         )
         Log.i(TAG, "VAD recording started")
-        // Watch for foreign mic clients (phone calls, Telegram voice
-        // messages, recorder apps). If any starts while we're recording,
-        // stop ourselves silently — see MicConflictDetector for the
-        // privacy and audio-routing reasoning. The session ID is set
-        // synchronously by VadRecorder.start before it returns.
-        val sessionId = recorder.audioSessionId
-        if (sessionId >= 0) {
-            val detector = MicConflictDetector(this) {
-                stopVadRecording(silent = true)
-            }
-            micConflictDetector = detector
-            detector.start(sessionId)
-        }
     }
 
     private fun stopVadRecording(silent: Boolean = false) {
         if (!isVadActive) return
         isVadActive = false
-        micConflictDetector?.stop()
-        micConflictDetector = null
         // Speech time is accounted per VAD segment via the onSpeechMillis
         // callback above — we don't add anything here. Any sub-second
         // remainder in speechMillisRemainder (<1000ms) is lost on stop;
