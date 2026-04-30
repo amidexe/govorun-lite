@@ -179,7 +179,16 @@ class VadRecorder(private val context: Context) {
         job = scope.launch(Dispatchers.IO) {
             val vad = getOrBuildVad(context, Prefs.getPauseLengthSeconds(context))
             // Cached instance carries state from previous session — wipe it.
-            try { vad.reset() } catch (e: Exception) { Log.w(TAG, "vad.reset failed: ${e.message}") }
+            // ALL Vad accesses below are wrapped in synchronized(vadLock):
+            // the underlying sherpa-onnx Vad is not thread-safe, and rapid
+            // tap-toggle creates overlapping VadRecorder sessions whose
+            // readers race on this same shared instance. Without the lock
+            // the second reader hits "Vad_acceptWaveform: NULL input
+            // supplied" — a SIGSEGV in native code that takes down the
+            // whole accessibility service process, and Android then refuses
+            // to restart it after a few crashes in a row. Same lock as
+            // getOrBuildVad/release so a concurrent rebuild is safe too.
+            try { synchronized(vadLock) { vad.reset() } } catch (e: Exception) { Log.w(TAG, "vad.reset failed: ${e.message}") }
 
             val segmentChannel = Channel<ByteArray>(capacity = SEGMENT_QUEUE_CAPACITY)
 
@@ -287,16 +296,24 @@ class VadRecorder(private val context: Context) {
 
                         val shortBuf = ByteBuffer.wrap(pcmWindow).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
                         val samples = FloatArray(VAD_WINDOW_SIZE) { shortBuf.get().toFloat() / 32768f }
-                        vad.acceptWaveform(samples)
-                        drainVadQueue()
+                        // acceptWaveform + drain MUST be in the same critical
+                        // section: drain reads vad.empty/front/pop, and another
+                        // reader could mutate Vad state between them, leaving
+                        // us reading partially-popped segments.
+                        synchronized(vadLock) {
+                            vad.acceptWaveform(samples)
+                            drainVadQueue()
+                        }
                     }
                 } finally {
                     // Flush any speech still inside VAD's buffer (user stopped before
                     // min_silence elapsed) so the last utterance isn't lost.
                     val beforeFlush = segmentsEmitted
                     try {
-                        vad.flush()
-                        drainVadQueue()
+                        synchronized(vadLock) {
+                            vad.flush()
+                            drainVadQueue()
+                        }
                     } catch (e: Exception) {
                         Log.w(TAG, "VAD flush failed: ${e.message}")
                     }
