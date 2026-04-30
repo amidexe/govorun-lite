@@ -22,8 +22,8 @@ android {
         applicationId = "com.govorun.lite"
         minSdk = 33
         targetSdk = 35
-        versionCode = 11
-        versionName = "1.0.9"
+        versionCode = 12
+        versionName = "1.0.10-rc1"
         ndk {
             abiFilters += "arm64-v8a"
         }
