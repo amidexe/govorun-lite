@@ -69,33 +69,17 @@ internal object InputFieldFilter {
         ) return true
         val variation = info.inputType and InputType.TYPE_MASK_VARIATION
         val klass = info.inputType and InputType.TYPE_MASK_CLASS
-        if (klass == InputType.TYPE_CLASS_TEXT &&
+        return klass == InputType.TYPE_CLASS_TEXT &&
             (variation == InputType.TYPE_TEXT_VARIATION_FILTER ||
                 variation == InputType.TYPE_TEXT_VARIATION_URI)
-        ) return true
-        // Hint-text fallback for apps that don't declare a standard
-        // search action / inputType but still expose a "Поиск" / "Search"
-        // placeholder. Telegram's chat-list search is the canonical
-        // case — it's a plain text field with hint "Поиск" and the
-        // standard "Done" action key. Most legitimate search fields
-        // follow the same convention across languages.
-        return matchesSearchHint(info.hintText)
+        // Detection is intentionally limited to the two language-independent
+        // signals above (IME action, input type variation). A previous
+        // version also matched the field's hint text against a regex of
+        // "поиск|найти|search|find" — that caught Telegram's chat-list
+        // search but required reading user-visible field content. Removed
+        // for a clean privacy story: with this implementation we only ever
+        // read technical bit flags from EditorInfo, never any text shown
+        // to the user. Trade-off: Telegram chat-list search and other
+        // fields with no IME_ACTION_SEARCH declared get the bubble.
     }
-
-    private fun matchesSearchHint(hint: CharSequence?): Boolean {
-        val text = hint?.toString()?.trim() ?: return false
-        if (text.isEmpty()) return false
-        return SEARCH_HINT_REGEX.containsMatchIn(text)
-    }
-
-    // Word-boundary match so "Поиск идей" doesn't trigger if the user
-    // has a creative field that happens to start with the word — but
-    // exact "Поиск", "Поиск чатов", "Найти", "Search...", etc do.
-    // Common shapes covered: just the keyword, keyword+space+anything,
-    // anything+space+keyword, three-language coverage (RU primary,
-    // EN secondary because Android system strings sometimes leak
-    // through, "Найти" because some Russian apps use that variant).
-    private val SEARCH_HINT_REGEX = Regex(
-        "(?i)\\b(поиск|найти|search|find)\\b"
-    )
 }
