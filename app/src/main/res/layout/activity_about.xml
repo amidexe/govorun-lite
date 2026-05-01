@@ -127,6 +127,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
+            <!-- Clickable action row: opens privacy policy in browser -->
+            <include
+                android:id="@+id/rowPrivacy"
+                layout="@layout/item_action_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
             <!-- Author section -->
             <com.google.android.material.textview.MaterialTextView
                 android:layout_width="match_parent"

@@ -75,6 +75,13 @@ class AboutActivity : AppCompatActivity() {
         licenses.setOnClickListener {
             startActivity(Intent(this, LicensesActivity::class.java))
         }
+
+        val privacy = findViewById<View>(R.id.rowPrivacy)
+        bindActionRow(
+            privacy, R.drawable.ic_shield_24,
+            R.string.about_action_privacy_title, R.string.about_action_privacy_sub
+        )
+        privacy.setOnClickListener { openExternal(getString(R.string.about_privacy_url)) }
     }
 
     private fun bindInfoRow(rowId: Int, iconRes: Int, titleRes: Int, bodyRes: Int) {
