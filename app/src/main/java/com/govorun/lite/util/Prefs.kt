@@ -19,7 +19,7 @@ object Prefs {
     // Version-suffixed so each release with new feature highlights re-shows
     // the card to existing users (their dismissal of the previous version's
     // card doesn't carry over). Bump the suffix when the card content changes.
-    private const val KEY_WHATS_NEW_HINT_DISMISSED = "whats_new_hint_dismissed_v108"
+    private const val KEY_WHATS_NEW_HINT_DISMISSED = "whats_new_hint_dismissed_v1010"
     private const val KEY_DICTIONARY = "dictionary_text"
     private const val KEY_DICTIONARY_ENABLED = "dictionary_enabled"
     private const val KEY_PAUSE_LENGTH = "pause_length"

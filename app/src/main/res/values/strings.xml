@@ -93,14 +93,9 @@
          doesn't compete with action items. Disappears for good after the
          user taps "Понятно". -->
     <string name="main_card_whats_new_title">Что нового</string>
-    <string name="main_card_whats_new_subhead_settings">В Настройках:</string>
-    <string name="main_card_whats_new_subhead_tile">В шторке Android:</string>
-    <string name="main_card_whats_new_subhead_mode">Новый режим:</string>
-    <string name="main_card_whats_new_tile_line">• Можно добавить плитку «Говорун» — быстро скрывать и показывать птичку</string>
-    <string name="main_card_whats_new_line1">• Длина паузы — теперь по умолчанию Средняя. Если нужна быстрая реакция, верните Короткую в Настройках</string>
-    <string name="main_card_whats_new_line2">• Свой словарь автозамен — для терминов, имён, аббревиатур</string>
-    <string name="main_card_whats_new_line3">• Размер, прозрачность и расположение птички</string>
-    <string name="main_card_whats_new_line4">• Удерживайте птичку для записи длинной фразы — отпустите, отправит текст</string>
+    <string name="main_card_whats_new_line1">• Новая настройка «Прятать в полях поиска» — птичка перестанет появляться на адресной строке браузера и в окнах поиска. Включается в Настройках.</string>
+    <string name="main_card_whats_new_line2">• Прозрачность бабла теперь регулируется до минимума — фон становится полностью прозрачным, остаётся только птичка.</string>
+    <string name="main_card_whats_new_line3">• Улучшена работа в некоторых мессенджерах — текст после отправки сообщения снова вставляется без перерывов.</string>
     <string name="main_card_whats_new_dismiss">Понятно</string>
     <string name="main_needs_setup_sub">Несколько мелочей надо подкрутить — карточки ниже подскажут, что и где.</string>
     <string name="main_disable_service">Выключить Говоруна</string>
@@ -195,6 +190,11 @@
     <!-- About: licenses action row -->
     <string name="about_action_licenses_title">Лицензии</string>
     <string name="about_action_licenses_sub">Тексты лицензий сторонних компонентов</string>
+
+    <!-- About: privacy policy action row -->
+    <string name="about_action_privacy_title">Политика конфиденциальности</string>
+    <string name="about_action_privacy_sub">Что приложение делает с вашими данными и условия использования</string>
+    <string name="about_privacy_url">https://amidexe.github.io/govorun-lite/privacy.html</string>
 
     <!-- Licenses screen -->
     <string name="licenses_title">Лицензии</string>

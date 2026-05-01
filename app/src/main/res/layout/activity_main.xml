@@ -458,14 +458,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="@string/main_card_whats_new_subhead_settings"
-                        android:textAppearance="?attr/textAppearanceLabelLarge"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
                         android:text="@string/main_card_whats_new_line1"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant" />
@@ -473,7 +465,7 @@
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
+                        android:layout_marginTop="8dp"
                         android:text="@string/main_card_whats_new_line2"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant" />
@@ -481,40 +473,8 @@
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
+                        android:layout_marginTop="8dp"
                         android:text="@string/main_card_whats_new_line3"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/main_card_whats_new_subhead_tile"
-                        android:textAppearance="?attr/textAppearanceLabelLarge"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/main_card_whats_new_tile_line"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/main_card_whats_new_subhead_mode"
-                        android:textAppearance="?attr/textAppearanceLabelLarge"
-                        android:textColor="?attr/colorOnSurface" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/main_card_whats_new_line4"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
