@@ -52,7 +52,7 @@ class TextInserter(
         if (rawText.isBlank()) return
         val replaced = Dictionary.applyReplacements(service, rawText)
         if (replaced != rawText) {
-            AppLog.log(service, "Dictionary applied: '${rawText.take(40)}' → '${replaced.take(40)}'")
+            AppLog.log(service, "Dictionary applied (raw=${rawText.length} → result=${replaced.length})")
         }
 
         val connection = imeProvider()?.currentInputConnection
@@ -65,7 +65,7 @@ class TextInserter(
         if (setTextOnFocusedEditable(replaced)) {
             StatsStore.addWords(service, StatsStore.countWords(replaced))
         } else {
-            AppLog.log(service, "Paste: all paths failed — dropping '${replaced.take(40)}'")
+            AppLog.log(service, "Paste: all paths failed — dropped len=${replaced.length}")
         }
     }
 
@@ -117,14 +117,13 @@ class TextInserter(
         node.refresh()
         val hint = node.hintText?.toString() ?: ""
         val rawText = node.text?.toString() ?: ""
-        // Telegram puts its placeholder string ("Сообщение" in Russian)
-        // directly into node.text instead of using the hint API. Recognise
-        // that exact string in the Telegram package as a placeholder. Real
-        // user content is never exactly equal to that single word, so the
-        // check is safe; it intentionally only covers the Russian
-        // placeholder — other locales need their own entries.
-        val isTelegramPlaceholder = rawText == "Сообщение" &&
-            node.packageName?.toString() == "org.telegram.messenger"
+        // Telegram puts its placeholder string directly into node.text instead
+        // of using the hint API. Recognise the known per-locale placeholders
+        // when we are in the Telegram package. Real user content is never
+        // exactly equal to a single placeholder word, so the check is safe.
+        val isTelegramPlaceholder =
+            node.packageName?.toString() == "org.telegram.messenger" &&
+                rawText in TELEGRAM_PLACEHOLDERS
         val isPlaceholderShowing = node.isShowingHintText ||
             (hint.isNotEmpty() && rawText == hint) ||
             isTelegramPlaceholder
@@ -158,5 +157,15 @@ class TextInserter(
     private fun prependSpaceIfNeeded(text: String, surroundingText: String?): String {
         val lastChar = surroundingText?.lastOrNull()
         return if (lastChar != null && !lastChar.isWhitespace()) " $text" else text
+    }
+
+    private companion object {
+        // Per-locale Telegram message-input placeholders. node.text exactly
+        // matching one of these (in the Telegram package) is treated as
+        // empty so we don't splice user dictation behind the placeholder.
+        private val TELEGRAM_PLACEHOLDERS = setOf(
+            "Сообщение",       // ru
+            "Message"          // en
+        )
     }
 }
