@@ -111,7 +111,7 @@ adb install --user 0 -r app/build/outputs/apk/debug/app-debug.apk
 
 ## Лицензия
 
-Код приложения — MIT, см. [LICENSE](LICENSE).
+Код приложения — MIT, см. [LICENSE](LICENSE). Приложение распространяется бесплатно как есть, без каких-либо гарантий — автор не несёт ответственности за возможный ущерб от использования.
 
 Сторонние компоненты и их лицензии перечислены в
 [THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES.txt):
