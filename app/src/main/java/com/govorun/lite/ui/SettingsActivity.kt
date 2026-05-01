@@ -3,6 +3,7 @@ package com.govorun.lite.ui
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import kotlin.math.roundToInt
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -74,6 +75,10 @@ class SettingsActivity : AppCompatActivity() {
         sizeSlider.valueFrom = Prefs.BUBBLE_SIZE_MIN
         sizeSlider.valueTo = Prefs.BUBBLE_SIZE_MAX
         sizeSlider.value = Prefs.getBubbleSize(this)
+        // Show the slider label as a percent of the base size (1.0 = 100%)
+        // instead of the raw float — it's the universal pattern for these
+        // kinds of UI controls and reads better than "0.85".
+        sizeSlider.setLabelFormatter { value -> "${(value * 100).roundToInt()}%" }
         sizeSlider.addOnChangeListener { _, value, fromUser ->
             if (!fromUser) return@addOnChangeListener
             Prefs.setBubbleSize(this, value)
@@ -87,6 +92,9 @@ class SettingsActivity : AppCompatActivity() {
         transparencySlider.valueFrom = Prefs.BUBBLE_ALPHA_MIN
         transparencySlider.valueTo = Prefs.BUBBLE_ALPHA_MAX
         transparencySlider.value = Prefs.getBubbleAlpha(this)
+        // Same percent formatting — alpha 0.857 → "86%", much easier to
+        // read than "0.857" or "0.142857".
+        transparencySlider.setLabelFormatter { value -> "${(value * 100).roundToInt()}%" }
         transparencySlider.addOnChangeListener { _, value, fromUser ->
             if (!fromUser) return@addOnChangeListener
             Prefs.setBubbleAlpha(this, value)
@@ -105,6 +113,15 @@ class SettingsActivity : AppCompatActivity() {
             Prefs.setHapticsEnabled(this, checked)
         }
         hapticsRow.setOnClickListener { hapticsSwitch.toggle() }
+
+        val hideInSearchSwitch = findViewById<MaterialSwitch>(R.id.hideInSearchSwitch)
+        val hideInSearchRow = findViewById<View>(R.id.hideInSearchRow)
+
+        hideInSearchSwitch.isChecked = Prefs.isHideInSearchEnabled(this)
+        hideInSearchSwitch.setOnCheckedChangeListener { _, checked ->
+            Prefs.setHideInSearchEnabled(this, checked)
+        }
+        hideInSearchRow.setOnClickListener { hideInSearchSwitch.toggle() }
 
         // Pause length — VAD silence threshold preset. "Короткая" preselects
         // for existing users (matches what shipped before 1.0.7); their
@@ -160,6 +177,7 @@ class SettingsActivity : AppCompatActivity() {
             Prefs.setBubbleSize(this, Prefs.BUBBLE_SIZE_DEFAULT)
             Prefs.setBubbleAlpha(this, Prefs.BUBBLE_ALPHA_DEFAULT)
             Prefs.setHapticsEnabled(this, false)
+            Prefs.setHideInSearchEnabled(this, false)
             Prefs.setBubbleSide(this, Prefs.BUBBLE_SIDE_RIGHT)
             // Reset Y too — "factory defaults" should put the bubble back to
             // the centre. A user who deliberately positioned it isn't going
@@ -170,6 +188,7 @@ class SettingsActivity : AppCompatActivity() {
             sizeSlider.value = Prefs.BUBBLE_SIZE_DEFAULT
             transparencySlider.value = Prefs.BUBBLE_ALPHA_DEFAULT
             hapticsSwitch.isChecked = false
+            hideInSearchSwitch.isChecked = false
             sideGroup.check(R.id.sideRight)
             pauseGroup.check(R.id.pauseShort)
             pauseHint.setText(hintForPause(Prefs.PAUSE_DEFAULT))

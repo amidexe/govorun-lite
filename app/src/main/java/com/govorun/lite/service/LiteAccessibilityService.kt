@@ -23,6 +23,7 @@ import com.govorun.lite.ui.MainActivity
 import com.govorun.lite.util.AccessibilityFrameworkCrashGuard
 import com.govorun.lite.util.AppLog
 import com.govorun.lite.util.Haptics
+import com.govorun.lite.util.Prefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -82,6 +83,18 @@ class LiteAccessibilityService : AccessibilityService() {
     @Volatile private var isVadActive = false
 
     private var accessibilityInputMethod: LiteAccessibilityInputMethod? = null
+
+    /** Debounces short SHOW transitions so that flicker bursts during
+     *  window-focus reshuffles (e.g. leaving a search field via Home
+     *  button — the search filter briefly lifts before the IME fully
+     *  hides) don't paint a one-frame bubble visible-then-gone. Hide
+     *  decisions are immediate; only show is delayed. 120 ms is long
+     *  enough to absorb most transitions, short enough to feel
+     *  responsive on a deliberate field tap. */
+    private val showDebounceHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val pendingShowRunnable = Runnable {
+        bubbleOverlay?.setVisibility(android.view.View.VISIBLE)
+    }
 
     // Accumulates sub-second speech durations from VAD callbacks. We only
     // store whole seconds in StatsStore (the UI shows minutes), but throwing
@@ -192,7 +205,14 @@ class LiteAccessibilityService : AccessibilityService() {
         // Hide on password fields anywhere in any app. Detection lives in
         // InputFieldFilter — see that file for the full rationale.
         val passwordField = InputFieldFilter.isPasswordField(accessibilityInputMethod)
-        val shouldShow = imeVisible && !locked && !passwordField
+        // Optional: hide on search fields too (Chrome address bar, app
+        // search boxes, system search). Off by default — existing users
+        // shouldn't suddenly find the bubble missing in places it used
+        // to appear. Power users who want this enable it in Settings;
+        // see InputFieldFilter.isSearchField for the detection logic.
+        val searchField = Prefs.isHideInSearchEnabled(this) &&
+            InputFieldFilter.isSearchField(accessibilityInputMethod)
+        val shouldShow = imeVisible && !locked && !passwordField && !searchField
 
         // In always-show mode the bubble stays on screen even when no IME
         // is up — the user explicitly opted into "voice-only" workflow via
@@ -204,15 +224,34 @@ class LiteAccessibilityService : AccessibilityService() {
         isImeVisible = shouldShow
 
         // Silence override beats everything — if the user explicitly put
-        // the bird to sleep, keep it hidden no matter what.
+        // the bird to sleep, keep it hidden no matter what. Always-show
+        // also intentionally bypasses the search filter: tile is the
+        // user's explicit "I want voice everywhere right now" toggle.
         val effectiveVisibility = when {
             manualSilence -> View.GONE
             manualAlwaysShow && !locked && !passwordField -> View.VISIBLE
             shouldShow -> View.VISIBLE
             else -> View.GONE
         }
-        bubbleOverlay?.setVisibility(effectiveVisibility)
-        AppLog.log(this, "Service: bubbleShow=$shouldShow ime=$imeVisible locked=$locked password=$passwordField alwaysShow=$manualAlwaysShow silence=$manualSilence pkg=$pkg")
+        applyVisibilityWithDebounce(effectiveVisibility)
+        AppLog.log(this, "Service: bubbleShow=$shouldShow ime=$imeVisible locked=$locked password=$passwordField search=$searchField alwaysShow=$manualAlwaysShow silence=$manualSilence pkg=$pkg")
+    }
+
+    /**
+     * Apply a new visibility to the bubble. Hides happen immediately;
+     * shows are debounced by ~120 ms so that brief transient SHOW
+     * decisions during window-focus shuffles (the search-field bug:
+     * leaving search field for Home momentarily flips !searchField=true
+     * before imeVisible flips to false) don't paint a single-frame
+     * bubble flicker.
+     */
+    private fun applyVisibilityWithDebounce(visibility: Int) {
+        showDebounceHandler.removeCallbacks(pendingShowRunnable)
+        if (visibility == View.VISIBLE) {
+            showDebounceHandler.postDelayed(pendingShowRunnable, 120L)
+        } else {
+            bubbleOverlay?.setVisibility(visibility)
+        }
     }
 
     /** Lazily created on first IME bind — TextInserter needs the service

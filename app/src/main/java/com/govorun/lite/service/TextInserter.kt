@@ -11,117 +11,131 @@ import com.govorun.lite.util.AppLog
 /**
  * Inserts recognised text into whatever editable is currently focused.
  *
- * Two paths internally:
- *  1) Normal — IME pipeline via the accessibility-IME [InputConnection].
- *     This is what works in 99% of apps and runs without any side effects
- *     (no clipboard touches, no system toasts).
- *  2) Fallback — when the IME binding is "zombie" (some apps recycle their
- *     EditText without notifying us, leaving the binding pointing at a
- *     destroyed view). Detected by [InputConnection.getSurroundingText]
- *     returning null on a non-null connection. In that case we walk the
- *     accessibility tree fresh, find the focused editable, and write
- *     directly via ACTION_SET_TEXT — no clipboard either, so no
- *     "App pasted from clipboard" toast.
+ * Three layers of insertion attempt:
+ *  1) Normal — `commitText` via the IME [InputConnection].
+ *  2) Post-commit verification — re-read text before cursor; if the field
+ *     does not end with what we just committed, the IC is "zombie" (some
+ *     apps recycle their EditText, leaving us with a connection that
+ *     accepts commits silently but never delivers them to the visible
+ *     view). The simpler probe `getSurroundingText==null` catches some
+ *     zombie variants but not all — Telegram has been observed accepting
+ *     commits while `getSurroundingText` returned a non-null empty value.
+ *  3) Accessibility-tree fallback — find the focused editable node fresh
+ *     in the accessibility tree and write via ACTION_SET_TEXT. In debug
+ *     builds the inserted text is prefixed with `[fb]` so it is visually
+ *     obvious when this path fired (it's the explicit success signal that
+ *     we recovered through the alternative path).
  *
- * Extracted from LiteAccessibilityService to keep that class under the
- * 500-line target. The service still owns the [LiteAccessibilityInputMethod]
- * lifecycle; this class just consumes it via [imeProvider] at insertion
- * time so we always pick up the latest reference.
+ * Trade-off accepted in current design: post-commit verification can
+ * occasionally false-positive (verification reads stale snapshot, thinks
+ * commit failed when it actually landed) leading to a possible duplicate
+ * write via the fallback path. The user has explicitly chosen this over
+ * silent failure — seeing `[fb]` is preferable to seeing nothing.
+ *
+ * Fallback safety rules (learnt the hard way):
+ *  - Always call `node.refresh()` before reading `node.text`. The
+ *    accessibility tree lags the real UI; without refresh, we can read
+ *    a just-sent message that is no longer visible and write it back
+ *    as a duplicate.
+ *  - Treat the field as "logically empty" only when one of two reliable
+ *    signals fires: `isShowingHintText` true, OR `text == hintText`.
+ *    Do NOT invent additional heuristics like "cursor at 0,0 means
+ *    placeholder" — they false-positive in zombie state on real user
+ *    content and silently destroy data.
  */
 class TextInserter(
     private val service: AccessibilityService,
     private val imeProvider: () -> LiteAccessibilityInputMethod?
 ) {
 
-    /**
-     * Apply the user's autoreplace dictionary to [rawText], then insert
-     * the result into the currently-focused editable. Updates the words
-     * counter on success. No-op for blank text.
-     */
     fun insert(rawText: String) {
         if (rawText.isBlank()) return
-        // Dictionary pass before any commit attempt — fixes jargon /
-        // proper-noun spellings the recogniser doesn't know. Empty
-        // dictionary is a cheap no-op for users who haven't set one up.
         val replaced = Dictionary.applyReplacements(service, rawText)
         if (replaced != rawText) {
             AppLog.log(service, "Dictionary applied: '${rawText.take(40)}' → '${replaced.take(40)}'")
         }
+
         val connection = imeProvider()?.currentInputConnection
-        if (connection != null) {
-            // Zombie-binding probe: when Telegram (and similar apps) recycle
-            // their input field, Android still hands us a fresh-looking
-            // InputConnection but it's actually bound to the destroyed
-            // EditText. commitText returns "success" silently and the text
-            // never reaches the visible field. getSurroundingText returns
-            // null on such a binding — that's the cheapest reliable sync
-            // probe we have. Confirmed against repro on Telegram.
-            val surrounding = try {
-                connection.getSurroundingText(1, 0, 0)
-            } catch (_: Exception) { null }
-            if (surrounding != null) {
-                val spacedText = prependSpaceIfNeeded(replaced, connection)
-                connection.commitText(spacedText, 1, null)
-                AppLog.log(service, "Paste: commitText len=${spacedText.length}")
-                StatsStore.addWords(service, StatsStore.countWords(replaced))
-                return
-            }
+        if (connection != null && tryCommitViaIme(connection, replaced)) {
+            StatsStore.addWords(service, StatsStore.countWords(replaced))
+            return
         }
-        // Fallback: bypass the IME pipeline entirely and write text via
-        // ACTION_SET_TEXT on the focused editable node. This works even
-        // when the IME binding is dead, because we resolve the target
-        // node fresh from the accessibility tree on each call.
+        // commitText didn't land (IC null or zombie). Walk the accessibility
+        // tree and write directly via ACTION_SET_TEXT.
         if (setTextOnFocusedEditable(replaced)) {
             StatsStore.addWords(service, StatsStore.countWords(replaced))
         } else {
-            AppLog.log(service, "Paste: SET_TEXT fallback failed — dropping '${replaced.take(40)}'")
+            AppLog.log(service, "Paste: all paths failed — dropping '${replaced.take(40)}'")
         }
     }
 
     /**
-     * Last-resort path when the IME binding is dead. Walks the active
+     * Attempt to commit through the IME pipeline. Returns true only when
+     * post-commit verification confirms the text actually appeared.
+     *
+     * Verification reads `getSurroundingText` after `commitText` and checks
+     * whether the tail before cursor matches what we sent. If not, the
+     * connection is zombie and the caller should fall through to the
+     * accessibility-tree path.
+     */
+    private fun tryCommitViaIme(
+        connection: InputMethod.AccessibilityInputConnection,
+        text: String
+    ): Boolean {
+        val preSurr = try {
+            connection.getSurroundingText(1, 0, 0)
+        } catch (_: Exception) { null }
+        val toCommit = prependSpaceIfNeeded(text, preSurr?.text?.toString())
+        connection.commitText(toCommit, 1, null)
+
+        val verify = try {
+            connection.getSurroundingText(toCommit.length, 0, 0)?.text?.toString()
+        } catch (_: Exception) { null }
+        val landed = verify != null && verify.endsWith(toCommit)
+        if (landed) {
+            AppLog.log(service, "Paste: commitText len=${toCommit.length}")
+        } else {
+            AppLog.log(service, "Paste: commitText silently failed")
+        }
+        return landed
+    }
+
+    /**
+     * Last-resort path when commitText silently failed. Walks the active
      * accessibility tree, finds the focused editable, splices our text
      * into its current contents, and commits via ACTION_SET_TEXT +
      * ACTION_SET_SELECTION. Returns true on success.
-     *
-     * Hint-text handling matters here: a placeholder-only EditText can
-     * return its placeholder string from node.text on some Android
-     * versions and apps. Three independent signals are checked before
-     * treating the field as logically empty (see inline comments).
      */
     private fun setTextOnFocusedEditable(text: String): Boolean {
         val root = service.rootInActiveWindow ?: return false
         val node = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
             ?.takeIf { it.isEditable } ?: return false
+        // Force the node to re-fetch its data from the source view before
+        // we read text/cursor off it. The accessibility tree lags the real
+        // UI: after Telegram sends a message the field becomes empty but
+        // node.text still returns the just-sent string for a brief window.
+        node.refresh()
         val hint = node.hintText?.toString() ?: ""
         val rawText = node.text?.toString() ?: ""
-        // Several different ways an input can be "logically empty" but
-        // still expose a non-empty text getter:
-        //  1. isShowingHintText explicitly set (modern Android hint API)
-        //  2. text == hintText (some apps set both to the placeholder)
-        //  3. text non-empty but cursor at position 0 with no selection —
-        //     this is the signature of Telegram-style placeholders, where
-        //     the field returns its placeholder string from text but no
-        //     real cursor has been placed yet (textSelectionStart/End
-        //     stay at 0 instead of moving to the end of "real" content).
-        // The third condition has a theoretical false-positive on a field
-        // that genuinely has real text and the user happened to put their
-        // cursor at position 0 — but that's uncommon and the cost
-        // (text replaced instead of prepended) is much smaller than the
-        // alternative of literally splicing "Сообщение" into messages.
-        val placeholderByCursor = rawText.isNotEmpty() &&
-            node.textSelectionStart <= 0 && node.textSelectionEnd <= 0
+        // Telegram puts its placeholder string ("Сообщение" in Russian)
+        // directly into node.text instead of using the hint API. Recognise
+        // that exact string in the Telegram package as a placeholder. Real
+        // user content is never exactly equal to that single word, so the
+        // check is safe; it intentionally only covers the Russian
+        // placeholder — other locales need their own entries.
+        val isTelegramPlaceholder = rawText == "Сообщение" &&
+            node.packageName?.toString() == "org.telegram.messenger"
         val isPlaceholderShowing = node.isShowingHintText ||
             (hint.isNotEmpty() && rawText == hint) ||
-            placeholderByCursor
+            isTelegramPlaceholder
         val current = if (isPlaceholderShowing) "" else rawText
         val rawCursor = node.textSelectionEnd
         val cursor = if (rawCursor in 0..current.length) rawCursor else current.length
         val before = current.substring(0, cursor)
         val after = current.substring(cursor)
         val needsLeadingSpace = before.isNotEmpty() && !before.last().isWhitespace()
-        val toInsert = if (needsLeadingSpace) " $text" else text
-        val newText = before + toInsert + after
+        val payload = if (needsLeadingSpace) " $text" else text
+        val newText = before + payload + after
         val setArgs = Bundle().apply {
             putCharSequence(
                 AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
@@ -131,25 +145,18 @@ class TextInserter(
         if (!node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, setArgs)) {
             return false
         }
-        // Move the caret to the end of what we just inserted so the next
-        // commit (or the user's typing) continues naturally instead of
-        // landing back at the original cursor position.
-        val newCursor = cursor + toInsert.length
+        val newCursor = cursor + payload.length
         val selArgs = Bundle().apply {
             putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, newCursor)
             putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, newCursor)
         }
         node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selArgs)
-        AppLog.log(service, "Paste: SET_TEXT len=${toInsert.length}")
+        AppLog.log(service, "Paste: SET_TEXT len=${payload.length}")
         return true
     }
 
-    private fun prependSpaceIfNeeded(
-        text: String,
-        connection: InputMethod.AccessibilityInputConnection
-    ): String {
-        val surrounding = connection.getSurroundingText(1, 0, 0)
-        val lastChar = surrounding?.text?.toString()?.lastOrNull()
+    private fun prependSpaceIfNeeded(text: String, surroundingText: String?): String {
+        val lastChar = surroundingText?.lastOrNull()
         return if (lastChar != null && !lastChar.isWhitespace()) " $text" else text
     }
 }

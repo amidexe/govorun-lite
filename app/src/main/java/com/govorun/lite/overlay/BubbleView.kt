@@ -60,6 +60,14 @@ class BubbleView @JvmOverloads constructor(
         com.google.android.material.R.attr.colorOnPrimaryContainer,
         fallbackIdleTint
     ) or 0xFF000000.toInt()
+    // Bare-bird tint — used when the bubble background is fully transparent
+    // (idleAlphaFraction approaches 0). colorOnSurface adapts to the current
+    // theme: dark on light backgrounds, light on dark backgrounds — so the
+    // outline stays readable on any wallpaper or app behind us.
+    private var bareBirdTint = readThemeRgb(
+        com.google.android.material.R.attr.colorOnSurface,
+        fallbackIdleTint
+    ) or 0xFF000000.toInt()
     private var haloBaseColor = readThemeRgb(
         com.google.android.material.R.attr.colorPrimaryContainer,
         recordingFill
@@ -68,7 +76,7 @@ class BubbleView @JvmOverloads constructor(
     // User-configurable fill alpha (from Prefs; see Prefs.BUBBLE_ALPHA_*).
     // Held separately so refreshThemeColors() never resets it. Kept in sync
     // with Prefs.BUBBLE_ALPHA_DEFAULT — if you change one, change both.
-    private var idleAlphaFraction: Float = 0.85f
+    private var idleAlphaFraction: Float = 12f / 14f
 
     private val basePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = composeIdleFill()
@@ -180,6 +188,10 @@ class BubbleView @JvmOverloads constructor(
             com.google.android.material.R.attr.colorOnPrimaryContainer,
             fallbackIdleTint
         ) or 0xFF000000.toInt()
+        bareBirdTint = readThemeRgb(
+            com.google.android.material.R.attr.colorOnSurface,
+            fallbackIdleTint
+        ) or 0xFF000000.toInt()
         haloBaseColor = readThemeRgb(
             com.google.android.material.R.attr.colorPrimaryContainer,
             recordingFill
@@ -241,7 +253,16 @@ class BubbleView @JvmOverloads constructor(
         //    Dynamic-Colors palette. Icon scales with the bubble so the
         //    proportions stay right during the breathing animation.
         birdIcon?.let {
-            val birdTint = if (isRecording || isProcessing) recordingBirdTint else idleBirdTint
+            // Recording / processing keep their fixed tints — the bird must
+            // read crisp white on red regardless of how transparent the user
+            // made the idle bubble. In idle, smoothly interpolate between
+            // bareBirdTint (works on any wallpaper, used at alpha≈0) and
+            // idleBirdTint (high contrast against colorPrimaryContainer
+            // disc, used at alpha≈1) by the current alpha fraction.
+            val birdTint = when {
+                isRecording || isProcessing -> recordingBirdTint
+                else -> lerpColor(bareBirdTint, idleBirdTint, idleAlphaFraction)
+            }
             it.setTint(birdTint)
             val l = (cx - scaledIcon / 2).toInt()
             val t = (cy - scaledIcon / 2).toInt()
@@ -329,5 +350,19 @@ class BubbleView @JvmOverloads constructor(
     private fun composeIdleFill(): Int {
         val a = (idleAlphaFraction.coerceIn(0f, 1f) * 255).toInt()
         return (a shl 24) or (idleFillRgb and 0x00FFFFFF)
+    }
+
+    /** Linear interpolation between two ARGB colours. Used to smoothly
+     *  transition the bird tint from colorOnSurface (at alpha=0, "bare
+     *  outline that reads on any wallpaper") to colorOnPrimaryContainer
+     *  (at alpha=1, "high contrast against the filled disc"). */
+    private fun lerpColor(from: Int, to: Int, t: Float): Int {
+        val tt = t.coerceIn(0f, 1f)
+        fun ch(shift: Int): Int {
+            val a = (from shr shift) and 0xFF
+            val b = (to shr shift) and 0xFF
+            return a + ((b - a) * tt).toInt()
+        }
+        return (ch(24) shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
     }
 }

@@ -179,11 +179,16 @@ class BubbleOverlayController(
         val fresh = BubbleView(bubbleContext()).apply {
             setIdleAlpha(Prefs.getBubbleAlpha(service))
             visibility = if (initiallyVisible) View.VISIBLE else View.GONE
-            // Force GPU layer for the bubble itself so its draw passes
-            // never fall back to software rendering. Combined with the
-            // HARDWARE_ACCELERATED window flag above, this keeps the
-            // overlay on the GPU end-to-end during drag.
-            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+            // Note: previously this view was wrapped in a hardware layer
+            // via setLayerType(LAYER_TYPE_HARDWARE) on the assumption it
+            // would help drag perf. The actual drag lag we were chasing
+            // turned out to be SurfaceFlinger composition, not view
+            // rendering — and a hardware layer is counterproductive for
+            // a view that animates its own contents (halo pulse,
+            // recording pulse) because every invalidate() re-uploads
+            // the cached texture. The window-level FLAG_HARDWARE_ACCELERATED
+            // already guarantees GPU rendering for the surface; this
+            // extra layer was redundant work.
         }
         installTouchListener(fresh, params)
         try { windowManager.addView(fresh, params) } catch (e: Exception) {

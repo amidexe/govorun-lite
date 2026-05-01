@@ -141,6 +141,8 @@
     <string name="settings_transparency_body">Насколько бабл просвечивает фон приложения, поверх которого он появляется.</string>
     <string name="settings_haptics_title">Вибрация</string>
     <string name="settings_haptics_body">Короткая вибрация, когда запись начинается и заканчивается.</string>
+    <string name="settings_hide_in_search_title">Прятать в полях поиска</string>
+    <string name="settings_hide_in_search_body">Птичка не появляется в строках поиска (адресная строка браузера, поиск в магазине, поиск внутри приложения).</string>
     <!-- Show-service row labels: title shows current state, body explains
          what tapping does. Toggle row tap leads to a confirmation dialog
          (main_disable_service_*) — the switch itself is non-interactive

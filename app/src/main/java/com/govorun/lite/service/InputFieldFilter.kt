@@ -2,6 +2,7 @@ package com.govorun.lite.service
 
 import android.accessibilityservice.InputMethod
 import android.text.InputType
+import android.view.inputmethod.EditorInfo
 
 /**
  * Filters that decide whether the bubble should be visible based on the
@@ -38,4 +39,63 @@ internal object InputFieldFilter {
             else -> false
         }
     }
+
+    /**
+     * True if the IME is bound to a search-style or address-bar-style
+     * input — the user is typing to find/navigate, not to compose. These
+     * places usually feel cluttered with our bubble overlapping the
+     * keyboard. Catch four distinct signals:
+     *
+     *   - imeOptions IME_ACTION_SEARCH — explicit "Search" action key
+     *     (Play Store search, system search, Telegram chat-list search,
+     *     in-app search of all kinds)
+     *   - imeOptions IME_ACTION_GO — explicit "Go" action key (Chrome
+     *     omnibox and other browser address bars, "open URL" prompts)
+     *   - inputType TYPE_TEXT_VARIATION_URI — declared URL input
+     *     (browser address bars even when imeOptions doesn't say GO,
+     *     URL prompts in apps)
+     *   - inputType TYPE_TEXT_VARIATION_FILTER — declared filter input
+     *     (filterable list searches, dropdown filters)
+     *
+     * Power users who do want voice search can enable the «Говорун:
+     * всегда» Quick Settings tile to bypass this filter for the whole
+     * session — it's the explicit "voice everywhere" override.
+     */
+    fun isSearchField(inputMethod: InputMethod?): Boolean {
+        val info = inputMethod?.currentInputEditorInfo ?: return false
+        val action = info.imeOptions and EditorInfo.IME_MASK_ACTION
+        if (action == EditorInfo.IME_ACTION_SEARCH ||
+            action == EditorInfo.IME_ACTION_GO
+        ) return true
+        val variation = info.inputType and InputType.TYPE_MASK_VARIATION
+        val klass = info.inputType and InputType.TYPE_MASK_CLASS
+        if (klass == InputType.TYPE_CLASS_TEXT &&
+            (variation == InputType.TYPE_TEXT_VARIATION_FILTER ||
+                variation == InputType.TYPE_TEXT_VARIATION_URI)
+        ) return true
+        // Hint-text fallback for apps that don't declare a standard
+        // search action / inputType but still expose a "Поиск" / "Search"
+        // placeholder. Telegram's chat-list search is the canonical
+        // case — it's a plain text field with hint "Поиск" and the
+        // standard "Done" action key. Most legitimate search fields
+        // follow the same convention across languages.
+        return matchesSearchHint(info.hintText)
+    }
+
+    private fun matchesSearchHint(hint: CharSequence?): Boolean {
+        val text = hint?.toString()?.trim() ?: return false
+        if (text.isEmpty()) return false
+        return SEARCH_HINT_REGEX.containsMatchIn(text)
+    }
+
+    // Word-boundary match so "Поиск идей" doesn't trigger if the user
+    // has a creative field that happens to start with the word — but
+    // exact "Поиск", "Поиск чатов", "Найти", "Search...", etc do.
+    // Common shapes covered: just the keyword, keyword+space+anything,
+    // anything+space+keyword, three-language coverage (RU primary,
+    // EN secondary because Android system strings sometimes leak
+    // through, "Найти" because some Russian apps use that variant).
+    private val SEARCH_HINT_REGEX = Regex(
+        "(?i)\\b(поиск|найти|search|find)\\b"
+    )
 }

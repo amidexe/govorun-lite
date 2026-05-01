@@ -82,6 +82,7 @@
                     android:id="@+id/sideToggleGroup"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
                     android:layout_marginTop="8dp"
                     app:singleSelection="true"
                     app:selectionRequired="true">
@@ -181,8 +182,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:stepSize="0.05"
-                    android:valueFrom="0.4"
+                    android:stepSize="0.07142857"
+                    android:valueFrom="0.0"
                     android:valueTo="1.0" />
 
             </LinearLayout>
@@ -242,6 +243,59 @@
                 android:layout_marginVertical="8dp"
                 android:background="?attr/colorOutlineVariant" />
 
+            <!-- Hide-in-search toggle — opt-in. Off by default so existing
+                 users see no behaviour change. Useful for users who feel
+                 the bubble is visual noise in browser address bars and
+                 in-app search boxes (where they want to type quickly via
+                 the keyboard, not voice). -->
+            <LinearLayout
+                android:id="@+id/hideInSearchRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:minHeight="72dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_hide_in_search_title"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/settings_hide_in_search_body"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/hideInSearchSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginVertical="8dp"
+                android:background="?attr/colorOutlineVariant" />
+
             <!-- Pause length — VAD silence threshold preset. Default Short
                  matches the value shipped in 1.0.6 and earlier; existing
                  users see no behaviour change. Long is what RuStore feedback
@@ -274,6 +328,7 @@
                     android:id="@+id/pauseToggleGroup"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
                     android:layout_marginTop="8dp"
                     app:singleSelection="true"
                     app:selectionRequired="true">

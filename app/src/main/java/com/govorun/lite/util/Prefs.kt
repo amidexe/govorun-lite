@@ -11,6 +11,7 @@ object Prefs {
 
     private const val FILE_NAME = "govorun_lite_prefs"
     private const val KEY_HAPTICS_ENABLED = "haptics_enabled"
+    private const val KEY_HIDE_IN_SEARCH = "hide_in_search"
     private const val KEY_BUBBLE_ALPHA = "bubble_alpha"
     private const val KEY_BUBBLE_SIZE = "bubble_size"
     private const val KEY_BUBBLE_Y = "bubble_y"
@@ -48,18 +49,26 @@ object Prefs {
     const val PAUSE_MEDIUM_SECONDS = 1.0f
     const val PAUSE_LONG_SECONDS = 2.0f
 
-    // Clamp range for the bubble fill alpha. The floor (0.4) keeps the
-    // bubble visible enough that the bird silhouette is still recognisable
-    // on any wallpaper — allowing lower values leads to "where did it go?"
-    // support questions. Ceiling 1.0 is fully opaque.
-    const val BUBBLE_ALPHA_MIN = 0.4f
+    // Clamp range for the bubble fill alpha. Floor 0.0 = fully transparent
+    // background, only the bird silhouette visible. When idleAlphaFraction
+    // approaches zero, BubbleView smoothly switches the bird tint toward
+    // colorOnSurface — the MD3 "always readable on system surface" colour
+    // that follows light/dark theme — so the outline stays visible on any
+    // wallpaper or app underneath. Ceiling 1.0 is fully opaque.
+    const val BUBBLE_ALPHA_MIN = 0.0f
     const val BUBBLE_ALPHA_MAX = 1.0f
-    const val BUBBLE_ALPHA_STEP = 0.05f
-    // Slight translucency by default — enough to blend the bubble with a
-    // patterned wallpaper, not so much that it becomes hard to spot. Must
-    // land on the slider step (0.4 + N × 0.05) or the M3 Slider throws
-    // IllegalStateException on setValue.
-    const val BUBBLE_ALPHA_DEFAULT = 0.85f
+    // 14 intervals (15 positions) — same count as the size slider so the
+    // two sliders feel similar. Range here is wider (1.0 vs 0.7), so the
+    // step value is smaller (1/14 ≈ 0.0714 vs size's 0.05). Existing
+    // off-grid stored values are snapped to the nearest position by
+    // snapBubbleAlpha() on read, so users see at most a one-position
+    // shift after upgrade.
+    const val BUBBLE_ALPHA_STEP = 1f / 14f
+    // Slight translucency by default — enough to blend with a patterned
+    // wallpaper, not so much that the bird gets lost. Lands on the
+    // grid: 12 × (1/14) = 0.857, closest grid stop to the original 0.85
+    // so existing users get the same visual.
+    const val BUBBLE_ALPHA_DEFAULT = 12f / 14f
 
     // Default ON since 1.0.4 — vibration is a "feature" we want users to
     // experience out of the box. The MainActivity shows a one-time FYI card
@@ -73,6 +82,21 @@ object Prefs {
         context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_HAPTICS_ENABLED, enabled)
+            .apply()
+    }
+
+    /** Whether the bubble should hide itself when an active search field
+     *  has focus (Chrome address bar, app search boxes, etc). Off by
+     *  default — existing users mustn't suddenly find the bubble missing
+     *  in places it used to appear. Surfaced as a Settings toggle. */
+    fun isHideInSearchEnabled(context: Context): Boolean =
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_HIDE_IN_SEARCH, false)
+
+    fun setHideInSearchEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_HIDE_IN_SEARCH, enabled)
             .apply()
     }
 
@@ -115,9 +139,12 @@ object Prefs {
     private fun snapBubbleSize(value: Float): Float {
         val clamped = value.coerceIn(BUBBLE_SIZE_MIN, BUBBLE_SIZE_MAX)
         val steps = Math.round((clamped - BUBBLE_SIZE_MIN) / BUBBLE_SIZE_STEP)
-        val raw = BUBBLE_SIZE_MIN + steps * BUBBLE_SIZE_STEP
-        val rounded = Math.round(raw * 100f) / 100f
-        return rounded.coerceIn(BUBBLE_SIZE_MIN, BUBBLE_SIZE_MAX)
+        // No extra 2-decimal rounding here — same reasoning as
+        // snapBubbleAlpha. Step 0.05 happens to be 2-decimal-clean today
+        // so the previous version didn't crash, but the rounding would
+        // misalign any future step that isn't (e.g. 1/14 = 0.0714...).
+        val snapped = BUBBLE_SIZE_MIN + steps * BUBBLE_SIZE_STEP
+        return snapped.coerceIn(BUBBLE_SIZE_MIN, BUBBLE_SIZE_MAX)
     }
 
     // WindowManager Y offset of the floating bubble — set after the user
@@ -244,15 +271,17 @@ object Prefs {
     }
 
     // Always land on a multiple of the slider step — M3 Slider throws if
-    // setValue() is called with anything between two steps, so we keep the
-    // pref storage aligned too. Rounded to 2 decimal places to neutralise
-    // float drift (0.4f + 9 * 0.05f = 0.8500001f, which would squeak past
-    // the current Slider tolerance but could break in a future release).
+    // setValue() is called with anything between two steps. Compute via
+    // step-index then multiply back: the result has the same float
+    // representation that the Slider's own validateValues path computes
+    // from stepSize, so they match. (An earlier version rounded to two
+    // decimal places to "neutralise float drift", but that produced
+    // 0.14 from a real grid stop of 0.142857 — Slider rejected it,
+    // crashing SettingsActivity.onCreate.)
     private fun snapBubbleAlpha(value: Float): Float {
         val clamped = value.coerceIn(BUBBLE_ALPHA_MIN, BUBBLE_ALPHA_MAX)
         val steps = Math.round((clamped - BUBBLE_ALPHA_MIN) / BUBBLE_ALPHA_STEP)
-        val raw = BUBBLE_ALPHA_MIN + steps * BUBBLE_ALPHA_STEP
-        val rounded = Math.round(raw * 100f) / 100f
-        return rounded.coerceIn(BUBBLE_ALPHA_MIN, BUBBLE_ALPHA_MAX)
+        val snapped = BUBBLE_ALPHA_MIN + steps * BUBBLE_ALPHA_STEP
+        return snapped.coerceIn(BUBBLE_ALPHA_MIN, BUBBLE_ALPHA_MAX)
     }
 }
