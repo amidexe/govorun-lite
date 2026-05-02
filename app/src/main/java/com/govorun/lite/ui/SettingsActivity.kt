@@ -123,6 +123,53 @@ class SettingsActivity : AppCompatActivity() {
         }
         hideInSearchRow.setOnClickListener { hideInSearchSwitch.toggle() }
 
+        val keepScreenSwitch = findViewById<MaterialSwitch>(R.id.keepScreenSwitch)
+        val keepScreenRow = findViewById<View>(R.id.keepScreenRow)
+        val keepScreenBody = findViewById<MaterialTextView>(R.id.keepScreenBody)
+        val autoStopRow = findViewById<View>(R.id.autoStopRow)
+        val autoStopGroup = findViewById<MaterialButtonToggleGroup>(R.id.autoStopToggleGroup)
+
+        // Show/hide the auto-stop picker based on the keep-screen-on toggle.
+        // When the toggle is OFF the system screen timeout already kills the
+        // session via screenOffReceiver well before any wall-clock cap could
+        // fire, so the picker would just be confusing dead UI.
+        fun applyAutoStopVisibility(keepScreenOn: Boolean) {
+            autoStopRow.visibility = if (keepScreenOn) View.VISIBLE else View.GONE
+        }
+        fun applyKeepScreenBody(checked: Boolean) {
+            keepScreenBody.setText(
+                if (checked) R.string.settings_keep_screen_body_on
+                else R.string.settings_keep_screen_body_off
+            )
+        }
+
+        keepScreenSwitch.isChecked = Prefs.isKeepScreenOnEnabled(this)
+        applyKeepScreenBody(keepScreenSwitch.isChecked)
+        applyAutoStopVisibility(keepScreenSwitch.isChecked)
+        keepScreenSwitch.setOnCheckedChangeListener { _, checked ->
+            Prefs.setKeepScreenOnEnabled(this, checked)
+            applyKeepScreenBody(checked)
+            applyAutoStopVisibility(checked)
+        }
+        keepScreenRow.setOnClickListener { keepScreenSwitch.toggle() }
+
+        autoStopGroup.check(when (Prefs.getAutoStopMinutes(this)) {
+            Prefs.AUTO_STOP_15M -> R.id.autoStop15m
+            Prefs.AUTO_STOP_3H -> R.id.autoStop3h
+            Prefs.AUTO_STOP_OFF -> R.id.autoStopOff
+            else -> R.id.autoStop1h
+        })
+        autoStopGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val minutes = when (checkedId) {
+                R.id.autoStop15m -> Prefs.AUTO_STOP_15M
+                R.id.autoStop3h -> Prefs.AUTO_STOP_3H
+                R.id.autoStopOff -> Prefs.AUTO_STOP_OFF
+                else -> Prefs.AUTO_STOP_1H
+            }
+            Prefs.setAutoStopMinutes(this, minutes)
+        }
+
         // Pause length — VAD silence threshold preset. "Короткая" preselects
         // for existing users (matches what shipped before 1.0.7); their
         // experience is unchanged unless they actively switch.
@@ -184,6 +231,8 @@ class SettingsActivity : AppCompatActivity() {
             // to hit Reset; anyone who does expects everything reverted.
             Prefs.setBubbleY(this, 0)
             Prefs.setPauseLength(this, Prefs.PAUSE_DEFAULT)
+            Prefs.setKeepScreenOnEnabled(this, false)
+            Prefs.setAutoStopMinutes(this, Prefs.AUTO_STOP_DEFAULT)
 
             sizeSlider.value = Prefs.BUBBLE_SIZE_DEFAULT
             transparencySlider.value = Prefs.BUBBLE_ALPHA_DEFAULT
@@ -192,6 +241,10 @@ class SettingsActivity : AppCompatActivity() {
             sideGroup.check(R.id.sideRight)
             pauseGroup.check(R.id.pauseShort)
             pauseHint.setText(hintForPause(Prefs.PAUSE_DEFAULT))
+            keepScreenSwitch.isChecked = false
+            applyKeepScreenBody(false)
+            applyAutoStopVisibility(false)
+            autoStopGroup.check(R.id.autoStop1h)
 
             previewBubble.applySizeScaleFromPrefs()
             previewBubble.setIdleAlpha(Prefs.BUBBLE_ALPHA_DEFAULT)

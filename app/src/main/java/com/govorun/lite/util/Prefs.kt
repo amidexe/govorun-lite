@@ -19,10 +19,12 @@ object Prefs {
     // Version-suffixed so each release with new feature highlights re-shows
     // the card to existing users (their dismissal of the previous version's
     // card doesn't carry over). Bump the suffix when the card content changes.
-    private const val KEY_WHATS_NEW_HINT_DISMISSED = "whats_new_hint_dismissed_v1010"
+    private const val KEY_WHATS_NEW_HINT_DISMISSED = "whats_new_hint_dismissed_v1011"
     private const val KEY_DICTIONARY = "dictionary_text"
     private const val KEY_DICTIONARY_ENABLED = "dictionary_enabled"
     private const val KEY_PAUSE_LENGTH = "pause_length"
+    private const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
+    private const val KEY_AUTO_STOP_MINUTES = "auto_stop_minutes"
     // One-shot flag: marks that we've already run the 1.0.8 migration that
     // bumps existing users from Short → Medium. Without this we'd reset
     // the pref on every cold start, which would override the user's
@@ -247,6 +249,55 @@ object Prefs {
         PAUSE_MEDIUM -> PAUSE_MEDIUM_SECONDS
         PAUSE_LONG -> PAUSE_LONG_SECONDS
         else -> PAUSE_SHORT_SECONDS
+    }
+
+    // "Keep screen on while listening" — opt-in override of the default
+    // hands-off behaviour. OFF (default since 1.0.11): the bubble does not
+    // hold FLAG_KEEP_SCREEN_ON, so the screen sleeps per the user's system
+    // timeout exactly like any other app, and the existing screenOffReceiver
+    // stops recording automatically. ON: hold the flag for the whole session,
+    // matching the pre-1.0.11 behaviour (intended for users with phone on
+    // charger, wall-mounted tablet, long-form dictation).
+    fun isKeepScreenOnEnabled(context: Context): Boolean =
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_KEEP_SCREEN_ON, false)
+
+    fun setKeepScreenOnEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_KEEP_SCREEN_ON, enabled)
+            .apply()
+    }
+
+    // Wall-clock cap on a single recording session. Only relevant when
+    // Keep-Screen-On is ON (otherwise the system screen timeout already
+    // ends the session via screenOffReceiver). Stored as minutes; 0 means
+    // "no cap". Surfaced as a 4-button toggle in Settings only when the
+    // Keep-Screen-On switch above it is enabled.
+    const val AUTO_STOP_15M = 15
+    const val AUTO_STOP_1H = 60
+    const val AUTO_STOP_3H = 180
+    const val AUTO_STOP_OFF = 0
+    const val AUTO_STOP_DEFAULT = AUTO_STOP_1H
+
+    fun getAutoStopMinutes(context: Context): Int {
+        val raw = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .getInt(KEY_AUTO_STOP_MINUTES, AUTO_STOP_DEFAULT)
+        return when (raw) {
+            AUTO_STOP_15M, AUTO_STOP_1H, AUTO_STOP_3H, AUTO_STOP_OFF -> raw
+            else -> AUTO_STOP_DEFAULT
+        }
+    }
+
+    fun setAutoStopMinutes(context: Context, minutes: Int) {
+        require(minutes == AUTO_STOP_15M || minutes == AUTO_STOP_1H ||
+                minutes == AUTO_STOP_3H || minutes == AUTO_STOP_OFF) {
+            "Invalid auto-stop minutes: $minutes"
+        }
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_AUTO_STOP_MINUTES, minutes)
+            .apply()
     }
 
     /**

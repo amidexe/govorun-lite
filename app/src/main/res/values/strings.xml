@@ -93,9 +93,10 @@
          doesn't compete with action items. Disappears for good after the
          user taps "Понятно". -->
     <string name="main_card_whats_new_title">Что нового</string>
-    <string name="main_card_whats_new_line1">• Новая настройка «Прятать в полях поиска» — птичка перестанет появляться на адресной строке браузера и в окнах поиска. Включается в Настройках.</string>
-    <string name="main_card_whats_new_line2">• Прозрачность бабла теперь регулируется до минимума — фон становится полностью прозрачным, остаётся только птичка.</string>
-    <string name="main_card_whats_new_line3">• Улучшена работа в некоторых мессенджерах — текст после отправки сообщения снова вставляется без перерывов.</string>
+    <string name="main_card_whats_new_line1">• Птичка больше не держит экран. Перестали говорить — экран блокируется, как и в других приложениях. Если хотите оставить как было — загляните в Настройки.</string>
+    <string name="main_card_whats_new_line2">• Настройка «Прятать в полях поиска» — птичка перестанет появляться на адресной строке браузера и в окнах поиска. Включается в Настройках.</string>
+    <string name="main_card_whats_new_line3">• Прозрачность бабла регулируется до минимума — фон становится полностью прозрачным, остаётся только птичка.</string>
+    <string name="main_card_whats_new_line4">• Улучшена работа в некоторых мессенджерах — текст после отправки сообщения снова вставляется без перерывов.</string>
     <string name="main_card_whats_new_dismiss">Понятно</string>
     <string name="main_needs_setup_sub">Несколько мелочей надо подкрутить — карточки ниже подскажут, что и где.</string>
     <string name="main_disable_service">Выключить Говоруна</string>
@@ -251,6 +252,17 @@
     <!-- Settings: entry-point card to the dictionary screen -->
     <string name="settings_dict_card_title">Свой словарь</string>
     <string name="settings_dict_card_body">Замены слов в распознанной речи. Например: имена, термины, аббревиатуры.</string>
+
+    <string name="settings_keep_screen_title">Не выключать экран</string>
+    <string name="settings_keep_screen_body_off">Экран блокируется как обычно</string>
+    <string name="settings_keep_screen_body_on">Птичка не даёт экрану блокироваться, пока слушает</string>
+
+    <string name="settings_auto_stop_title">Останавливать распознавание</string>
+    <string name="settings_auto_stop_body">Защита если забыли выключить</string>
+    <string name="settings_auto_stop_15m">15 мин</string>
+    <string name="settings_auto_stop_1h">1 час</string>
+    <string name="settings_auto_stop_3h">3 часа</string>
+    <string name="settings_auto_stop_off">Без огр.</string>
 
     <string name="settings_pause_title">Длина паузы</string>
     <string name="settings_pause_body">Подстройте под ваш темп. После паузы Говорун заканчивает предложение - если точки ставятся раньше чем вы закончили мысль, попробуйте Среднюю или Длинную.</string>

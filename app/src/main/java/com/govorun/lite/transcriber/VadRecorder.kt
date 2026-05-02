@@ -133,6 +133,14 @@ class VadRecorder(private val context: Context) {
         // to 0 and disappear from the counter). Used to feed StatsStore —
         // pure speech time, not session time.
         onSpeechMillis: (Long) -> Unit = {},
+        // Edge callback for «speech currently audible» — fires only on
+        // transitions (silence→speech and speech→silence), not on every
+        // VAD window. Used by the service to keep the screen alive while
+        // the user is actively speaking, even when the user has NOT opted
+        // into the persistent keep-screen-on flag. Without this hook,
+        // ongoing dictation is killed by Android's screen timeout because
+        // speech is not a touch event and we don't poke userActivity.
+        onSpeechActive: (Boolean) -> Unit = {},
         // useVad=true (default): Silero splits audio into segments on
         // pauses, each segment transcribed and pasted independently —
         // the right behaviour for tap-toggle dictation where the user
@@ -235,6 +243,10 @@ class VadRecorder(private val context: Context) {
                 // internal buffer has already been partially drained by flush().
                 val tailBuffer = ByteArrayOutputStream()
                 var segmentsEmitted = 0
+                // Tracks isSpeechDetected() across windows so we only emit
+                // edge events to onSpeechActive (start of speech, end of
+                // speech). Initial false matches VAD's post-reset state.
+                var prevSpeechDetected = false
 
                 fun drainVadQueue() {
                     while (!vad.empty()) {
@@ -300,12 +312,25 @@ class VadRecorder(private val context: Context) {
                         // section: drain reads vad.empty/front/pop, and another
                         // reader could mutate Vad state between them, leaving
                         // us reading partially-popped segments.
-                        synchronized(vadLock) {
+                        val speechNow = synchronized(vadLock) {
                             vad.acceptWaveform(samples)
                             drainVadQueue()
+                            vad.isSpeechDetected()
+                        }
+                        if (speechNow != prevSpeechDetected) {
+                            prevSpeechDetected = speechNow
+                            withContext(Dispatchers.Main) { onSpeechActive(speechNow) }
                         }
                     }
                 } finally {
+                    if (prevSpeechDetected) {
+                        // Reader is shutting down while VAD still considered
+                        // the audio "speech". Emit a final false so the
+                        // service can drop any keep-screen-on override and
+                        // the device returns to normal sleep behaviour.
+                        prevSpeechDetected = false
+                        withContext(Dispatchers.Main) { onSpeechActive(false) }
+                    }
                     // Flush any speech still inside VAD's buffer (user stopped before
                     // min_silence elapsed) so the last utterance isn't lost.
                     val beforeFlush = segmentsEmitted

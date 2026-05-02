@@ -18,6 +18,10 @@ captures/
 *.keystore
 keystore.properties
 
+# Local secrets (VT API key etc) — never commit
+.env
+scripts/.env
+
 # Large native deps downloaded by script
 app/libs/*.aar
 app/src/main/assets/models/

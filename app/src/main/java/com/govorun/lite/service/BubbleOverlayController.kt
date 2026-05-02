@@ -116,13 +116,41 @@ class BubbleOverlayController(
         attachFreshBubble(initiallyVisible)
     }
 
-    /** Toggle the recording indicator (red bubble). Also pins the screen
-     *  on while recording so the user's words don't get cut by an
-     *  auto-lock mid-utterance. */
+    private var recordingActive = false
+    // Transient screen-keep-on override driven by VAD speech detection —
+    // the service flips this true on speech-start and false after a short
+    // grace following speech-end, so active dictation isn't killed by the
+    // system's screen timeout even when the user opted out of the
+    // persistent keep-screen-on switch.
+    private var speechActiveOverride = false
+
+    /** Toggle the recording indicator (red bubble). The screen-keep-on
+     *  flag is held when the user has opted into it via Settings
+     *  (Prefs.isKeepScreenOnEnabled), OR transiently while VAD reports
+     *  active speech (see setKeepScreenOnOverride). Without the flag,
+     *  the screen sleeps per the user's system timeout and the
+     *  service's screenOffReceiver picks up ACTION_SCREEN_OFF and stops
+     *  the session automatically. */
     fun setRecording(active: Boolean) {
         bubbleView?.setRecording(active)
+        recordingActive = active
+        if (!active) speechActiveOverride = false
+        applyKeepScreenFlag()
+    }
+
+    /** Called by the service when VAD edge events arrive — true while
+     *  speech is currently audible, false after the grace window expires.
+     *  No effect outside an active recording. */
+    fun setKeepScreenOnOverride(active: Boolean) {
+        speechActiveOverride = active
+        applyKeepScreenFlag()
+    }
+
+    private fun applyKeepScreenFlag() {
         val params = bubbleParams ?: return
-        params.flags = if (active) {
+        val keepScreenOn = recordingActive &&
+            (Prefs.isKeepScreenOnEnabled(service) || speechActiveOverride)
+        params.flags = if (keepScreenOn) {
             params.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         } else {
             params.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON.inv()

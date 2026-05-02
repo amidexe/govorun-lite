@@ -104,6 +104,27 @@ class LiteAccessibilityService : AccessibilityService() {
     // lifetime; on service restart we lose at most 999ms of remainder.
     @Volatile private var speechMillisRemainder: Long = 0L
 
+    // Wall-clock auto-stop timer. Only armed when the user has opted into
+    // Keep-Screen-On (without that, the system's own screen timeout already
+    // ends the session via screenOffReceiver, well before any sane wall cap).
+    // Default cap is 1 hour, configurable to 15 min / 1 hour / 3 hours / off.
+    // Protects against forgetting + the music/podcast edge case where Silero
+    // VAD treats vocals as speech and keeps the session alive indefinitely.
+    private val autoStopHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val autoStopRunnable = Runnable { stopVadRecording(silent = true) }
+
+    // Speech-active grace timer. When VAD reports speech end we hold the
+    // keep-screen-on override briefly so the screen doesn't sleep during
+    // a natural inter-sentence pause. New speech inside the grace window
+    // cancels this and keeps the screen up. Default-mode users (no opt-in
+    // keep-screen flag) need this — without it Android's screen timeout
+    // happily kills mid-utterance dictation since speech is not a
+    // touchUserActivity event we have permission to fake.
+    private val speechGraceHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val speechGraceRunnable = Runnable {
+        bubbleOverlay?.setKeepScreenOnOverride(false)
+    }
+
     // Was a wrapper around View.performHapticFeedback with predefined HID
     // constants — see util/Haptics.kt for why we abandoned that approach
     // (silent no-op on Xiaomi/Huawei). Kept as no-op signature briefly so
@@ -291,6 +312,7 @@ class LiteAccessibilityService : AccessibilityService() {
         isVadActive = true
         vibrateStart()
         bubbleOverlay?.setRecording(true)
+        scheduleAutoStop()
 
         // Build + start the recorder SYNCHRONOUSLY on the main thread. Dispatching
         // through scope.launch added ~50-200 ms of latency that swallowed the first
@@ -316,6 +338,18 @@ class LiteAccessibilityService : AccessibilityService() {
                     speechMillisRemainder -= whole * 1000L
                 }
             },
+            onSpeechActive = { active ->
+                if (active) {
+                    speechGraceHandler.removeCallbacks(speechGraceRunnable)
+                    bubbleOverlay?.setKeepScreenOnOverride(true)
+                } else {
+                    // 5 s grace lets the screen stay alive across natural
+                    // inter-sentence pauses without dragging on after the
+                    // user has clearly finished and walked away.
+                    speechGraceHandler.removeCallbacks(speechGraceRunnable)
+                    speechGraceHandler.postDelayed(speechGraceRunnable, 5_000L)
+                }
+            },
             useVad = useVad,
         )
         Log.i(TAG, "VAD recording started")
@@ -335,9 +369,34 @@ class LiteAccessibilityService : AccessibilityService() {
         // before releasing the mic, so the last phrase isn't lost on quick taps.
         vadRecorder?.stop()
         vadRecorder = null
+        autoStopHandler.removeCallbacks(autoStopRunnable)
+        speechGraceHandler.removeCallbacks(speechGraceRunnable)
         if (!silent) vibrateStop()
         bubbleOverlay?.setRecording(false)
+        bubbleOverlay?.setKeepScreenOnOverride(false)
         Log.i(TAG, "VAD recording stopped")
+    }
+
+    /** Arm the wall-clock cap timer if the user is in Keep-Screen-On mode
+     *  with a finite cap selected. Pure no-op for the default (off) mode —
+     *  the screenOffReceiver handles that path via system screen timeout.
+     *  Each branch writes a positive AppLog line so a 30-second tap-stop
+     *  smoke test can confirm in the log which path actually ran (instead
+     *  of waiting 15 minutes to see whether the cap stops the session). */
+    private fun scheduleAutoStop() {
+        autoStopHandler.removeCallbacks(autoStopRunnable)
+        if (!Prefs.isKeepScreenOnEnabled(this)) {
+            AppLog.log(this, "Service: auto-stop SKIPPED (keep-screen-on = false)")
+            return
+        }
+        val minutes = Prefs.getAutoStopMinutes(this)
+        if (minutes <= 0) {
+            AppLog.log(this, "Service: auto-stop SKIPPED (cap = unlimited)")
+            return
+        }
+        val delayMs = minutes.toLong() * 60_000L
+        autoStopHandler.postDelayed(autoStopRunnable, delayMs)
+        AppLog.log(this, "Service: auto-stop ARMED for $minutes min")
     }
 
     // Recording start = a deliberate "this is happening now" haptic;
