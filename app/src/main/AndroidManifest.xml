@@ -10,6 +10,16 @@
 
     <uses-feature android:name="android.hardware.microphone" android:required="true" />
 
+    <!-- Needed to enumerate launcher apps for the app filter screen.
+         More targeted than QUERY_ALL_PACKAGES — only grants visibility
+         into apps that declare a MAIN/LAUNCHER intent-filter. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application
         android:name=".LiteApp"
         android:allowBackup="false"
