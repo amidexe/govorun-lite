@@ -1,6 +1,5 @@
 package com.govorun.lite.service
 
-import android.accessibilityservice.InputMethod
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
 
@@ -27,8 +26,10 @@ internal object InputFieldFilter {
      * safe default is "not a password", so we'd rather leak a bubble
      * appearance than miss showing it on a regular field.
      */
-    fun isPasswordField(inputMethod: InputMethod?): Boolean {
-        val info = inputMethod?.currentInputEditorInfo ?: return false
+    fun isPasswordField(inputMethod: LiteAccessibilityInputMethod?): Boolean {
+        val info = inputMethod?.currentInputEditorInfo
+            ?: inputMethod?.lastEditorInfo
+            ?: return false
         val variation = info.inputType and InputType.TYPE_MASK_VARIATION
         val klass = info.inputType and InputType.TYPE_MASK_CLASS
         return when (klass) {
@@ -61,8 +62,10 @@ internal object InputFieldFilter {
      * всегда» Quick Settings tile to bypass this filter for the whole
      * session — it's the explicit "voice everywhere" override.
      */
-    fun isSearchField(inputMethod: InputMethod?): Boolean {
-        val info = inputMethod?.currentInputEditorInfo ?: return false
+    fun isSearchField(inputMethod: LiteAccessibilityInputMethod?): Boolean {
+        val info = inputMethod?.currentInputEditorInfo
+            ?: inputMethod?.lastEditorInfo
+            ?: return false
         val action = info.imeOptions and EditorInfo.IME_MASK_ACTION
         if (action == EditorInfo.IME_ACTION_SEARCH ||
             action == EditorInfo.IME_ACTION_GO

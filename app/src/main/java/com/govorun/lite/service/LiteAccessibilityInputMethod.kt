@@ -60,7 +60,22 @@ class LiteAccessibilityInputMethod(
     val currentStartCount: Long
         get() = startCount.value
 
+    /**
+     * Last EditorInfo seen in onStartInput. Intentionally NOT cleared in
+     * onFinishInput — Android nulls out currentInputEditorInfo the moment
+     * the input session ends, but the IME window stays visible for another
+     * ~200-400 ms during its closing animation. Without this fallback,
+     * InputFieldFilter sees (imeVisible=true, searchField=false) and briefly
+     * shows the bubble before the window fully disappears. Keeping
+     * lastEditorInfo lets the filter still report "this was a search field"
+     * through the closing gap, and it is replaced the next time onStartInput
+     * fires for a new field.
+     */
+    var lastEditorInfo: EditorInfo? = null
+        private set
+
     override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
+        lastEditorInfo = attribute
         try {
             super.onStartInput(attribute, restarting)
         } catch (npe: NullPointerException) {
