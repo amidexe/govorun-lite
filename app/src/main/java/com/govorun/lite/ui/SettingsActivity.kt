@@ -29,6 +29,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var showServiceRow: View
     private lateinit var showServiceSwitch: MaterialSwitch
+    private lateinit var appFilterSubtitle: MaterialTextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -197,6 +198,11 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, DictionaryActivity::class.java))
         }
 
+        appFilterSubtitle = findViewById(R.id.appFilterSubtitle)
+        findViewById<View>(R.id.appFilterRow).setOnClickListener {
+            startActivity(Intent(this, AppFilterActivity::class.java))
+        }
+
         showServiceRow = findViewById(R.id.showServiceRow)
         showServiceSwitch = findViewById(R.id.showServiceSwitch)
         // Row is visible regardless of service state so the user always has a
@@ -261,6 +267,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshServiceSwitch()
+        updateAppFilterSubtitle()
     }
 
     /**
@@ -329,5 +336,17 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun updateAppFilterSubtitle() {
+        val mode = Prefs.getAppFilterMode(this)
+        val count = Prefs.getAppFilterPackages(this).size
+        appFilterSubtitle.text = when {
+            count == 0 -> getString(R.string.settings_app_filter_body_all)
+            mode == Prefs.APP_FILTER_WHITELIST ->
+                getString(R.string.settings_app_filter_body_whitelist, count)
+            else ->
+                getString(R.string.settings_app_filter_body_blacklist, count)
+        }
     }
 }

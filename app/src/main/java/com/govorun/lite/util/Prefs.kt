@@ -321,6 +321,48 @@ object Prefs {
         prefs.edit().putBoolean(KEY_V108_PAUSE_MIGRATED, true).apply()
     }
 
+    // App filter — controls in which apps the bubble appears.
+    // Mode "blacklist" (default): show everywhere except listed packages.
+    // Mode "whitelist": show only in listed packages (empty list → show everywhere).
+    private const val KEY_APP_FILTER_MODE = "app_filter_mode"
+    private const val KEY_APP_FILTER_PACKAGES = "app_filter_packages"
+
+    const val APP_FILTER_BLACKLIST = "blacklist"
+    const val APP_FILTER_WHITELIST = "whitelist"
+
+    fun getAppFilterMode(context: Context): String =
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_APP_FILTER_MODE, APP_FILTER_BLACKLIST) ?: APP_FILTER_BLACKLIST
+
+    fun setAppFilterMode(context: Context, mode: String) {
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_APP_FILTER_MODE, mode)
+            .commit()
+    }
+
+    fun getAppFilterPackages(context: Context): Set<String> =
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .getStringSet(KEY_APP_FILTER_PACKAGES, emptySet()) ?: emptySet()
+
+    fun setAppFilterPackages(context: Context, pkgs: Set<String>) {
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putStringSet(KEY_APP_FILTER_PACKAGES, pkgs)
+            .commit()
+    }
+
+    /** Returns true when the bubble should be HIDDEN in this app package. */
+    fun isAppFiltered(context: Context, pkg: String?): Boolean {
+        pkg ?: return false
+        val mode = getAppFilterMode(context)
+        val pkgSet = getAppFilterPackages(context)
+        return when (mode) {
+            APP_FILTER_WHITELIST -> pkgSet.isNotEmpty() && pkg !in pkgSet
+            else -> pkg in pkgSet
+        }
+    }
+
     // Always land on a multiple of the slider step — M3 Slider throws if
     // setValue() is called with anything between two steps. Compute via
     // step-index then multiply back: the result has the same float

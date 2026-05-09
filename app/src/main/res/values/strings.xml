@@ -285,4 +285,19 @@
     <string name="tile_silence_label">Говорун</string>
     <string name="tile_silence_subtitle_on">Птичка временно выключена</string>
     <string name="tile_silence_subtitle_off">Птичка работает</string>
+
+    <!-- App filter screen -->
+    <string name="title_app_filter">Фильтр по приложениям</string>
+    <string name="filter_blacklist">Не показывать тут</string>
+    <string name="filter_whitelist">Показывать только тут</string>
+    <string name="app_filter_desc_blacklist">Значок не появляется в отмеченных приложениях</string>
+    <string name="app_filter_desc_whitelist">Значок появляется только в отмеченных приложениях</string>
+    <string name="hint_search_app">Поиск</string>
+    <string name="app_filter_tile_note">Тайл «Говорун: всегда» показывает значок в любом приложении вне зависимости от этого фильтра</string>
+
+    <!-- Settings row for app filter -->
+    <string name="settings_app_filter_title">Фильтр по приложениям</string>
+    <string name="settings_app_filter_body_all">Показывается во всех приложениях</string>
+    <string name="settings_app_filter_body_blacklist">Скрыто в %d прил.</string>
+    <string name="settings_app_filter_body_whitelist">Только в %d прил.</string>
 </resources>

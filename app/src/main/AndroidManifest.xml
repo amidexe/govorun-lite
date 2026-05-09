@@ -67,6 +67,13 @@
             tools:ignore="LockedOrientationActivity" />
 
         <activity
+            android:name=".ui.AppFilterActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.SettingsActivity"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity" />
+
+        <activity
             android:name=".ui.LicensesActivity"
             android:exported="false"
             android:parentActivityName=".ui.AboutActivity"

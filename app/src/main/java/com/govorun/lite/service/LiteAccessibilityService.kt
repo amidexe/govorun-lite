@@ -78,6 +78,10 @@ class LiteAccessibilityService : AccessibilityService() {
     // NOT actually disable the AccessibilityService, just hides the bubble.
     @Volatile private var manualSilence: Boolean = false
 
+    // Foreground app package — updated on TYPE_WINDOW_STATE_CHANGED, skipping
+    // IME packages and our own. Used by the app filter to decide visibility.
+    private var currentForegroundPackage: String? = null
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var vadRecorder: VadRecorder? = null
     @Volatile private var isVadActive = false
@@ -201,14 +205,28 @@ class LiteAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
         when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                // Track which non-IME, non-self app is in the foreground so
+                // the app filter has a reliable package to check against.
+                val pkg = event.packageName?.toString()
+                if (pkg != null && !isImePackage(pkg) && pkg != packageName) {
+                    currentForegroundPackage = pkg
+                }
+                updateImeVisibility(pkg)
+            }
             AccessibilityEvent.TYPE_WINDOWS_CHANGED,
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
             // typeViewFocused fires when the user moves focus between fields
             // inside the same window — e.g. login screen email -> password.
             // Without it, the IME-window event won't refire (the same IME stays
             // visible) and we won't know to hide the bubble for the new field.
             AccessibilityEvent.TYPE_VIEW_FOCUSED -> updateImeVisibility(event.packageName?.toString())
         }
+    }
+
+    private fun isImePackage(pkg: String): Boolean {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            ?: return false
+        return imm.enabledInputMethodList.any { it.packageName == pkg }
     }
 
     private fun updateImeVisibility(pkg: String? = null) {
@@ -233,7 +251,8 @@ class LiteAccessibilityService : AccessibilityService() {
         // see InputFieldFilter.isSearchField for the detection logic.
         val searchField = Prefs.isHideInSearchEnabled(this) &&
             InputFieldFilter.isSearchField(accessibilityInputMethod)
-        val shouldShow = imeVisible && !locked && !passwordField && !searchField
+        val appFiltered = Prefs.isAppFiltered(this, currentForegroundPackage)
+        val shouldShow = imeVisible && !locked && !passwordField && !searchField && !appFiltered
 
         // In always-show mode the bubble stays on screen even when no IME
         // is up — the user explicitly opted into "voice-only" workflow via
@@ -255,7 +274,7 @@ class LiteAccessibilityService : AccessibilityService() {
             else -> View.GONE
         }
         applyVisibilityWithDebounce(effectiveVisibility)
-        AppLog.log(this, "Service: bubbleShow=$shouldShow ime=$imeVisible locked=$locked password=$passwordField search=$searchField alwaysShow=$manualAlwaysShow silence=$manualSilence pkg=$pkg")
+        AppLog.log(this, "Service: bubbleShow=$shouldShow ime=$imeVisible locked=$locked password=$passwordField search=$searchField appFiltered=$appFiltered alwaysShow=$manualAlwaysShow silence=$manualSilence foreground=$currentForegroundPackage")
     }
 
     /**
