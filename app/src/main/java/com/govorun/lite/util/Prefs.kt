@@ -338,7 +338,7 @@ object Prefs {
         context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_APP_FILTER_MODE, mode)
-            .commit()
+            .apply()
     }
 
     fun getAppFilterPackages(context: Context): Set<String> =
@@ -349,7 +349,7 @@ object Prefs {
         context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
             .edit()
             .putStringSet(KEY_APP_FILTER_PACKAGES, pkgs)
-            .commit()
+            .apply()
     }
 
     /** Returns true when the bubble should be HIDDEN in this app package. */

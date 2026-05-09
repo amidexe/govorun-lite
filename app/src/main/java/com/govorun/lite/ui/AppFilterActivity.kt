@@ -1,6 +1,5 @@
 package com.govorun.lite.ui
 
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.Editable
@@ -165,7 +164,7 @@ class AppFilterActivity : AppCompatActivity() {
             holder.itemView.setOnClickListener {
                 entry.checked = !entry.checked
                 savePrefs()
-                reSort()
+                notifyItemChanged(holder.bindingAdapterPosition)
             }
         }
 

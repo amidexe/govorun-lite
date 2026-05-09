@@ -212,14 +212,14 @@ class LiteAccessibilityService : AccessibilityService() {
                 if (pkg != null && !isImePackage(pkg) && pkg != packageName) {
                     currentForegroundPackage = pkg
                 }
-                updateImeVisibility(pkg)
+                updateImeVisibility()
             }
             AccessibilityEvent.TYPE_WINDOWS_CHANGED,
             // typeViewFocused fires when the user moves focus between fields
             // inside the same window — e.g. login screen email -> password.
             // Without it, the IME-window event won't refire (the same IME stays
             // visible) and we won't know to hide the bubble for the new field.
-            AccessibilityEvent.TYPE_VIEW_FOCUSED -> updateImeVisibility(event.packageName?.toString())
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> updateImeVisibility()
         }
     }
 
@@ -229,7 +229,7 @@ class LiteAccessibilityService : AccessibilityService() {
         return imm.enabledInputMethodList.any { it.packageName == pkg }
     }
 
-    private fun updateImeVisibility(pkg: String? = null) {
+    private fun updateImeVisibility() {
         val imeVisible = try {
             windows?.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD } == true
         } catch (e: Exception) {
