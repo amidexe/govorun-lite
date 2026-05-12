@@ -19,7 +19,7 @@ object Prefs {
     // Version-suffixed so each release with new feature highlights re-shows
     // the card to existing users (their dismissal of the previous version's
     // card doesn't carry over). Bump the suffix when the card content changes.
-    private const val KEY_WHATS_NEW_HINT_DISMISSED = "whats_new_hint_dismissed_v1011"
+    private const val KEY_WHATS_NEW_HINT_DISMISSED = "whats_new_hint_dismissed_v1012"
     private const val KEY_DICTIONARY = "dictionary_text"
     private const val KEY_DICTIONARY_ENABLED = "dictionary_enabled"
     private const val KEY_PAUSE_LENGTH = "pause_length"
@@ -319,6 +319,36 @@ object Prefs {
             setPauseLength(context, PAUSE_MEDIUM)
         }
         prefs.edit().putBoolean(KEY_V108_PAUSE_MIGRATED, true).apply()
+    }
+
+    // Lock bubble position — when ON, drag gestures on the bubble are ignored.
+    // OFF by default so existing users are unaffected.
+    private const val KEY_BUBBLE_POSITION_LOCKED = "bubble_position_locked"
+
+    fun isBubblePositionLocked(context: Context): Boolean =
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_BUBBLE_POSITION_LOCKED, false)
+
+    fun setBubblePositionLocked(context: Context, locked: Boolean) {
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_BUBBLE_POSITION_LOCKED, locked)
+            .apply()
+    }
+
+    // Append "[текст распознан с голоса]" on a new line after the last
+    // transcribed segment of each session. Off by default — opt-in.
+    private const val KEY_VOICE_SUFFIX_ENABLED = "voice_suffix_enabled"
+
+    fun isVoiceSuffixEnabled(context: Context): Boolean =
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_VOICE_SUFFIX_ENABLED, false)
+
+    fun setVoiceSuffixEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_VOICE_SUFFIX_ENABLED, enabled)
+            .apply()
     }
 
     // App filter — controls in which apps the bubble appears.

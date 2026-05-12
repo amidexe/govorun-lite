@@ -208,9 +208,16 @@ class LiteAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 // Track which non-IME, non-self app is in the foreground so
                 // the app filter has a reliable package to check against.
+                // Skip system windows (copy toolbar, permission dialogs, system
+                // overlays from "android" / "com.android.systemui") — they fire
+                // TYPE_WINDOW_STATE_CHANGED too and would transiently clobber
+                // currentForegroundPackage, causing the bubble to vanish.
                 val pkg = event.packageName?.toString()
                 if (pkg != null && !isImePackage(pkg) && pkg != packageName) {
-                    currentForegroundPackage = pkg
+                    val srcWindowType = try { event.source?.window?.type } catch (_: Exception) { null }
+                    if (srcWindowType != AccessibilityWindowInfo.TYPE_SYSTEM) {
+                        currentForegroundPackage = pkg
+                    }
                 }
                 updateImeVisibility()
             }
@@ -251,6 +258,20 @@ class LiteAccessibilityService : AccessibilityService() {
         // see InputFieldFilter.isSearchField for the detection logic.
         val searchField = Prefs.isHideInSearchEnabled(this) &&
             InputFieldFilter.isSearchField(accessibilityInputMethod)
+        // Derive the foreground package live from the current window list
+        // instead of relying on the cached value. The cache can be stale
+        // during app transitions — the first TYPE_WINDOW_STATE_CHANGED on
+        // return often comes from the launcher/animation, not the target app,
+        // so the cache holds the wrong package when we reach this point.
+        val livePkg = try {
+            windows?.mapNotNull { w ->
+                if (w.type != AccessibilityWindowInfo.TYPE_APPLICATION) return@mapNotNull null
+                val pkg = w.root?.packageName?.toString() ?: return@mapNotNull null
+                if (pkg == packageName || isImePackage(pkg)) return@mapNotNull null
+                pkg
+            }?.firstOrNull()
+        } catch (_: Exception) { null }
+        if (livePkg != null) currentForegroundPackage = livePkg
         val appFiltered = Prefs.isAppFiltered(this, currentForegroundPackage)
         val shouldShow = imeVisible && !locked && !passwordField && !searchField && !appFiltered
 
@@ -342,6 +363,11 @@ class LiteAccessibilityService : AccessibilityService() {
             scope = scope,
             transcriberProvider = { OfflineTranscriber.getInstance(this@LiteAccessibilityService) },
             onSegment = { text -> pasteText(text) },
+            onDone = {
+                if (Prefs.isVoiceSuffixEnabled(this@LiteAccessibilityService)) {
+                    pasteText("\n\n[текст распознан с голоса]")
+                }
+            },
             // Per-segment speech time in milliseconds. Replaces the old
             // "session length" counter that added tap-to-tap elapsed time
             // (including silence and forgotten-on records). We accumulate

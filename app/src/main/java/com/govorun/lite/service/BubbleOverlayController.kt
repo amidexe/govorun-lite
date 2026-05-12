@@ -280,6 +280,11 @@ class BubbleOverlayController(
                         if (holdStarted) return true
                         val dy = event.rawY - initialTouchY
                         val dx = event.rawX - initialTouchX
+                        // Two-level threshold: TAP_CANCEL_SLOP cancels tap/hold
+                        // on any significant movement (back-edge swipes, scroll
+                        // gestures passing over the bubble). DRAG_THRESHOLD is
+                        // the much higher bar for actually repositioning the
+                        // bubble — prevents casual swipes from moving it.
                         // ANY-direction threshold check: a back-edge swipe
                         // that crosses the bubble is mostly horizontal —
                         // before this fix it never tripped the (vertical-only)
@@ -292,7 +297,10 @@ class BubbleOverlayController(
                             }
                             // Bubble itself only moves vertically — horizontal
                             // delta just blocks tap activation, doesn't drag.
-                            if (Math.abs(dy) > dragThresholdPx) {
+                            // Position-lock: record dragged=true (so tap doesn't
+                            // fire) but skip the layout update.
+                            if (Math.abs(dy) > dragThresholdPx &&
+                                !Prefs.isBubblePositionLocked(service)) {
                                 params.y = initialY + dy.toInt()
                                 try {
                                     windowManager.updateViewLayout(bubbleView, params)
@@ -304,14 +312,10 @@ class BubbleOverlayController(
                     MotionEvent.ACTION_UP -> {
                         holdHandler.removeCallbacks(holdRunnable)
                         if (dragged) {
-                            // Persist final Y so the bubble lands in the same
-                            // place after the next service restart.
                             Prefs.setBubbleY(service, params.y)
                             return true
                         }
                         if (holdStarted) {
-                            // Hold-to-talk: releasing the finger stops the
-                            // recording (and triggers VAD pipeline → paste).
                             callbacks.onHoldStop(silent = false)
                             return true
                         }

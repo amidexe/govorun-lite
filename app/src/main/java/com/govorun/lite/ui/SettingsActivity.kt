@@ -124,6 +124,24 @@ class SettingsActivity : AppCompatActivity() {
         }
         hideInSearchRow.setOnClickListener { hideInSearchSwitch.toggle() }
 
+        val bubbleLockSwitch = findViewById<MaterialSwitch>(R.id.bubbleLockSwitch)
+        val bubbleLockRow = findViewById<View>(R.id.bubbleLockRow)
+
+        bubbleLockSwitch.isChecked = Prefs.isBubblePositionLocked(this)
+        bubbleLockSwitch.setOnCheckedChangeListener { _, checked ->
+            Prefs.setBubblePositionLocked(this, checked)
+        }
+        bubbleLockRow.setOnClickListener { bubbleLockSwitch.toggle() }
+
+        val voiceSuffixSwitch = findViewById<MaterialSwitch>(R.id.voiceSuffixSwitch)
+        val voiceSuffixRow = findViewById<View>(R.id.voiceSuffixRow)
+
+        voiceSuffixSwitch.isChecked = Prefs.isVoiceSuffixEnabled(this)
+        voiceSuffixSwitch.setOnCheckedChangeListener { _, checked ->
+            Prefs.setVoiceSuffixEnabled(this, checked)
+        }
+        voiceSuffixRow.setOnClickListener { voiceSuffixSwitch.toggle() }
+
         val keepScreenSwitch = findViewById<MaterialSwitch>(R.id.keepScreenSwitch)
         val keepScreenRow = findViewById<View>(R.id.keepScreenRow)
         val keepScreenBody = findViewById<MaterialTextView>(R.id.keepScreenBody)

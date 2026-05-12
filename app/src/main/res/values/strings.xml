@@ -93,10 +93,10 @@
          doesn't compete with action items. Disappears for good after the
          user taps "Понятно". -->
     <string name="main_card_whats_new_title">Что нового</string>
-    <string name="main_card_whats_new_line1">• Птичка больше не держит экран. Перестали говорить — экран блокируется, как и в других приложениях. Если хотите оставить как было — загляните в Настройки.</string>
-    <string name="main_card_whats_new_line2">• Настройка «Прятать в полях поиска» — птичка перестанет появляться на адресной строке браузера и в окнах поиска. Включается в Настройках.</string>
-    <string name="main_card_whats_new_line3">• Прозрачность бабла регулируется до минимума — фон становится полностью прозрачным, остаётся только птичка.</string>
-    <string name="main_card_whats_new_line4">• Улучшена работа в некоторых мессенджерах — текст после отправки сообщения снова вставляется без перерывов.</string>
+    <string name="main_card_whats_new_line1">• Фильтр приложений — теперь можно скрывать птичку в отдельных программах или показывать только в нужных. Настраивается в Настройках.</string>
+    <string name="main_card_whats_new_line2">• Зафиксировать позицию — если птичка сдвигается при случайных касаниях, включите эту опцию в Настройках.</string>
+    <string name="main_card_whats_new_line3">• Добавлять пометку — Говорун может дописывать «[текст распознан с голоса]» после каждой диктовки. Включите в Настройках.</string>
+    <string name="main_card_whats_new_line4">• Птичка больше не держит экран включённым по умолчанию. Хотите вернуть как было — найдите переключатель в Настройках.</string>
     <string name="main_card_whats_new_dismiss">Понятно</string>
     <string name="main_needs_setup_sub">Несколько мелочей надо подкрутить — карточки ниже подскажут, что и где.</string>
     <string name="main_disable_service">Выключить Говоруна</string>
@@ -137,8 +137,16 @@
     <string name="settings_transparency_body">Насколько бабл просвечивает фон приложения, поверх которого он появляется.</string>
     <string name="settings_haptics_title">Вибрация</string>
     <string name="settings_haptics_body">Короткая вибрация, когда запись начинается и заканчивается.</string>
-    <string name="settings_hide_in_search_title">Прятать в полях поиска</string>
-    <string name="settings_hide_in_search_body">Птичка не появляется в строках поиска (адресная строка браузера, поиск в магазине, поиск внутри приложения).</string>
+    <string name="settings_hide_in_search_title">Прятать в строках поиска</string>
+    <string name="settings_hide_in_search_body">Птичка не появляется, когда открыта строка поиска.</string>
+    <string name="settings_section_appearance">Внешний вид</string>
+    <string name="settings_section_visibility">Где показывать</string>
+    <string name="settings_section_recording">Запись</string>
+    <string name="settings_section_text">Текст</string>
+    <string name="settings_bubble_lock_title">Зафиксировать позицию</string>
+    <string name="settings_bubble_lock_body">Птичка не двигается при случайных касаниях.</string>
+    <string name="settings_voice_suffix_title">Добавлять пометку</string>
+    <string name="settings_voice_suffix_body">Дописывает «[текст распознан с голоса]» на новой строке после каждой диктовки.</string>
     <!-- Show-service row labels: title shows current state, body explains
          what tapping does. Toggle row tap leads to a confirmation dialog
          (main_disable_service_*) — the switch itself is non-interactive
@@ -288,8 +296,8 @@
 
     <!-- App filter screen -->
     <string name="title_app_filter">Фильтр по приложениям</string>
-    <string name="filter_blacklist">Не показывать тут</string>
-    <string name="filter_whitelist">Показывать только тут</string>
+    <string name="filter_blacklist">Не показывать в</string>
+    <string name="filter_whitelist">Показывать в</string>
     <string name="app_filter_desc_blacklist">Значок не появляется в отмеченных приложениях</string>
     <string name="app_filter_desc_whitelist">Значок появляется только в отмеченных приложениях</string>
     <string name="hint_search_app">Поиск</string>
