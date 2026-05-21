@@ -122,7 +122,7 @@ class TextInserter(
         // when we are in the Telegram package. Real user content is never
         // exactly equal to a single placeholder word, so the check is safe.
         val isTelegramPlaceholder =
-            node.packageName?.toString() == "org.telegram.messenger" &&
+            node.packageName?.toString() in TELEGRAM_PACKAGES &&
                 rawText in TELEGRAM_PLACEHOLDERS
         val isPlaceholderShowing = node.isShowingHintText ||
             (hint.isNotEmpty() && rawText == hint) ||
@@ -161,11 +161,19 @@ class TextInserter(
 
     private companion object {
         // Per-locale Telegram message-input placeholders. node.text exactly
-        // matching one of these (in the Telegram package) is treated as
+        // matching one of these (in a Telegram-family package) is treated as
         // empty so we don't splice user dictation behind the placeholder.
         private val TELEGRAM_PLACEHOLDERS = setOf(
             "Сообщение",       // ru
             "Message"          // en
+        )
+        // Official Telegram and popular third-party clients that put the
+        // placeholder directly into node.text instead of using the hint API.
+        private val TELEGRAM_PACKAGES = setOf(
+            "org.telegram.messenger",       // Play Store
+            "org.telegram.messenger.web",   // telegram.org direct APK
+            "tw.nekomimi.nekogram",         // Nekogram
+            "com.radolyn.ayugram",          // AyuGram
         )
     }
 }
