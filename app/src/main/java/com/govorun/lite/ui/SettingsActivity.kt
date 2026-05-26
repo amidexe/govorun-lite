@@ -221,6 +221,10 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, AppFilterActivity::class.java))
         }
 
+        findViewById<View>(R.id.benchmarkRow).setOnClickListener {
+            startActivity(Intent(this, BenchmarkActivity::class.java))
+        }
+
         showServiceRow = findViewById(R.id.showServiceRow)
         showServiceSwitch = findViewById(R.id.showServiceSwitch)
         // Row is visible regardless of service state so the user always has a
