@@ -47,6 +47,7 @@ class BenchmarkActivity : AppCompatActivity() {
     private lateinit var shareRow: View
     private lateinit var rtfHint: View
     private lateinit var heroMultiplierText: MaterialTextView
+    private lateinit var ratingText: MaterialTextView
     private lateinit var providerText: MaterialTextView
     private lateinit var coldTimeText: MaterialTextView
     private lateinit var warmTimeText: MaterialTextView
@@ -89,6 +90,7 @@ class BenchmarkActivity : AppCompatActivity() {
         shareRow            = findViewById(R.id.benchmarkShareRow)
         rtfHint             = findViewById(R.id.benchmarkRtfHint)
         heroMultiplierText  = findViewById(R.id.benchmarkHeroMultiplier)
+        ratingText = findViewById(R.id.benchmarkRating)
         providerText        = findViewById(R.id.benchmarkProvider)
         coldTimeText   = findViewById(R.id.benchmarkColdTime)
         warmTimeText   = findViewById(R.id.benchmarkWarmTime)
@@ -145,8 +147,8 @@ class BenchmarkActivity : AppCompatActivity() {
                 }
                 val (coldMs, warmMs, longMs, provider) = result
 
-                val providerLabel = if (provider == "nnapi") "Аппаратный NPU"
-                    else "Процессор (NPU недоступен)"
+                val providerLabel = if (provider == "nnapi") "NNAPI"
+                    else "Процессор"
                 // Hero = weighted average over warm short + long clips (cold excluded —
                 // it's a one-time startup cost, not representative of daily use).
                 // Formula: total warm audio duration / total warm processing time → true RTF.
@@ -157,22 +159,34 @@ class BenchmarkActivity : AppCompatActivity() {
                 fun fmtX(x: Float) = if (x >= 10f) "×${x.toInt()}" else "×%.1f".format(x)
 
                 heroMultiplierText.text = fmtX(heroX)
+                val ratingRes = when {
+                    heroX >= 20f -> R.string.benchmark_rating_excellent
+                    heroX >= 13f -> R.string.benchmark_rating_great
+                    heroX >= 8f  -> R.string.benchmark_rating_good
+                    else         -> 0
+                }
+                if (ratingRes != 0) {
+                    ratingText.setText(ratingRes)
+                    ratingText.visibility = View.VISIBLE
+                } else {
+                    ratingText.visibility = View.GONE
+                }
                 providerText.text = providerLabel
-                coldTimeText.text = "%.1f сек".format(coldMs / 1000f)
-                warmTimeText.text = "%.1f сек".format(warmMs / 1000f)
-                longTimeText.text = "%.1f сек".format(longMs / 1000f)
+                coldTimeText.text = "${coldMs} мс"
+                warmTimeText.text = "${warmMs} мс"
+                longTimeText.text = "${longMs} мс"
 
                 // Dynamic hint: plain-language description of what the numbers mean.
                 (rtfHint as? com.google.android.material.textview.MaterialTextView)?.text =
-                    "11 секунд аудио: распознано за %.1f сек при первом запуске и за %.1f сек при повторном. ".format(coldMs / 1000f, warmMs / 1000f) +
-                    "71 секунда аудио: распознана за %.1f сек.".format(longMs / 1000f)
+                    "11 секунд аудио: распознано за ${coldMs} мс при первом запуске и за ${warmMs} мс при повторном. " +
+                    "71 секунда аудио: распознана за ${longMs} мс."
 
                 val appVersion = packageManager.getPackageInfo(packageName, 0).versionName
                 lastShareText = buildString {
                     appendLine("Говорун: голос в текст ($appVersion)")
                     appendLine("$device, Android ${Build.VERSION.RELEASE}, $providerLabel")
                     appendLine("Скорость: ${fmtX(heroX)}")
-                    append("11 сек: %.1f / %.1f с, 71 сек: %.1f с".format(coldMs / 1000f, warmMs / 1000f, longMs / 1000f))
+                    append("11 сек: ${coldMs} / ${warmMs} мс, 71 сек: ${longMs} мс")
                 }
 
                 progress.visibility = View.GONE

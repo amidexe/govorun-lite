@@ -99,7 +99,7 @@ class OfflineTranscriber private constructor(
                     joiner = File(dir, GigaAmModel.JOINER).absolutePath
                 ),
                 tokens = File(dir, GigaAmModel.TOKENS).absolutePath,
-                numThreads = 2,
+                numThreads = 4,
                 provider = provider,
                 modelType = "nemo_transducer"
             )

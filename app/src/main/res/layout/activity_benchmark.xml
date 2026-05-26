@@ -107,6 +107,17 @@
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/benchmarkRating"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:visibility="gone"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorPrimary"
+                            tools:text="Отличный результат"
+                            tools:visibility="visible" />
+
                     </LinearLayout>
 
                     <View
