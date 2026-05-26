@@ -343,4 +343,5 @@
     <string name="benchmark_rating_great">Отличный результат</string>
     <string name="benchmark_rating_excellent">Превосходный результат</string>
     <string name="benchmark_rtf_hint">×10 означает что 10 сек аудио обрабатывается за 1 сек. Чем больше число — тем быстрее устройство.</string>
+    <string name="benchmark_running_hint">Идёт тест — не выходите из приложения</string>
 </resources>

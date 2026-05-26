@@ -64,6 +64,18 @@
                 android:visibility="gone"
                 app:trackCornerRadius="4dp" />
 
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/benchmarkRunningHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/benchmark_running_hint"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
             <!-- Results card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/benchmarkResultsCard"

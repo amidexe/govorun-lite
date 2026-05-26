@@ -43,6 +43,7 @@ class BenchmarkActivity : AppCompatActivity() {
 
     private lateinit var runButton: MaterialButton
     private lateinit var progress: LinearProgressIndicator
+    private lateinit var runningHint: View
     private lateinit var resultsCard: View
     private lateinit var shareRow: View
     private lateinit var rtfHint: View
@@ -86,6 +87,7 @@ class BenchmarkActivity : AppCompatActivity() {
 
         runButton           = findViewById(R.id.benchmarkRunButton)
         progress            = findViewById(R.id.benchmarkProgress)
+        runningHint         = findViewById(R.id.benchmarkRunningHint)
         resultsCard         = findViewById(R.id.benchmarkResultsCard)
         shareRow            = findViewById(R.id.benchmarkShareRow)
         rtfHint             = findViewById(R.id.benchmarkRtfHint)
@@ -104,9 +106,11 @@ class BenchmarkActivity : AppCompatActivity() {
     private fun runBenchmark() {
         runButton.isEnabled = false
         progress.visibility = View.VISIBLE
+        runningHint.visibility = View.VISIBLE
         resultsCard.visibility = View.GONE
         shareRow.visibility = View.GONE
         rtfHint.visibility = View.GONE
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         scope.launch {
             try {
@@ -190,6 +194,8 @@ class BenchmarkActivity : AppCompatActivity() {
                 }
 
                 progress.visibility = View.GONE
+                runningHint.visibility = View.GONE
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 resultsCard.visibility = View.VISIBLE
                 shareRow.visibility = View.VISIBLE
                 rtfHint.visibility = View.VISIBLE
@@ -197,6 +203,8 @@ class BenchmarkActivity : AppCompatActivity() {
 
             } catch (e: Exception) {
                 progress.visibility = View.GONE
+                runningHint.visibility = View.GONE
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 runButton.isEnabled = true
             }
         }
