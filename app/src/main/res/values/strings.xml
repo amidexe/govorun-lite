@@ -74,8 +74,8 @@
     <string name="main_ready">Всё готово</string>
     <string name="main_needs_setup">Нужна настройка</string>
     <string name="main_just_finished">Всё готово!</string>
-    <string name="main_just_finished_sub">Откройте любое поле для ввода текста — Говорун появится рядом с клавиатурой. Нажмите на него — и говорите.</string>
-    <string name="main_hint">Откройте любое поле для ввода текста — Говорун появится рядом с клавиатурой. Нажмите на него — и говорите.</string>
+    <string name="main_just_finished_sub">Откройте любое поле для ввода текста — птичка появится рядом с клавиатурой. Нажмите на неё — и говорите.</string>
+    <string name="main_hint">Откройте любое поле для ввода текста — птичка появится рядом с клавиатурой. Нажмите на неё — и говорите.</string>
     <string name="main_engine_credit">Движок — GigaAM v3 от Сбера, лицензия MIT.</string>
     <string name="main_card_mic_title">Включите микрофон</string>
     <string name="main_card_mic_body">Без микрофона Говорун не услышит, что вы говорите. Выберите Разрешения → Микрофон → Разрешить во время использования приложения.</string>
@@ -111,14 +111,15 @@
     <string name="main_open_accessibility">Открыть специальные возможности</string>
 
     <!-- Main screen: usage stats -->
-    <string name="main_stats_title">Говорун: голос в текст</string>
+    <string name="main_stats_title">Статистика</string>
     <string name="main_stats_today_label">слов за сегодня</string>
     <string name="main_stats_totals_compact_fmt">всего %1$s слов · %2$s мин.</string>
+    <string name="main_stats_words_only_fmt">всего %1$s слов</string>
     <string name="main_stats_words_label">слов распознано</string>
     <string name="main_stats_minutes_label">минут диктовки</string>
     <string name="main_stats_empty">Ещё ничего не наговорили — попробуйте открыть любое поле ввода и нажать на Говоруна.</string>
     <!-- "Tell friends" card on main screen -->
-    <string name="main_share_card_title">Расскажите о Говоруне</string>
+    <string name="main_share_card_title">Расскажите о приложении</string>
     <string name="main_share_card_body">Порекомендуйте друзьям и коллегам</string>
     <string name="main_share_chooser">Порекомендовать Говорун</string>
     <string name="main_share_app_text">Говорун: голос в текст. Голосовой ввод на русском без интернета.\nhttps://apps.rustore.ru/app/com.govorun.lite</string>
@@ -229,7 +230,7 @@
 
     <!-- Future plans screen / RuStore review CTA -->
     <string name="main_pro_title">Новые функции</string>
-    <string name="main_pro_intro">Говорун — небольшой проект, и мы делаем его с душой. За несколько месяцев вышло 13 обновлений, добавлено пять новых функций. Если приложение пригодилось — поддержите звёздочкой в RuStore: это лучший способ сказать, куда двигаться дальше.</string>
+    <string name="main_pro_intro">Говорун — небольшой проект, и мы делаем его с душой. За несколько месяцев вышло 13 обновлений, добавлено пять новых функций. Если приложение пригодилось — оставьте отзыв в RuStore или расскажите друзьям и коллегам: это лучший способ помочь проекту.</string>
     <string name="main_pro_feat_heading">Реализовано благодаря вашим отзывам</string>
     <string name="main_pro_feat_bg_record_title">Режим удержания</string>
     <string name="main_pro_feat_bg_record_body">Запись пока держишь птичку — удобно для коротких фраз.</string>
@@ -239,6 +240,7 @@
     <string name="main_pro_feat_theme_body">Фиксация в нужном месте, прозрачность и размер.</string>
     <string name="main_pro_feat_more">…и многое другое, реализованное благодаря вашим отзывам.</string>
     <string name="main_pro_review_button">Оставить отзыв в RuStore</string>
+    <string name="main_pro_share_button">Расскажите о приложении</string>
     <string name="main_pro_review_url">https://apps.rustore.ru/app/com.govorun.lite</string>
 
     <!-- Dictionary screen -->

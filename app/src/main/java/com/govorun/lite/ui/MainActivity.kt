@@ -70,7 +70,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statsTodayNumber: MaterialTextView
     private lateinit var statsTotalsCompact: MaterialTextView
     private lateinit var promoCard: View
-    private lateinit var shareCard: View
     private lateinit var toolbar: MaterialToolbar
     private var showJustFinished: Boolean = false
 
@@ -167,9 +166,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, FuturePlansActivity::class.java))
         }
 
-        shareCard = findViewById(R.id.shareCard)
-        shareCard.setOnClickListener { shareApp() }
-
         showJustFinished = intent.getBooleanExtra(EXTRA_JUST_FINISHED, false)
         if (showJustFinished) {
             // Consume the flag so orientation changes / re-launches show the
@@ -217,29 +213,16 @@ class MainActivity : AppCompatActivity() {
         statsEmpty.visibility = View.GONE
 
         val wordsToday = StatsStore.getWordsToday(this)
-        if (wordsToday > 0L) {
-            // Today is the hero — show big centred number, totals as compact line below
-            statsTodayNumber.text = formatThousands(wordsToday)
-            statsTodaySection.visibility = View.VISIBLE
-            statsTotalsCompact.text = getString(
-                R.string.main_stats_totals_compact_fmt,
-                formatThousands(words),
-                formatThousands(voiceMinutes),
-            )
-            statsTotalsCompact.visibility = View.VISIBLE
-            statsRow.visibility = View.GONE
-        } else {
-            // No activity today — show full two-column totals
-            statsTodaySection.visibility = View.GONE
-            statsTotalsCompact.visibility = View.GONE
-            statsRow.visibility = View.VISIBLE
-            statsWordsNumber.text = formatThousands(words)
-            statsMinutesNumber.text = formatThousands(voiceMinutes)
-            statsMinutesLabel.text = resources.getQuantityString(
-                R.plurals.minutes_label,
-                voiceMinutes.toPluralSelector(),
-            )
-        }
+        // Always show today as the hero — even 0 is valid (new day, haven't spoken yet).
+        statsTodayNumber.text = formatThousands(wordsToday)
+        statsTodaySection.visibility = View.VISIBLE
+        statsRow.visibility = View.GONE
+        statsTotalsCompact.text = getString(
+            R.string.main_stats_totals_compact_fmt,
+            formatThousands(words),
+            formatThousands(voiceMinutes),
+        )
+        statsTotalsCompact.visibility = View.VISIBLE
     }
 
     // Russian plural rule branches on last-digit AND last-two-digits, both
@@ -269,18 +252,6 @@ class MainActivity : AppCompatActivity() {
         dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
             MaterialColors.getColor(statsCard, com.google.android.material.R.attr.colorError)
         )
-    }
-
-    private fun shareApp() {
-        val text = getString(R.string.main_share_app_text)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, text)
-        }
-        try {
-            startActivity(Intent.createChooser(intent, getString(R.string.main_share_chooser)))
-        } catch (_: Exception) {
-        }
     }
 
     private fun formatThousands(value: Long): String {
@@ -345,7 +316,6 @@ class MainActivity : AppCompatActivity() {
         // and nice-to-have surfaces. Battery being unset doesn't qualify.
         statsCard.visibility = if (criticalOk) View.VISIBLE else View.GONE
         promoCard.visibility = if (criticalOk) View.VISIBLE else View.GONE
-        shareCard.visibility = if (criticalOk) View.VISIBLE else View.GONE
     }
 
     private fun openAppDetails() {

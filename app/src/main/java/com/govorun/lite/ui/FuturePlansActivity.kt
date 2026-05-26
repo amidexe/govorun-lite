@@ -53,6 +53,9 @@ class FuturePlansActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.proReviewButton).setOnClickListener {
             openRuStoreReview()
         }
+        findViewById<MaterialButton>(R.id.proShareButton).setOnClickListener {
+            shareApp()
+        }
     }
 
     private fun bindFeatureRow(rowId: Int, iconRes: Int, titleRes: Int, bodyRes: Int) {
@@ -69,6 +72,18 @@ class FuturePlansActivity : AppCompatActivity() {
             startActivity(intent)
         } catch (_: ActivityNotFoundException) {
             // No handler — silently no-op.
+        }
+    }
+
+    private fun shareApp() {
+        val text = getString(R.string.main_share_app_text)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        try {
+            startActivity(Intent.createChooser(intent, getString(R.string.main_share_chooser)))
+        } catch (_: Exception) {
         }
     }
 }
