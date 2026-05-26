@@ -85,6 +85,7 @@ class LiteAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var vadRecorder: VadRecorder? = null
     @Volatile private var isVadActive = false
+    private var isHoldMode = false   // true when recording started with useVad=false
 
     private var accessibilityInputMethod: LiteAccessibilityInputMethod? = null
 
@@ -327,6 +328,7 @@ class LiteAccessibilityService : AccessibilityService() {
     @SuppressLint("MissingPermission")
     private fun startVadRecording(useVad: Boolean = true) {
         if (isVadActive) return
+        isHoldMode = !useVad
         // Mic permission can disappear out from under us — most commonly when
         // the user picked "Только в этот раз" and Android quietly revoked it
         // (and killed the previous process). MainActivity already has a card
@@ -352,6 +354,10 @@ class LiteAccessibilityService : AccessibilityService() {
         isVadActive = true
         vibrateStart()
         bubbleOverlay?.setRecording(true)
+        // In hold-to-talk mode VAD is disabled so onSpeechActive never fires —
+        // the keep-screen-on override must be set here directly. In VAD mode
+        // the override is driven by speech-detection callbacks instead.
+        if (!useVad) bubbleOverlay?.setKeepScreenOnOverride(true)
         scheduleAutoStop()
 
         // Build + start the recorder SYNCHRONOUSLY on the main thread. Dispatching
@@ -363,8 +369,14 @@ class LiteAccessibilityService : AccessibilityService() {
             scope = scope,
             transcriberProvider = { OfflineTranscriber.getInstance(this@LiteAccessibilityService) },
             onSegment = { text -> pasteText(text) },
-            onDone = {
-                if (Prefs.isVoiceSuffixEnabled(this@LiteAccessibilityService)) {
+            onDone = { hadText ->
+                if (isHoldMode) {
+                    // Always clear processing state, even if nothing was recognised —
+                    // otherwise the yellow spinning bubble gets stuck on silence.
+                    bubbleOverlay?.setProcessing(false)
+                    bubbleOverlay?.setKeepScreenOnOverride(false)
+                }
+                if (hadText && Prefs.isVoiceSuffixEnabled(this@LiteAccessibilityService)) {
                     pasteText("\n\n[текст распознан с голоса]")
                 }
             },
@@ -418,7 +430,15 @@ class LiteAccessibilityService : AccessibilityService() {
         speechGraceHandler.removeCallbacks(speechGraceRunnable)
         if (!silent) vibrateStop()
         bubbleOverlay?.setRecording(false)
-        bubbleOverlay?.setKeepScreenOnOverride(false)
+        if (isHoldMode) {
+            // Hold-to-talk: transcription of the full buffer can take several
+            // seconds for long recordings. Show the processing state so the
+            // user knows the app is working, not frozen. Keep the screen alive
+            // during that time too — both are cleared in the onDone callback.
+            bubbleOverlay?.setProcessing(true)
+        } else {
+            bubbleOverlay?.setKeepScreenOnOverride(false)
+        }
         Log.i(TAG, "VAD recording stopped")
     }
 

@@ -127,10 +127,10 @@ class VadRecorder(private val context: Context) {
         scope: CoroutineScope,
         transcriberProvider: suspend () -> Transcriber,
         onSegment: suspend (String) -> Unit,
-        // Called once after the last segment is transcribed and inserted,
-        // only when at least one non-blank segment was delivered. Used by
-        // the service to append a session-end suffix if the pref is on.
-        onDone: suspend () -> Unit = {},
+        // Called once after all segments are processed, always — even when
+        // nothing was recognised (silence, too-short hold). hadText=true when
+        // at least one non-blank segment was delivered.
+        onDone: suspend (hadText: Boolean) -> Unit = {},
         // Called once per VAD-detected speech segment with that segment's
         // duration in MILLISECONDS. Caller is responsible for accumulating
         // and rolling over to seconds (a 700ms «ага» would otherwise round
@@ -406,9 +406,7 @@ class VadRecorder(private val context: Context) {
                 try { audioRecord.stop() } catch (_: Exception) {}
                 audioRecord.release()
                 this@VadRecorder.audioRecord = null
-                if (textInserted > 0) {
-                    withContext(Dispatchers.Main) { onDone() }
-                }
+                withContext(Dispatchers.Main) { onDone(textInserted > 0) }
                 this@VadRecorder.isActive = false
                 stopAtMs = Long.MAX_VALUE
                 // Keep sharedVad alive — it's reused across sessions.

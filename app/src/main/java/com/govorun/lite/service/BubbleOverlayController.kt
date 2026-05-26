@@ -123,6 +123,9 @@ class BubbleOverlayController(
     // system's screen timeout even when the user opted out of the
     // persistent keep-screen-on switch.
     private var speechActiveOverride = false
+    // True while the model is processing audio after hold-to-talk release.
+    // Keeps the screen alive unconditionally until the result lands.
+    private var processingActive = false
 
     /** Toggle the recording indicator (red bubble). The screen-keep-on
      *  flag is held when the user has opted into it via Settings
@@ -146,10 +149,21 @@ class BubbleOverlayController(
         applyKeepScreenFlag()
     }
 
+    /** Show the yellow "thinking" indicator while the model transcribes a
+     *  hold-to-talk recording. Keeps the screen on unconditionally until
+     *  [active] is set back to false in the onDone callback. */
+    fun setProcessing(active: Boolean) {
+        processingActive = active
+        bubbleView?.setProcessing(active)
+        applyKeepScreenFlag()
+    }
+
     private fun applyKeepScreenFlag() {
         val params = bubbleParams ?: return
-        val keepScreenOn = recordingActive &&
-            (Prefs.isKeepScreenOnEnabled(service) || speechActiveOverride)
+        // Screen stays on while recording (subject to prefs/VAD override)
+        // OR unconditionally while the model is processing a hold-to-talk result.
+        val keepScreenOn = processingActive ||
+            (recordingActive && (Prefs.isKeepScreenOnEnabled(service) || speechActiveOverride))
         params.flags = if (keepScreenOn) {
             params.flags or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         } else {

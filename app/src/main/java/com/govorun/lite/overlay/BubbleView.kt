@@ -9,6 +9,7 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import androidx.core.content.ContextCompat
 import com.govorun.lite.R
 import com.govorun.lite.util.Prefs
@@ -102,6 +103,8 @@ class BubbleView @JvmOverloads constructor(
     private var isProcessing = false
     private var pulseRadius = 0f
     private var pulseAnimator: ValueAnimator? = null
+    private var processingAngle = 0f
+    private var processingAnimator: ValueAnimator? = null
 
     private var idleHaloActive = false
     private var idleHaloRadius = 0f
@@ -128,8 +131,13 @@ class BubbleView @JvmOverloads constructor(
     fun setProcessing(processing: Boolean) {
         isProcessing = processing; isRecording = false
         stopRecordingPulse()
-        if (processing) stopIdleHalo()
-        else if (idleHaloActive) startIdleHalo()
+        if (processing) {
+            stopIdleHalo()
+            startProcessingSpin()
+        } else {
+            stopProcessingSpin()
+            if (idleHaloActive) startIdleHalo()
+        }
         invalidate()
     }
 
@@ -243,8 +251,7 @@ class BubbleView @JvmOverloads constructor(
 
         // 3. Main bubble disc.
         val paint = when {
-            isProcessing -> processingPaint
-            isRecording -> recordingPaint
+            isProcessing || isRecording -> recordingPaint
             else -> basePaint
         }
         canvas.drawCircle(cx, cy, radius, paint)
@@ -267,7 +274,15 @@ class BubbleView @JvmOverloads constructor(
             val l = (cx - scaledIcon / 2).toInt()
             val t = (cy - scaledIcon / 2).toInt()
             it.setBounds(l, t, l + scaledIcon, t + scaledIcon)
-            it.draw(canvas)
+            if (isProcessing) {
+                // Spin the bird around its centre while the model is thinking.
+                canvas.save()
+                canvas.rotate(processingAngle, cx, cy)
+                it.draw(canvas)
+                canvas.restore()
+            } else {
+                it.draw(canvas)
+            }
         }
     }
 
@@ -288,6 +303,24 @@ class BubbleView @JvmOverloads constructor(
         pulseAnimator?.cancel()
         pulseAnimator = null
         pulseRadius = 0f
+    }
+
+    private fun startProcessingSpin() {
+        processingAnimator?.cancel()
+        processingAnimator = ValueAnimator.ofFloat(0f, 360f).apply {
+            duration = 1500L
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.RESTART
+            interpolator = LinearInterpolator()
+            addUpdateListener { processingAngle = it.animatedValue as Float; invalidate() }
+            start()
+        }
+    }
+
+    private fun stopProcessingSpin() {
+        processingAnimator?.cancel()
+        processingAnimator = null
+        processingAngle = 0f
     }
 
     // Combined breathing animation: the bubble itself scales 1.0 → 1.07 → 1.0
@@ -330,6 +363,7 @@ class BubbleView @JvmOverloads constructor(
         super.onDetachedFromWindow()
         pulseAnimator?.cancel()
         idleHaloAnimator?.cancel()
+        processingAnimator?.cancel()
     }
 
     // Theme lookup wrapper: keeps the whole bubble working even if someone

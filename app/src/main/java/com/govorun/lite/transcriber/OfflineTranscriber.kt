@@ -20,7 +20,9 @@ import java.nio.ByteOrder
  * Singleton — keeps recognizer in memory across recordings. Tries NNAPI first, falls back to CPU.
  */
 class OfflineTranscriber private constructor(
-    private val recognizer: OfflineRecognizer
+    private val recognizer: OfflineRecognizer,
+    /** Which ONNX execution provider actually loaded the model: "nnapi" or "cpu". */
+    val activeProvider: String
 ) : Transcriber {
 
     // Guards every call into the native sherpa-onnx session — both the hot
@@ -47,8 +49,8 @@ class OfflineTranscriber private constructor(
             instance?.let { return@withContext it }
             synchronized(this@Companion) {
                 instance?.let { return@synchronized it }
-                val recognizer = buildRecognizer(context)
-                OfflineTranscriber(recognizer).also { instance = it }
+                val (recognizer, provider) = buildRecognizer(context)
+                OfflineTranscriber(recognizer, provider).also { instance = it }
             }
         }
 
@@ -68,7 +70,7 @@ class OfflineTranscriber private constructor(
             }
         }
 
-        private fun buildRecognizer(context: Context): OfflineRecognizer {
+        private fun buildRecognizer(context: Context): Pair<OfflineRecognizer, String> {
             val dir = GigaAmModel.modelDir(context)
             val missing = GigaAmModel.FILES.map { File(dir, it.name) }.filter { !it.exists() }
             if (missing.isNotEmpty()) {
@@ -80,7 +82,7 @@ class OfflineTranscriber private constructor(
                     val config = buildConfig(dir, provider)
                     val recognizer = OfflineRecognizer(null, config)
                     Log.i(TAG, "GigaAM v3 provider=$provider — OK")
-                    return recognizer
+                    return Pair(recognizer, provider)
                 } catch (e: Exception) {
                     Log.w(TAG, "provider '$provider' FAILED: ${e.message}")
                     if (provider == "cpu") throw e

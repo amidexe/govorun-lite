@@ -174,6 +174,9 @@ class TextInserter(
             "org.telegram.messenger.web",   // telegram.org direct APK
             "tw.nekomimi.nekogram",         // Nekogram
             "com.radolyn.ayugram",          // AyuGram
+            "org.telegram.plus",            // Plus Messenger
+            "nu.gpu.nagram",               // Nagram
+            "nu.gpu.nagramx",              // NagramX / NagramXF
         )
     }
 }
