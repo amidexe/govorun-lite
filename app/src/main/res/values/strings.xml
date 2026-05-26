@@ -74,8 +74,8 @@
     <string name="main_ready">Всё готово</string>
     <string name="main_needs_setup">Нужна настройка</string>
     <string name="main_just_finished">Всё готово!</string>
-    <string name="main_just_finished_sub">Откройте любое поле ввода — справа появится Говорун. Нажмите на него — и говорите.</string>
-    <string name="main_hint">Можете отключить интернет — Говорун продолжит распознавать речь прямо на телефоне.</string>
+    <string name="main_just_finished_sub">Откройте любое поле для ввода текста — Говорун появится рядом с клавиатурой. Нажмите на него — и говорите.</string>
+    <string name="main_hint">Откройте любое поле для ввода текста — Говорун появится рядом с клавиатурой. Нажмите на него — и говорите.</string>
     <string name="main_engine_credit">Движок — GigaAM v3 от Сбера, лицензия MIT.</string>
     <string name="main_card_mic_title">Включите микрофон</string>
     <string name="main_card_mic_body">Без микрофона Говорун не услышит, что вы говорите. Выберите Разрешения → Микрофон → Разрешить во время использования приложения.</string>
@@ -93,10 +93,10 @@
          doesn't compete with action items. Disappears for good after the
          user taps "Понятно". -->
     <string name="main_card_whats_new_title">Что нового</string>
-    <string name="main_card_whats_new_line1">• Фильтр приложений — теперь можно скрывать птичку в отдельных программах или показывать только в нужных. Настраивается в Настройках.</string>
-    <string name="main_card_whats_new_line2">• Зафиксировать позицию — если птичка сдвигается при случайных касаниях, включите эту опцию в Настройках.</string>
-    <string name="main_card_whats_new_line3">• Добавлять пометку — Говорун может дописывать «[текст распознан с голоса]» после каждой диктовки. Включите в Настройках.</string>
-    <string name="main_card_whats_new_line4">• Птичка больше не держит экран включённым по умолчанию. Хотите вернуть как было — найдите переключатель в Настройках.</string>
+    <string name="main_card_whats_new_line1">• Статистика — сколько слов наговорили сегодня теперь на первом плане.</string>
+    <string name="main_card_whats_new_line2">• Тест скорости — новый инструмент в Настройках: насколько быстро Говорун работает на вашем телефоне.</string>
+    <string name="main_card_whats_new_line3">• Поделитесь Говоруном — новая кнопка на главном экране, чтобы рассказать друзьям.</string>
+
     <string name="main_card_whats_new_dismiss">Понятно</string>
     <string name="main_needs_setup_sub">Несколько мелочей надо подкрутить — карточки ниже подскажут, что и где.</string>
     <string name="main_disable_service">Выключить Говоруна</string>
@@ -111,18 +111,21 @@
     <string name="main_open_accessibility">Открыть специальные возможности</string>
 
     <!-- Main screen: usage stats -->
-    <string name="main_stats_title">Ваша статистика</string>
+    <string name="main_stats_title">Говорун: голос в текст</string>
+    <string name="main_stats_today_label">слов за сегодня</string>
+    <string name="main_stats_totals_compact_fmt">всего %1$s слов · %2$s мин.</string>
     <string name="main_stats_words_label">слов распознано</string>
     <string name="main_stats_minutes_label">минут диктовки</string>
     <string name="main_stats_empty">Ещё ничего не наговорили — попробуйте открыть любое поле ввода и нажать на Говоруна.</string>
-    <!-- Share-from-stats: tapping the small share icon on the stats card
-         pre-fills an Intent.ACTION_SEND with the user's current total
-         baked in, so the recipient sees the bragging number first and
-         can install with one tap from the link. If RuStore URL moves,
-         update main_pro_review_url AND this string in lockstep. -->
-    <string name="main_share_chooser">Рассказать о Говоруне</string>
-    <string name="main_share_button">Поделиться статистикой</string>
-    <string name="main_share_stats_fmt">Наговорил через Говоруна уже %1$s. Офлайн голосовой ввод без интернета, прямо над клавиатурой.\n\nhttps://apps.rustore.ru/app/com.govorun.lite</string>
+    <!-- "Tell friends" card on main screen -->
+    <string name="main_share_card_title">Расскажите о Говоруне</string>
+    <string name="main_share_card_body">Порекомендуйте друзьям и коллегам</string>
+    <string name="main_share_chooser">Порекомендовать Говорун</string>
+    <string name="main_share_app_text">Говорун: голос в текст. Голосовой ввод на русском без интернета.\nhttps://apps.rustore.ru/app/com.govorun.lite</string>
+
+    <!-- Benchmark card on main screen -->
+    <string name="main_benchmark_card_title">Тест скорости</string>
+    <string name="main_benchmark_card_body">Насколько быстро работает на вашем устройстве</string>
 
     <!-- Main toolbar: overflow menu -->
     <string name="menu_settings">Настройки</string>
@@ -167,12 +170,12 @@
 
     <!-- Main screen: promo card -->
     <string name="main_promo_title">Хотите больше возможностей?</string>
-    <string name="main_promo_body">Загляните, что мы задумали дальше — и помогите нам сделать Говорун ещё удобнее.</string>
+    <string name="main_promo_body">Помогите нам сделать Говорун ещё удобнее.</string>
 
     <!-- Future plans screen -->
-    <string name="future_title">Новые функции</string>
+    <string name="future_title">Как развивается Говорун</string>
     <string name="main_pro_feat_filter_title">Фильтр по приложениям</string>
-    <string name="main_pro_feat_filter_body">Говорун появляется только в выбранных приложениях — например, только в мессенджерах.</string>
+    <string name="main_pro_feat_filter_body">Говорун показывается только там, где нужно — например, только в мессенджерах.</string>
     <string name="main_pro_follow_updates">Следите за обновлениями в RuStore, чтобы узнать, что появилось.</string>
 
     <!-- About screen -->
@@ -226,15 +229,15 @@
 
     <!-- Future plans screen / RuStore review CTA -->
     <string name="main_pro_title">Новые функции</string>
-    <string name="main_pro_intro">Говорун — наш небольшой проект, и мы делаем его с душой. Если приложение пригодилось — поддержите звёздочкой в RuStore: пара тёплых слов подскажет, куда двигаться дальше.</string>
-    <string name="main_pro_feat_heading">Что планируем дальше</string>
-    <string name="main_pro_feat_bg_record_title">Запись голоса в фоне</string>
-    <string name="main_pro_feat_bg_record_body">Диктофон, который продолжает запись даже с выключенным экраном и распознаёт всё целиком.</string>
+    <string name="main_pro_intro">Говорун — небольшой проект, и мы делаем его с душой. За несколько месяцев вышло 13 обновлений, добавлено пять новых функций. Если приложение пригодилось — поддержите звёздочкой в RuStore: это лучший способ сказать, куда двигаться дальше.</string>
+    <string name="main_pro_feat_heading">Реализовано благодаря вашим отзывам</string>
+    <string name="main_pro_feat_bg_record_title">Режим удержания</string>
+    <string name="main_pro_feat_bg_record_body">Запись пока держишь птичку — удобно для коротких фраз.</string>
     <string name="main_pro_feat_dict_title">Словарь автозамен</string>
-    <string name="main_pro_feat_dict_body">Подмена слов при наборе — удобно для имён, сокращений и технических терминов.</string>
-    <string name="main_pro_feat_theme_title">Темы и вид Говоруна</string>
-    <string name="main_pro_feat_theme_body">Разные стили, цвета и размеры Говоруна.</string>
-    <string name="main_pro_feat_more">…и многое другое, что сделает голосовой ввод удобнее</string>
+    <string name="main_pro_feat_dict_body">Замена слов, аббревиатур и имён прямо при диктовке.</string>
+    <string name="main_pro_feat_theme_title">Блокировка и настройка пузыря</string>
+    <string name="main_pro_feat_theme_body">Фиксация в нужном месте, прозрачность и размер.</string>
+    <string name="main_pro_feat_more">…и многое другое, реализованное благодаря вашим отзывам.</string>
     <string name="main_pro_review_button">Оставить отзыв в RuStore</string>
     <string name="main_pro_review_url">https://apps.rustore.ru/app/com.govorun.lite</string>
 
@@ -308,4 +311,31 @@
     <string name="settings_app_filter_body_all">Показывается во всех приложениях</string>
     <string name="settings_app_filter_body_blacklist">Скрыто в %d прил.</string>
     <string name="settings_app_filter_body_whitelist">Только в %d прил.</string>
+
+    <!-- Settings row for benchmark -->
+    <string name="settings_benchmark_title">Тест производительности</string>
+    <string name="settings_benchmark_body">Скорость распознавания на вашем устройстве</string>
+
+    <!-- Benchmark screen -->
+    <string name="benchmark_title">Тест производительности</string>
+    <string name="benchmark_description">Прогоняет два тестовых ролика и показывает, во сколько раз быстрее реального времени работает распознавание на вашем устройстве. Результатом можно поделиться.</string>
+    <string name="benchmark_run">Запустить тест</string>
+    <string name="benchmark_results_title">Результат</string>
+    <string name="benchmark_label_provider">Ускоритель</string>
+    <string name="benchmark_label_time">Время</string>
+    <string name="benchmark_label_rtf">RTF</string>
+    <string name="benchmark_label_recognized">Что распознало</string>
+    <string name="benchmark_share">Поделиться</string>
+    <string name="benchmark_copy">Скопировать</string>
+    <string name="benchmark_hero_label">скорость распознавания</string>
+    <string name="benchmark_help_action">Как считается</string>
+    <string name="benchmark_help_title">Как считается результат</string>
+    <string name="benchmark_help_body">Говорун прогоняет два тестовых ролика через модель GigaAM и замеряет время обработки.\n\nБольшое число в центре — во сколько раз модель обрабатывает повторный запуск быстрее, чем длится само аудио. Например, ×10 означает: 11 секунд аудио обработаны за 1,1 секунды.\n\nПервый запуск — медленнее: модель загружается с нуля. Повторный — реальная скорость в обычной работе.\n\nДлинный ролик (71 сек) проверяет, как устройство справляется с продолжительной записью.\n\nЧто означает ваш результат:\n×3–4 — терпимо, пауза после речи заметна\n×5–9 — комфортно, пауза короткая\n×10 и выше — отлично, ожидание почти не чувствуется\n\nАппаратный NPU — специальный чип в телефоне для нейросетей, работает быстрее и экономнее. Процессор — обычный CPU, используется если NPU недоступен.\n\nТестовые ролики — официальные примеры GigaAM от Сбера, лицензия MIT:\nhttps://github.com/amidexe/govorun-lite/tree/main/app/src/main/assets</string>
+    <string name="benchmark_help_close">Понятно</string>
+    <string name="benchmark_short_title">Короткий ролик (11 сек)</string>
+    <string name="benchmark_cold_title">Первый запуск</string>
+    <string name="benchmark_warm_title">Повторный</string>
+    <string name="benchmark_long_title">Длинный ролик (71 сек)</string>
+    <string name="benchmark_long_run_label">Результат</string>
+    <string name="benchmark_rtf_hint">×10 означает что 10 сек аудио обрабатывается за 1 сек. Чем больше число — тем быстрее устройство.</string>
 </resources>

@@ -81,7 +81,8 @@
                     <ImageView
                         android:layout_width="104dp"
                         android:layout_height="104dp"
-                        android:layout_gravity="end|bottom"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="8dp"
                         android:alpha="0.14"
                         android:importantForAccessibility="no"
                         android:src="@drawable/logo_bird"
@@ -93,37 +94,50 @@
                         android:orientation="vertical"
                         android:padding="20dp">
 
-                        <FrameLayout
+                        <com.google.android.material.textview.MaterialTextView
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
+                            android:layout_height="wrap_content"
+                            android:text="@string/main_stats_title"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <!-- Today hero: big number left-aligned, shown when today > 0 -->
+                        <LinearLayout
+                            android:id="@+id/statsTodaySection"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:orientation="vertical"
+                            android:visibility="gone"
+                            tools:visibility="visible">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/statsTodayNumber"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                                android:textColor="?attr/colorPrimary"
+                                tools:text="1 234" />
 
                             <com.google.android.material.textview.MaterialTextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_gravity="start|center_vertical"
-                                android:paddingEnd="48dp"
-                                android:text="@string/main_stats_title"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface" />
+                                android:layout_marginTop="2dp"
+                                android:text="@string/main_stats_today_label"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/statsShareButton"
-                                style="@style/Widget.Material3.Button.IconButton"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:layout_gravity="end|center_vertical"
-                                android:contentDescription="@string/main_share_button"
-                                app:icon="@drawable/ic_share_24"
-                                app:iconSize="20dp"
-                                app:iconTint="?attr/colorOnSurfaceVariant" />
-                        </FrameLayout>
+                        </LinearLayout>
 
+                        <!-- Totals: two columns, shown when today == 0 -->
                         <LinearLayout
                             android:id="@+id/statsRow"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
-                            android:orientation="horizontal">
+                            android:orientation="horizontal"
+                            android:visibility="gone"
+                            tools:visibility="visible">
 
                             <LinearLayout
                                 android:layout_width="0dp"
@@ -138,7 +152,7 @@
                                     android:maxLines="1"
                                     android:textAppearance="?attr/textAppearanceHeadlineSmall"
                                     android:textColor="?attr/colorPrimary"
-                                    tools:text="1 234" />
+                                    tools:text="25 739" />
 
                                 <com.google.android.material.textview.MaterialTextView
                                     android:layout_width="wrap_content"
@@ -162,7 +176,7 @@
                                     android:maxLines="1"
                                     android:textAppearance="?attr/textAppearanceHeadlineSmall"
                                     android:textColor="?attr/colorPrimary"
-                                    tools:text="47" />
+                                    tools:text="160" />
 
                                 <com.google.android.material.textview.MaterialTextView
                                     android:id="@+id/statsMinutesLabel"
@@ -174,6 +188,18 @@
                                     android:textColor="?attr/colorOnSurfaceVariant" />
                             </LinearLayout>
                         </LinearLayout>
+
+                        <!-- Compact totals line below today hero -->
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/statsTotalsCompact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:visibility="gone"
+                            tools:text="всего 25 739 слов · 160 мин."
+                            tools:visibility="visible" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/statsEmpty"
@@ -478,14 +504,6 @@
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurfaceVariant" />
 
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/main_card_whats_new_line4"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -548,6 +566,67 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:text="@string/main_promo_body"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginStart="8dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right_24"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Share app card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/shareCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="20dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_share_24"
+                        app:tint="?attr/colorPrimary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/main_share_card_title"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/main_share_card_body"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>

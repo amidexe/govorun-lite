@@ -41,22 +41,14 @@ class FuturePlansActivity : AppCompatActivity() {
             insets
         }
 
-        bindFeatureRow(
-            R.id.rowBgRecord, R.drawable.ic_mic_24,
-            R.string.main_pro_feat_bg_record_title, R.string.main_pro_feat_bg_record_body
-        )
-        bindFeatureRow(
-            R.id.rowDict, R.drawable.ic_translate_24,
-            R.string.main_pro_feat_dict_title, R.string.main_pro_feat_dict_body
-        )
-        bindFeatureRow(
-            R.id.rowTheme, R.drawable.ic_palette_24,
-            R.string.main_pro_feat_theme_title, R.string.main_pro_feat_theme_body
-        )
-        bindFeatureRow(
-            R.id.rowFilter, R.drawable.ic_filter_list_24,
-            R.string.main_pro_feat_filter_title, R.string.main_pro_feat_filter_body
-        )
+        bindFeatureRow(R.id.rowBgRecord, R.drawable.ic_check_circle_24,
+            R.string.main_pro_feat_bg_record_title, R.string.main_pro_feat_bg_record_body)
+        bindFeatureRow(R.id.rowDict, R.drawable.ic_check_circle_24,
+            R.string.main_pro_feat_dict_title, R.string.main_pro_feat_dict_body)
+        bindFeatureRow(R.id.rowTheme, R.drawable.ic_check_circle_24,
+            R.string.main_pro_feat_theme_title, R.string.main_pro_feat_theme_body)
+        bindFeatureRow(R.id.rowFilter, R.drawable.ic_check_circle_24,
+            R.string.main_pro_feat_filter_title, R.string.main_pro_feat_filter_body)
 
         findViewById<MaterialButton>(R.id.proReviewButton).setOnClickListener {
             openRuStoreReview()

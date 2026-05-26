@@ -66,8 +66,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statsMinutesNumber: MaterialTextView
     private lateinit var statsMinutesLabel: MaterialTextView
     private lateinit var statsEmpty: MaterialTextView
-    private lateinit var statsShareButton: MaterialButton
+    private lateinit var statsTodaySection: View
+    private lateinit var statsTodayNumber: MaterialTextView
+    private lateinit var statsTotalsCompact: MaterialTextView
     private lateinit var promoCard: View
+    private lateinit var shareCard: View
     private lateinit var toolbar: MaterialToolbar
     private var showJustFinished: Boolean = false
 
@@ -91,10 +94,6 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.action_settings -> {
                     startActivity(Intent(this, SettingsActivity::class.java))
-                    true
-                }
-                R.id.action_pro -> {
-                    startActivity(Intent(this, FuturePlansActivity::class.java))
                     true
                 }
                 R.id.action_about -> {
@@ -149,8 +148,9 @@ class MainActivity : AppCompatActivity() {
         statsMinutesNumber = findViewById(R.id.statsMinutesNumber)
         statsMinutesLabel = findViewById(R.id.statsMinutesLabel)
         statsEmpty = findViewById(R.id.statsEmpty)
-        statsShareButton = findViewById(R.id.statsShareButton)
-        statsShareButton.setOnClickListener { shareAppLink() }
+        statsTodaySection = findViewById(R.id.statsTodaySection)
+        statsTodayNumber = findViewById(R.id.statsTodayNumber)
+        statsTotalsCompact = findViewById(R.id.statsTotalsCompact)
         // Long-press to reset the running counter. Hidden on purpose —
         // there's no visible button because the action is destructive
         // and rarely needed; the gesture + confirmation dialog is enough
@@ -166,6 +166,9 @@ class MainActivity : AppCompatActivity() {
         promoCard.setOnClickListener {
             startActivity(Intent(this, FuturePlansActivity::class.java))
         }
+
+        shareCard = findViewById(R.id.shareCard)
+        shareCard.setOnClickListener { shareApp() }
 
         showJustFinished = intent.getBooleanExtra(EXTRA_JUST_FINISHED, false)
         if (showJustFinished) {
@@ -205,32 +208,36 @@ class MainActivity : AppCompatActivity() {
         val voiceMinutes = voiceSeconds / 60L
 
         if (words <= 0L) {
+            statsTodaySection.visibility = View.GONE
             statsRow.visibility = View.GONE
-            statsShareButton.visibility = View.GONE
+            statsTotalsCompact.visibility = View.GONE
             statsEmpty.visibility = View.VISIBLE
             return
         }
-        statsRow.visibility = View.VISIBLE
-        statsShareButton.visibility = View.VISIBLE
         statsEmpty.visibility = View.GONE
 
-        statsWordsNumber.text = formatThousands(words)
-        // Switch to hours when the counter passes 60 minutes — keeps the
-        // number compact (e.g. «360» instead of «21600») and matches how
-        // people read time. Sub-hour: «47 минут диктовки». Hour-plus:
-        // «10 часов диктовки» / «360 часов диктовки» (for power users).
-        if (voiceMinutes < 60L) {
-            statsMinutesNumber.text = voiceMinutes.toString()
+        val wordsToday = StatsStore.getWordsToday(this)
+        if (wordsToday > 0L) {
+            // Today is the hero — show big centred number, totals as compact line below
+            statsTodayNumber.text = formatThousands(wordsToday)
+            statsTodaySection.visibility = View.VISIBLE
+            statsTotalsCompact.text = getString(
+                R.string.main_stats_totals_compact_fmt,
+                formatThousands(words),
+                formatThousands(voiceMinutes),
+            )
+            statsTotalsCompact.visibility = View.VISIBLE
+            statsRow.visibility = View.GONE
+        } else {
+            // No activity today — show full two-column totals
+            statsTodaySection.visibility = View.GONE
+            statsTotalsCompact.visibility = View.GONE
+            statsRow.visibility = View.VISIBLE
+            statsWordsNumber.text = formatThousands(words)
+            statsMinutesNumber.text = formatThousands(voiceMinutes)
             statsMinutesLabel.text = resources.getQuantityString(
                 R.plurals.minutes_label,
                 voiceMinutes.toPluralSelector(),
-            )
-        } else {
-            val hours = voiceMinutes / 60L
-            statsMinutesNumber.text = formatThousands(hours)
-            statsMinutesLabel.text = resources.getQuantityString(
-                R.plurals.hours_label,
-                hours.toPluralSelector(),
             )
         }
     }
@@ -264,14 +271,8 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun shareAppLink() {
-        val totalWords = StatsStore.getWords(this)
-        val wordsPhrase = resources.getQuantityString(
-            R.plurals.words_count,
-            totalWords.toPluralSelector(),
-            formatThousands(totalWords),
-        )
-        val text = getString(R.string.main_share_stats_fmt, wordsPhrase)
+    private fun shareApp() {
+        val text = getString(R.string.main_share_app_text)
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, text)
@@ -344,6 +345,7 @@ class MainActivity : AppCompatActivity() {
         // and nice-to-have surfaces. Battery being unset doesn't qualify.
         statsCard.visibility = if (criticalOk) View.VISIBLE else View.GONE
         promoCard.visibility = if (criticalOk) View.VISIBLE else View.GONE
+        shareCard.visibility = if (criticalOk) View.VISIBLE else View.GONE
     }
 
     private fun openAppDetails() {

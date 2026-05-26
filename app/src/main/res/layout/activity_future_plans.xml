@@ -92,7 +92,6 @@
                 android:textAppearance="?attr/textAppearanceTitleSmall"
                 android:textColor="?attr/colorOnSurface" />
 
-            <!-- Feature rows -->
             <include
                 android:id="@+id/rowBgRecord"
                 layout="@layout/item_info_row"
