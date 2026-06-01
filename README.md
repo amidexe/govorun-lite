@@ -109,6 +109,10 @@ adb install --user 0 -r app/build/outputs/apk/debug/app-debug.apk
 
 См. [CHANGELOG.md](CHANGELOG.md) — что менялось в каждой версии. Подписанные APK к каждому релизу — на странице [Releases](https://github.com/amidexe/govorun-lite/releases).
 
+## Говорун для macOS
+
+Если нужен голосовой ввод на Mac — есть [macOS-версия](https://github.com/amidexe/govorun-osx) на той же модели GigaAM v3.
+
 ## Лицензия
 
 Код приложения — MIT, см. [LICENSE](LICENSE). Приложение распространяется бесплатно как есть, без каких-либо гарантий — автор не несёт ответственности за возможный ущерб от использования.
