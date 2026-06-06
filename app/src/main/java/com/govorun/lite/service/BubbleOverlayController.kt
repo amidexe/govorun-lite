@@ -86,11 +86,14 @@ class BubbleOverlayController(
                 // this is a no-op or a small win.
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                    WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED or
+                    // Allows negative x so the halo can clip at the screen edge
+                    // when the user sets a small edge margin.
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = bubbleHorizontalGravity() or Gravity.CENTER_VERTICAL
-                x = 16
+                x = edgeMarginPx()
                 // Restore the user's last drag position. Without this, every
                 // time Android restarts our service (memory pressure, OEM
                 // battery-saver killing the process, accessibility unbind/rebind
@@ -198,6 +201,16 @@ class BubbleOverlayController(
         params.gravity = bubbleHorizontalGravity() or Gravity.CENTER_VERTICAL
         try { windowManager.updateViewLayout(bubbleView, params) } catch (_: Exception) {}
     }
+
+    /** Edge margin change — update x in LayoutParams in place; no rebuild. */
+    fun applyEdgeMargin() {
+        val params = bubbleParams ?: return
+        params.x = edgeMarginPx()
+        try { windowManager.updateViewLayout(bubbleView, params) } catch (_: Exception) {}
+    }
+
+    private fun edgeMarginPx(): Int =
+        (Prefs.getBubbleEdgeMargin(service) * service.resources.displayMetrics.density).toInt()
 
     private fun bubbleHorizontalGravity(): Int =
         if (Prefs.getBubbleSide(service) == Prefs.BUBBLE_SIDE_LEFT) Gravity.START else Gravity.END

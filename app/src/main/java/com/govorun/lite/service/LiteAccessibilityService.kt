@@ -582,6 +582,14 @@ class LiteAccessibilityService : AccessibilityService() {
         bubbleOverlay?.applySide()
     }
 
+    /**
+     * Called from Settings when the user moves the edge-margin slider.
+     * Updates the x offset in-place; no rebuild needed.
+     */
+    fun applyBubbleEdgeMarginFromPrefs() {
+        bubbleOverlay?.applyEdgeMargin()
+    }
+
     override fun onDestroy() {
         instance = null
         stopVadRecording(silent = true)

@@ -63,12 +63,14 @@ class SettingsActivity : AppCompatActivity() {
             R.id.sideLeft else R.id.sideRight
         sideGroup.check(initialSideId)
         applyPreviewSide(previewBubble, Prefs.getBubbleSide(this))
+        applyPreviewEdgeMargin(previewBubble, Prefs.getBubbleSide(this), Prefs.getBubbleEdgeMargin(this))
         sideGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             val side = if (checkedId == R.id.sideLeft) Prefs.BUBBLE_SIDE_LEFT
                        else Prefs.BUBBLE_SIDE_RIGHT
             Prefs.setBubbleSide(this, side)
             applyPreviewSide(previewBubble, side)
+            applyPreviewEdgeMargin(previewBubble, side, Prefs.getBubbleEdgeMargin(this))
             LiteAccessibilityService.instance?.applyBubbleSideFromPrefs()
         }
 
@@ -104,6 +106,20 @@ class SettingsActivity : AppCompatActivity() {
             // disabled it). If it's on, nudge it so the overlay bubble reflects
             // the change immediately — no need to toggle or reopen anything.
             LiteAccessibilityService.instance?.applyBubbleAlphaFromPrefs()
+        }
+
+        val edgeMarginSlider = findViewById<Slider>(R.id.edgeMarginSlider)
+        edgeMarginSlider.valueFrom = Prefs.BUBBLE_EDGE_MARGIN_MIN.toFloat()
+        edgeMarginSlider.valueTo = Prefs.BUBBLE_EDGE_MARGIN_MAX.toFloat()
+        edgeMarginSlider.stepSize = Prefs.BUBBLE_EDGE_MARGIN_STEP.toFloat()
+        edgeMarginSlider.value = Prefs.getBubbleEdgeMargin(this).toFloat()
+        edgeMarginSlider.setLabelFormatter { value -> "${value.toInt()} dp" }
+        edgeMarginSlider.addOnChangeListener { _, value, fromUser ->
+            if (!fromUser) return@addOnChangeListener
+            val marginDp = value.toInt()
+            Prefs.setBubbleEdgeMargin(this, marginDp)
+            applyPreviewEdgeMargin(previewBubble, Prefs.getBubbleSide(this), marginDp)
+            LiteAccessibilityService.instance?.applyBubbleEdgeMarginFromPrefs()
         }
 
         val hapticsSwitch = findViewById<MaterialSwitch>(R.id.hapticsSwitch)
@@ -251,6 +267,7 @@ class SettingsActivity : AppCompatActivity() {
             // surprising; the dictionary screen has its own clear action.
             Prefs.setBubbleSize(this, Prefs.BUBBLE_SIZE_DEFAULT)
             Prefs.setBubbleAlpha(this, Prefs.BUBBLE_ALPHA_DEFAULT)
+            Prefs.setBubbleEdgeMargin(this, Prefs.BUBBLE_EDGE_MARGIN_DEFAULT)
             Prefs.setHapticsEnabled(this, false)
             Prefs.setHideInSearchEnabled(this, false)
             Prefs.setBubbleSide(this, Prefs.BUBBLE_SIDE_RIGHT)
@@ -264,6 +281,7 @@ class SettingsActivity : AppCompatActivity() {
 
             sizeSlider.value = Prefs.BUBBLE_SIZE_DEFAULT
             transparencySlider.value = Prefs.BUBBLE_ALPHA_DEFAULT
+            edgeMarginSlider.value = Prefs.BUBBLE_EDGE_MARGIN_DEFAULT.toFloat()
             hapticsSwitch.isChecked = false
             hideInSearchSwitch.isChecked = false
             sideGroup.check(R.id.sideRight)
@@ -277,10 +295,12 @@ class SettingsActivity : AppCompatActivity() {
             previewBubble.applySizeScaleFromPrefs()
             previewBubble.setIdleAlpha(Prefs.BUBBLE_ALPHA_DEFAULT)
             applyPreviewSide(previewBubble, Prefs.BUBBLE_SIDE_RIGHT)
+            applyPreviewEdgeMargin(previewBubble, Prefs.BUBBLE_SIDE_RIGHT, Prefs.BUBBLE_EDGE_MARGIN_DEFAULT)
 
             LiteAccessibilityService.instance?.applyBubbleSizeFromPrefs()
             LiteAccessibilityService.instance?.applyBubbleAlphaFromPrefs()
             LiteAccessibilityService.instance?.applyBubbleSideFromPrefs()
+            LiteAccessibilityService.instance?.applyBubbleEdgeMarginFromPrefs()
             // Position reset — a fresh bubble rebuild picks up the new Y=0.
             LiteAccessibilityService.instance?.applyBubbleSizeFromPrefs()
         }
@@ -309,6 +329,14 @@ class SettingsActivity : AppCompatActivity() {
                          else android.view.Gravity.END
         lp.gravity = horizontal or android.view.Gravity.CENTER_VERTICAL
         previewBubble.layoutParams = lp
+    }
+
+    // Shifts the preview bubble horizontally to mirror the real overlay x offset.
+    // Right side: positive margin = move left (away from edge) → negative translationX.
+    // Left side:  positive margin = move right (away from edge) → positive translationX.
+    private fun applyPreviewEdgeMargin(previewBubble: BubbleView, side: String, marginDp: Int) {
+        val px = marginDp * resources.displayMetrics.density
+        previewBubble.translationX = if (side == Prefs.BUBBLE_SIDE_LEFT) px else -px
     }
 
     private fun refreshServiceSwitch() {

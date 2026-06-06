@@ -321,6 +321,41 @@ object Prefs {
         prefs.edit().putBoolean(KEY_V108_PAUSE_MIGRATED, true).apply()
     }
 
+    // Edge margin — additional inset between the bubble disc and the screen edge,
+    // stored in dp. 0 = as close to the edge as the halo ring allows (~17dp for
+    // the disc itself at default size). Stored in dp so it scales correctly across
+    // densities; converted to px in BubbleOverlayController.
+    private const val KEY_BUBBLE_EDGE_MARGIN = "bubble_edge_margin"
+
+    // Negative values push the view past the screen edge (halo clips, disc stays
+    // visible). Overlay uses FLAG_LAYOUT_NO_LIMITS so negative x is honoured.
+    // -16 dp ≈ disc right at the screen edge; 0 dp ≈ 17dp gap (just halo space);
+    // +24 dp ≈ disc clearly inset. Step 4dp gives 11 positions total.
+    const val BUBBLE_EDGE_MARGIN_MIN = -12
+    const val BUBBLE_EDGE_MARGIN_MAX = 24
+    const val BUBBLE_EDGE_MARGIN_STEP = 4
+    const val BUBBLE_EDGE_MARGIN_DEFAULT = 0
+
+    fun getBubbleEdgeMargin(context: Context): Int {
+        val raw = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .getInt(KEY_BUBBLE_EDGE_MARGIN, BUBBLE_EDGE_MARGIN_DEFAULT)
+        return snapBubbleEdgeMargin(raw)
+    }
+
+    fun setBubbleEdgeMargin(context: Context, dp: Int) {
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(KEY_BUBBLE_EDGE_MARGIN, snapBubbleEdgeMargin(dp))
+            .apply()
+    }
+
+    private fun snapBubbleEdgeMargin(value: Int): Int {
+        val clamped = value.coerceIn(BUBBLE_EDGE_MARGIN_MIN, BUBBLE_EDGE_MARGIN_MAX)
+        val steps = Math.round((clamped - BUBBLE_EDGE_MARGIN_MIN).toFloat() / BUBBLE_EDGE_MARGIN_STEP)
+        return (BUBBLE_EDGE_MARGIN_MIN + steps * BUBBLE_EDGE_MARGIN_STEP)
+            .coerceIn(BUBBLE_EDGE_MARGIN_MIN, BUBBLE_EDGE_MARGIN_MAX)
+    }
+
     // Lock bubble position — when ON, drag gestures on the bubble are ignored.
     // OFF by default so existing users are unaffected.
     private const val KEY_BUBBLE_POSITION_LOCKED = "bubble_position_locked"
