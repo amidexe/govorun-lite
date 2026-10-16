@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "approvedAmountKopeks": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "currency": {
+      "default": "RUB",
+      "type": "string"
+    },
+    "currentAccessEndsAt": {
+      "default": "",
+      "type": "string"
+    },
+    "decisionCode": {
+      "default": "",
+      "type": "string"
+    },
+    "decisionMode": {
+      "default": "",
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "reasonCode": {
+      "type": "string"
+    },
+    "renewalStopped": {
+      "default": true,
+      "type": "boolean"
+    },
+    "requestedAt": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "reasonCode",
+    "requestedAt",
+    "state"
+  ],
+  "title": "ConsumerBillingRefundRequest",
+  "type": "object",
+  "x-consumer-field-order": [
+    "id",
+    "state",
+    "reasonCode",
+    "requestedAt",
+    "decisionCode",
+    "decisionMode",
+    "approvedAmountKopeks",
+    "currency",
+    "renewalStopped",
+    "currentAccessEndsAt"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

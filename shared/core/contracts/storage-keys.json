@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 1,
+  "secrets": {
+    "account.session": {
+      "macos": {
+        "store": "AccountKeychain.currentService",
+        "key": "govorunOfficialAccountEnvelope.v1",
+        "defaults": {
+          "profile": "govorunSharedAccountProfile.v1",
+          "sessionMarker": "govorunAccountStoredSession",
+          "displayName": "govorunAccountDisplayName",
+          "deviceId": "govorunAccountCurrentDeviceId",
+          "deviceLimit": "govorunAccountDeviceLimit"
+        }
+      },
+      "windows": {
+        "store": "SecureStore(AppPaths.DataDirectory/secure, current recovery generation, DPAPI CurrentUser)",
+        "key": "account-session",
+        "sessionFence": "settings.json:AccountSessionEnded"
+      }
+    },
+    "account.authAttempt": {
+      "macos": {
+        "store": "AccountKeychain.currentService",
+        "key": "govorunSharedAuthAttempt.v1"
+      },
+      "windows": {
+        "store": "SecureStore(AppPaths.DataDirectory/secure, current recovery generation, DPAPI CurrentUser)",
+        "key": "account-auth-attempt-v1"
+      }
+    },
+    "selfHost.ollama": {
+      "macos": {
+        "store": "KeychainHelper.current service",
+        "key": "llmApiKey_ollama",
+        "savedFlag": "llmApiKeySaved_ollama",
+        "legacyDefaultsKey": "llmApiKey_ollama"
+      },
+      "windows": {
+        "store": "SecureStore(AppPaths.DataDirectory/secure, current recovery generation, DPAPI CurrentUser)",
+        "key": "custom-server-api-key"
+      }
+    },
+    "selfHost.openai": {
+      "macos": {
+        "store": "KeychainHelper.current service",
+        "key": "llmApiKey_openai",
+        "savedFlag": "llmApiKeySaved_openai",
+        "legacyDefaultsKey": "llmApiKey_openai"
+      },
+      "windows": {
+        "store": "SecureStore(AppPaths.DataDirectory/secure, current recovery generation, DPAPI CurrentUser)",
+        "key": "custom-server-openai-key"
+      }
+    },
+    "selfHost.gemini": {
+      "macos": {
+        "store": "KeychainHelper.current service",
+        "key": "llmApiKey_gemini",
+        "savedFlag": "llmApiKeySaved_gemini",
+        "legacyDefaultsKey": "llmApiKey_gemini"
+      },
+      "windows": {
+        "store": "SecureStore(AppPaths.DataDirectory/secure, current recovery generation, DPAPI CurrentUser)",
+        "key": "custom-server-gemini-key"
+      }
+    },
+    "stylePass.vault": {
+      "maximumValueBytes": 4194304,
+      "macos": {
+        "store": "AccountKeychain.currentService",
+        "key": "govorunOfficialAccountEnvelope.v1",
+        "field": "vault",
+        "format": "ledgerV5"
+      },
+      "windows": {
+        "store": "SecureStore(AppPaths.DataDirectory/secure, current recovery generation, DPAPI CurrentUser)",
+        "key": "anonymous-style-passes",
+        "format": "flatV4"
+      }
+    }
+  },
+  "documents": {
+    "statistics.document": {
+      "fixedKey": "statistics.document",
+      "maximumValueBytes": 8388608,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "key": "govorunStatisticsJournalV1",
+        "legacyNumbers": {
+          "words": "statsWords",
+          "speechSeconds": "statsSeconds",
+          "recognitions": "statsSessions"
+        },
+        "legacyRaw": {
+          "history": "statsDailyHistory",
+          "performance": "recognitionPerformanceDailyV1"
+        },
+        "legacyAccountPrefixes": {
+          "cloud": "statsCloudDaysV2.",
+          "acknowledgedTotal": "statsAcknowledgedTotalV3.",
+          "acknowledgedDays": "statsAcknowledgedDaysV2.",
+          "resetPending": "statsResetPendingV2."
+        }
+      },
+      "windows": {
+        "store": "AppPaths.DataDirectory",
+        "file": "statistics-journal-v1.json",
+        "legacyRaw": {
+          "days": "stats.json",
+          "syncState": "sync-state.json"
+        }
+      }
+    },
+    "dictionary.document": {
+      "fixedKey": "dictionary.document",
+      "maximumValueBytes": 8388608,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "key": "wordDictionary",
+        "portableKey": "govorunDictionaryReturnV1",
+        "enabledKey": "wordDictionaryEnabled"
+      },
+      "windows": {
+        "store": "AppPaths.DataDirectory",
+        "file": "dictionary.json",
+        "portableFile": "dictionary-return-v1.json"
+      }
+    },
+    "account.checkout": {
+      "prefix": "account-purchase-v1-",
+      "suffixLowerHexBytes": 64,
+      "maximumValueBytes": 65536,
+      "macos": {
+        "store": "AccountKeychain.currentService",
+        "key": "unchanged slot"
+      },
+      "windows": {
+        "store": "SecureStore(AppPaths.DataDirectory/secure, current recovery generation, DPAPI CurrentUser)",
+        "key": "unchanged slot"
+      }
+    },
+    "styles.document": {
+      "fixedKey": "styles.document",
+      "maximumValueBytes": 8388608,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "rawKeys": [
+          "govorunGatewayCustomPresetsV1",
+          "govorunApplicationStyleRulesV1"
+        ],
+        "scalarKeys": [
+          "govorunGatewayStyle",
+          "govorunGatewayActiveCustomPresetV1",
+          "govorunGatewayCustomInstruction",
+          "govorunGatewayReducedPunctuation",
+          "govorunGatewayPunctuationMode",
+          "govorunGatewayEmojiEnabled",
+          "govorunGatewayEmojiMode",
+          "govorunGatewayProfanityFilterEnabled",
+          "govorunGatewayPunctuationMode.formal",
+          "govorunGatewayEmojiEnabled.formal",
+          "govorunGatewayEmojiMode.formal",
+          "govorunGatewayProfanityFilterEnabled.formal",
+          "govorunGatewayPunctuationMode.light",
+          "govorunGatewayEmojiEnabled.light",
+          "govorunGatewayEmojiMode.light",
+          "govorunGatewayProfanityFilterEnabled.light",
+          "govorunGatewayPunctuationMode.concise",
+          "govorunGatewayEmojiEnabled.concise",
+          "govorunGatewayEmojiMode.concise",
+          "govorunGatewayProfanityFilterEnabled.concise",
+          "govorunGatewayPunctuationMode.custom",
+          "govorunGatewayEmojiEnabled.custom",
+          "govorunGatewayEmojiMode.custom",
+          "govorunGatewayProfanityFilterEnabled.custom",
+          "govorunGatewayEnabled",
+          "govorunGatewayAcceptedTermsVersion",
+          "govorunGatewayAcceptedTermsAt",
+          "govorunStarterGuidanceVisibleV1"
+        ]
+      },
+      "windows": {
+        "store": "AppPaths.SettingsFile",
+        "file": "settings.json",
+        "mutableFields": [
+          "selectedStyle",
+          "selectedCustomStyleId",
+          "customStyles",
+          "builtInStyleOptions",
+          "punctuation",
+          "emojiMode",
+          "emojiEnabled",
+          "profanityFilterEnabled",
+          "applicationStyleRules",
+          "stylingEnabled",
+          "acceptedOnlineTermsVersion",
+          "starterGuidanceVisible"
+        ],
+        "initialFormatField": {
+          "inputModeContractVersion": 1
+        }
+      }
+    },
+    "sync.content": {
+      "fixedKey": "sync.content",
+      "maximumValueBytes": 8388608,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "prefix": "govorunContentJournalV1.",
+        "representation": "per-account Data JSON",
+        "mutationClockKey": "govorunContentMutationGenerationV2"
+      },
+      "windows": {
+        "store": "AppPaths.DataDirectory",
+        "file": "content-journal.json"
+      }
+    },
+    "sync.preferences": {
+      "fixedKey": "sync.preferences",
+      "maximumValueBytes": 8388608,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "prefix": "govorunPreferenceJournalV1.",
+        "representation": "per-account Data JSON"
+      },
+      "windows": {
+        "store": "AppPaths.DataDirectory",
+        "file": "preference-journal.json"
+      }
+    },
+    "sync.enrollment": {
+      "fixedKey": "sync.enrollment",
+      "maximumValueBytes": 8388608,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "choicePrefix": "govorunAccountDataSyncChoiceV1.",
+        "requestedPrefix": "syncDecisionRequested."
+      },
+      "windows": {
+        "store": "AppPaths.DataDirectory",
+        "file": "account-data-sync.json"
+      }
+    },
+    "selfHost.document": {
+      "fixedKey": "selfHost.document",
+      "maximumValueBytes": 8388608,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "rawKeys": [
+          "llmCustomPresetsV1"
+        ],
+        "scalarKeys": [
+          "llmEnabled",
+          "llmProvider",
+          "llmEndpointType",
+          "llmStylizationEnabledV1",
+          "llmSelectedStyleV1",
+          "llmServerURL_ollama",
+          "llmServerURL_openai",
+          "llmServerURL_gemini",
+          "llmModel_ollama",
+          "llmModel_openai",
+          "llmModel_gemini",
+          "llmSystemPrompt",
+          "llmVerifiedConfigurationV1",
+          "llmAcceptedRecipientV1",
+          "llmProxyEnabled",
+          "llmProxyURL",
+          "llmLastErrorMessage",
+          "llmMinLength"
+        ]
+      },
+      "windows": {
+        "store": "AppPaths.SettingsFile",
+        "file": "settings.json",
+        "mutableFields": [
+          "customServerEnabled",
+          "customServerProvider",
+          "customServerProviders",
+          "customServerStylingEnabled",
+          "customServerStyle",
+          "customServerStyles",
+          "customServerEndpoint",
+          "customServerModel",
+          "customServerPrompt",
+          "customServerMinimumCharacters",
+          "customServerAcceptedRecipient",
+          "customServerVerifiedConfiguration",
+          "customServerProxyEnabled",
+          "customServerProxyUrl"
+        ]
+      }
+    },
+    "clipboard.document": {
+      "fixedKey": "clipboard.document",
+      "maximumValueBytes": 65536,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "rawKeys": [],
+        "scalarKeys": [
+          "paste.clipboard",
+          "experimentalWindowsAppPaste"
+        ]
+      },
+      "windows": {
+        "store": "unavailable"
+      }
+    },
+    "hotkeys.document": {
+      "fixedKey": "hotkeys.document",
+      "maximumValueBytes": 8388608,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "rawKeys": [],
+        "scalarKeys": [
+          "hotkeyKeyCode",
+          "hotkeyModifiers",
+          "hotkeyKind",
+          "plainHotkeyKeyCode",
+          "plainHotkeyModifiers",
+          "plainHotkeyKind",
+          "cancelHotkeyKeyCode",
+          "cancelHotkeyModifiers",
+          "cancelHotkeyKind"
+        ]
+      },
+      "windows": {
+        "store": "AppPaths.SettingsFile",
+        "file": "settings.json",
+        "mutableFields": [
+          "hotkey",
+          "hotkeySetupCompleted",
+          "plainHotkey",
+          "cancelHotkey"
+        ]
+      }
+    },
+    "recording.document": {
+      "fixedKey": "recording.document",
+      "maximumValueBytes": 8388608,
+      "macos": {
+        "store": "current application UserDefaults domain",
+        "rawKeys": [],
+        "scalarKeys": [
+          "audioInputDeviceUID",
+          "playRecordingSounds",
+          "muteAudioDuringRecording",
+          "maxRecordingMinutes",
+          "asrAccelerationMode",
+          "voiceInputMarkerMode"
+        ]
+      },
+      "windows": {
+        "store": "AppPaths.SettingsFile",
+        "file": "settings.json",
+        "mutableFields": [
+          "audioInputDevice",
+          "audioInputChannel",
+          "playSounds",
+          "muteAudioDuringRecording",
+          "maxRecordingMinutes",
+          "asrAcceleration",
+          "voiceMarker",
+          "pushToTalk",
+          "keepRecognitionModelLoaded",
+          "alwaysOnMicrophone"
+        ]
+      }
+    }
+  },
+  "semantics": {
+    "missingIsNotUnavailable": true,
+    "compareAndWrite": "serialized compare of opaque content revision; no extra persistent revision file",
+    "delete": "explicit nullable envelope; retain recovery/logout fences",
+    "restart": "select fresh protected namespace; old namespace remains untouched"
+  }
+}

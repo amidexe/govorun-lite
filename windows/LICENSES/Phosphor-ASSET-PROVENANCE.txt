@@ -1,0 +1,43 @@
+Phosphor Icons asset provenance
+
+Upstream: https://github.com/phosphor-icons/core
+Verified commit: 2b75f3ad12b420c9504ef05df8d2564a28f8500e
+License: MIT; see Phosphor-MIT.txt
+
+The 26 SVG files below preserve the ordered vector geometry from the named
+upstream asset at the verified commit. Govorun only minifies the XML wrapper,
+removes the transparent canvas rectangle where present, and sets the paint to
+currentColor so the desktop interface can tint the icon. The verifier checks the local file
+hashes. The upstream byte hashes and paths make this review reproducible.
+
+Canonical files below are relative to macos/ in the source tree. Both Windows
+and macOS use desktop/scripts/prepare-assets.mjs to copy these exact SVGs to
+desktop/public/generated/ph_<name>.svg; Icon.svelte renders them as CSS masks.
+
+Local SHA-256 | Local file | Upstream file | Upstream SHA-256
+d26dba295c9c0d9237ebb31beb0a7d0c256e4bba3574d549a337dce4d3dedf02 | Govorun/Assets.xcassets/ph_arrow_counter_clockwise.imageset/arrow-counter-clockwise.svg | assets/regular/arrow-counter-clockwise.svg | 4eb160d5ae781107c674481ac081962e6bce6281a646129e6c3f960b9dd5dac6
+bdc05f4f1e0760ba8cc7ab9e8cb1b25ca8b73813dbe0c510a4348d42e6261fbf | Govorun/Assets.xcassets/ph_arrow_square_out.imageset/arrow-square-out.svg | assets/regular/arrow-square-out.svg | 8610e8f5c7d4952ae1ada34ef56fa7cbab1780bc85f25a5c9482b74144790fc8
+3b66fe27929db28145d36890e14c754b1d1e88658de31d6a0ae078c797fab0e0 | Govorun/Assets.xcassets/ph_arrows_clockwise.imageset/arrows-clockwise.svg | assets/regular/arrows-clockwise.svg | 2e80fbc9c5c37553934c9ebbd6324bf7fabe9a4b4d7c2445d99edfce55cc22df
+e9a0f5eeca58a641061513176baf28775fee026ab474744dc5cb989080d7df41 | Govorun/Assets.xcassets/ph_book_open_text.imageset/book-open-text.svg | assets/regular/book-open-text.svg | 5eb0c8daceb5a6ffa004118720ea712a3eb8b7d2b6ab5bae750c3efca9d35450
+4bba8b51bb5f68d046a0b33f8c95efce24ae8543dd32316a856ef93581100e12 | Govorun/Assets.xcassets/ph_bug.imageset/bug.svg | assets/regular/bug.svg | 05041640c72e5cccc75ffe9b5138ff173c8097ee75183f231deeadcdf108dd0a
+9257147c4510788a10c3065f1d0f6c3c68da5bb265e03892b960f45d3d50d903 | Govorun/Assets.xcassets/ph_caret_down.imageset/caret-down.svg | assets/regular/caret-down.svg | 53f0cf2d0b144ac3cb07e353e0cd0853ffb3ed432d741460ce288edfcb0924b1
+da96a0362670cf8fc16b2e94ba4db4862852469570b586c428e897781ecc10a5 | Govorun/Assets.xcassets/ph_caret_right.imageset/caret-right.svg | assets/regular/caret-right.svg | e6dec01e074807965b7f3146b976a9b5e82c31d9c2c88aeb52e77cc2ab16c1d7
+5240397abc0f053f3af0105485b925b26be9562c9011512e7fae7bbb734bd0d8 | Govorun/Assets.xcassets/ph_chart_line.imageset/chart-line.svg | assets/regular/chart-line.svg | 8a432fac53ae887b1726a96462aa8ea285e714b8e480261751361e4d6b2b226f
+1e8ca48992cf906a064d2195ba9aa3fdf81aacbda53c66c9db8dd2a266d18434 | Govorun/Assets.xcassets/ph_check.imageset/check.svg | assets/regular/check.svg | cbb89a8c42f283d4f846eb935e05d88c1be04462f16480e068c0f82b9ce40b12
+9a065618c3b939e554240051eeb463f3264b71b75bafb70b02fe1c83b7fab649 | Govorun/Assets.xcassets/ph_check_circle_fill.imageset/check-circle-fill.svg | assets/fill/check-circle-fill.svg | 6ba676543869fddabb7a4ba7026fc51e14351455f4c095ea389b89d0e1d79708
+7b25fd70db095905940335a455f6595b7be414d45f870c3498307bea78bc8e96 | Govorun/Assets.xcassets/ph_copy.imageset/copy.svg | assets/regular/copy.svg | 5a892fc6a72866e60c67db2088a87653cf44b57b1a5d183b36e950cdc5dd66b3
+1e3092d22df61cd993870fd02728f7373b1165b1727f50adbbddc6513ccef0a2 | Govorun/Assets.xcassets/ph_gear.imageset/gear.svg | assets/regular/gear.svg | 5c0cb3ba307c72babf78d952d9140c682ff30307fedc7fbb87c9a293c1e2fd64
+37d751ce8bd914399f9e80d2fc38f995f55254cafbc9a3dec1810e6648ed2de0 | Govorun/Assets.xcassets/ph_hard_drives.imageset/hard-drives.svg | assets/regular/hard-drives.svg | c4ba6f3519182785a6b99d04d2d0fdbbb0bcb54f1e3c916c49e1af59ea77b6f2
+e5d3870592369aaba35c6434cdf9777f851031fe78a5d8e990cb7d84c7b56272 | Govorun/Assets.xcassets/ph_info.imageset/info.svg | assets/regular/info.svg | 438a1f319d53d86e840af73fb7b1d224c9224a437b9fa449a4e2cb45a82a3552
+06b63aeca13dd714057b2faad953689559e71e3d682215531c285c65fa79a417 | Govorun/Assets.xcassets/ph_key.imageset/key.svg | assets/regular/key.svg | 61694102f24a2eb4ce68f337fb6bf81090aef219328cb10dc2bd3f3c9e2ea266
+fab48571aaab70176011b5e4dd67470f81d0bf4bc54395c8fea186fd90fe7150 | Govorun/Assets.xcassets/ph_microphone.imageset/microphone.svg | assets/regular/microphone.svg | b49dabfaf603e82594cef0c5e5784c747f4c098b7723d2973c92965745ca93a9
+970f740f86ecb1ea61f33a66e8bfef5fbaef52ec4ab9ac3491cd0f3f158e3d26 | Govorun/Assets.xcassets/ph_network.imageset/network.svg | assets/regular/network.svg | 9f632e1b092871168c497d948fea25ea6814d52eda3106ad1a5b232c8d2d63ea
+eca5bd5b2fabf21af55daa681b9ff9adcfefd92644a25ad4ef6943fc9b3b23e4 | Govorun/Assets.xcassets/ph_scroll.imageset/scroll.svg | assets/regular/scroll.svg | e8e1f6aa3ca71259fe81b9bb9d6b697c69cd614b2126fabcdbc21390857a2ac7
+e0ed8d2d4c6f7c0baed041114f3ab967a400f467790b9b9ecfcfc8728fd99480 | Govorun/Assets.xcassets/ph_shield_check.imageset/shield-check.svg | assets/regular/shield-check.svg | bb04d552c0baaaabd90f7eb60760cb0c7ddb7e9f47e4b76e9599ddd7dfd8eaa7
+bd674f021581e7e62d3638d59435020c0cd72f814532661d30551270914f9bea | Govorun/Assets.xcassets/ph_sparkle.imageset/sparkle.svg | assets/regular/sparkle.svg | 9e2c17a26564098cb48dd95737a83c742156f755f13cedaa30f9d864d0e3eb76
+ba9ab7fe9a5b2ad32f1644ba685f19094de3b4afab12a7af4ad891f128d3eb5c | Govorun/Assets.xcassets/ph_trash.imageset/trash.svg | assets/regular/trash.svg | e6a830c0409f9e101e3695c981eef98427d39fd01f502b9cbd6900930b01f19c
+96cc02045d8e1db183681f90ee21883b2cc45ce941a8ac5af5a6fa47bdd01f4b | Govorun/Assets.xcassets/ph_user_circle.imageset/user-circle.svg | assets/regular/user-circle.svg | 5aee25838c1915058940900df322afc36b76f4ea7e48499c33603cf121258b2a
+8750cd7c52c5dfe06a059a1a283a82574f4456cb7fdc50fe8e6924072079ee69 | Govorun/Assets.xcassets/ph_warning_circle_fill.imageset/warning-circle-fill.svg | assets/fill/warning-circle-fill.svg | 29199dd3ff20a7fc36380dc366c9004fafa98d979649dc2311c5b1f8fd968dac
+eedf99716df00dfcab5a5eb82a6d5c7031bade771254e5db4b45bfaf9cd5e1b4 | Govorun/Assets.xcassets/ph_waveform.imageset/waveform.svg | assets/regular/waveform.svg | 8f6a47cff9b0fb3a8f25fe411b9cc1b24d063d6577c8d07cc53b0e9b080afaa0
+e3e5283d0e96f9c50888e13c4ce91cd55780c6f7bb3e57efde07bdce801af2e9 | Govorun/Assets.xcassets/ph_x.imageset/x.svg | assets/regular/x.svg | 7397b15e1fa66eaf6ff9b59fe91d483cb5c3bcf75b2fe052097ab6f0593b513a
+15aa383eedde1f3d95df3749b30ad1ba986f0522ef8784a68f9039f18efdc5eb | Govorun/Assets.xcassets/ph_credit_card.imageset/credit-card.svg | assets/regular/credit-card.svg | 15aa383eedde1f3d95df3749b30ad1ba986f0522ef8784a68f9039f18efdc5eb

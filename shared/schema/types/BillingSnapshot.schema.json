@@ -1,0 +1,577 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "BillingBalance": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "percent": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "value"
+      ],
+      "type": "object"
+    },
+    "BillingCheckout": {
+      "additionalProperties": false,
+      "properties": {
+        "actionEnabled": {
+          "type": "boolean"
+        },
+        "actionTitle": {
+          "type": "string"
+        },
+        "amountDueNow": {
+          "type": "string"
+        },
+        "availablePaymentMethods": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "consent": {
+          "type": "string"
+        },
+        "email": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "emailMasked": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "emailRequired": {
+          "type": "boolean"
+        },
+        "firstCharge": {
+          "type": "string"
+        },
+        "handoff": {
+          "type": "string"
+        },
+        "hasLegalDocuments": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "paymentMethodKind": {
+          "type": "string"
+        },
+        "planTitle": {
+          "type": "string"
+        },
+        "receiptContactNeeded": {
+          "type": "boolean"
+        },
+        "receiptPurpose": {
+          "type": "string"
+        },
+        "recurringDisclosure": {
+          "type": "string"
+        },
+        "renewal": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "trialHeadline": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actionEnabled",
+        "actionTitle",
+        "amountDueNow",
+        "availablePaymentMethods",
+        "consent",
+        "emailRequired",
+        "firstCharge",
+        "handoff",
+        "hasLegalDocuments",
+        "id",
+        "paymentMethodKind",
+        "planTitle",
+        "receiptContactNeeded",
+        "receiptPurpose",
+        "recurringDisclosure",
+        "renewal",
+        "title",
+        "trialHeadline"
+      ],
+      "type": "object"
+    },
+    "BillingPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "string"
+        },
+        "multiplier": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "period": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "trial": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "current",
+        "id",
+        "limit",
+        "period",
+        "price",
+        "title",
+        "trial"
+      ],
+      "type": "object"
+    },
+    "BillingPromotionAccess": {
+      "additionalProperties": false,
+      "properties": {
+        "deferredMessage": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/PromotionAccessKind"
+        },
+        "message": {
+          "type": "string"
+        },
+        "termsVersion": {
+          "format": "uint32",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "deferredMessage",
+        "id",
+        "kind",
+        "message"
+      ],
+      "type": "object"
+    },
+    "BillingStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "bindingUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "canCancelChange": {
+          "type": "boolean"
+        },
+        "canCancelRenewal": {
+          "type": "boolean"
+        },
+        "canRemoveCard": {
+          "type": "boolean"
+        },
+        "canRestartBinding": {
+          "type": "boolean"
+        },
+        "canResumeCheckout": {
+          "type": "boolean"
+        },
+        "card": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "checkoutExpiresAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fresh": {
+          "type": "boolean"
+        },
+        "loading": {
+          "type": "boolean"
+        },
+        "payment": {
+          "type": "string"
+        },
+        "paymentMethodUnavailable": {
+          "type": "boolean"
+        },
+        "pendingCheckout": {
+          "type": "boolean"
+        },
+        "periodEnd": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "renewalNotice": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "trialActive": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "canCancelChange",
+        "canCancelRenewal",
+        "canRemoveCard",
+        "canRestartBinding",
+        "canResumeCheckout",
+        "fresh",
+        "loading",
+        "payment",
+        "paymentMethodUnavailable",
+        "pendingCheckout",
+        "state",
+        "title",
+        "trialActive"
+      ],
+      "type": "object"
+    },
+    "BillingStorefront": {
+      "additionalProperties": false,
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "message",
+        "state"
+      ],
+      "type": "object"
+    },
+    "PromoPreview": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "bonusDays": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "checkoutRequired": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "body",
+        "checkoutRequired",
+        "id",
+        "title"
+      ],
+      "type": "object"
+    },
+    "PromoProgram": {
+      "additionalProperties": false,
+      "properties": {
+        "accessDays": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "accessMode": {
+          "type": "string"
+        },
+        "canActivate": {
+          "type": "boolean"
+        },
+        "dailyLimit": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "endsAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enrollmentOpen": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        },
+        "participated": {
+          "type": "boolean"
+        },
+        "periodDays": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "periodLimit": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "programVersion": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "visible": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "accessDays",
+        "accessMode",
+        "canActivate",
+        "dailyLimit",
+        "enrollmentOpen",
+        "message",
+        "participated",
+        "periodDays",
+        "periodLimit",
+        "programVersion",
+        "state",
+        "visible"
+      ],
+      "type": "object"
+    },
+    "PromotionAccessKind": {
+      "enum": [
+        "done",
+        "acceptTerms",
+        "refresh"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "accessType": {
+      "type": "string"
+    },
+    "balances": {
+      "items": {
+        "$ref": "#/definitions/BillingBalance"
+      },
+      "type": "array"
+    },
+    "busy": {
+      "type": "boolean"
+    },
+    "canActivateStarter": {
+      "type": "boolean"
+    },
+    "canPreviewCheckout": {
+      "type": "boolean"
+    },
+    "catalogState": {
+      "type": "string"
+    },
+    "checkout": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/BillingCheckout"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "hasAccess": {
+      "type": "boolean"
+    },
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "period": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "planAction": {
+      "type": "string"
+    },
+    "planDisclosure": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "planTitle": {
+      "type": "string"
+    },
+    "plans": {
+      "items": {
+        "$ref": "#/definitions/BillingPlan"
+      },
+      "type": "array"
+    },
+    "promo": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PromoPreview"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "promoAccess": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/BillingPromotionAccess"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "promoProgram": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PromoProgram"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "refreshAfterSeconds": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "showPaymentDetails": {
+      "type": "boolean"
+    },
+    "showPlanIntro": {
+      "type": "boolean"
+    },
+    "showPlans": {
+      "type": "boolean"
+    },
+    "signedIn": {
+      "type": "boolean"
+    },
+    "status": {
+      "$ref": "#/definitions/BillingStatus"
+    },
+    "storefront": {
+      "$ref": "#/definitions/BillingStorefront"
+    },
+    "termsVersion": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "accessType",
+    "balances",
+    "busy",
+    "canActivateStarter",
+    "canPreviewCheckout",
+    "catalogState",
+    "hasAccess",
+    "planAction",
+    "planTitle",
+    "plans",
+    "refreshAfterSeconds",
+    "scope",
+    "showPaymentDetails",
+    "showPlanIntro",
+    "showPlans",
+    "signedIn",
+    "status",
+    "storefront",
+    "termsVersion"
+  ],
+  "title": "BillingSnapshot",
+  "type": "object"
+}

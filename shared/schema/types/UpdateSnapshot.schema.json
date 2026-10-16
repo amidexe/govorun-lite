@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Channel": {
+      "enum": [
+        "stable",
+        "test"
+      ],
+      "type": "string"
+    },
+    "Release": {
+      "description": "Presentation metadata only; Tauri owns manifests, version selection and signatures.",
+      "properties": {
+        "notes": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "notes",
+        "version"
+      ],
+      "type": "object"
+    },
+    "UpdateTransfer": {
+      "properties": {
+        "downloaded": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "total": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "downloaded",
+        "total"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "channel": {
+      "$ref": "#/definitions/Channel"
+    },
+    "channelSelectable": {
+      "type": "boolean"
+    },
+    "dismissed": {
+      "type": "boolean"
+    },
+    "error": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "release": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Release"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "type": "string"
+    },
+    "transfer": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/UpdateTransfer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "channel",
+    "channelSelectable",
+    "dismissed",
+    "status"
+  ],
+  "title": "UpdateSnapshot",
+  "type": "object"
+}

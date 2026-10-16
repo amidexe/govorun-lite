@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "Acceleration": {
+      "enum": [
+        "automatic",
+        "cpu",
+        "gpu"
+      ],
+      "type": "string"
+    },
+    "Duration": {
+      "enum": [
+        "local",
+        "styles",
+        "unlimited"
+      ],
+      "type": "string"
+    },
+    "Login": {
+      "enum": [
+        "enabled",
+        "disabled",
+        "approvalRequired",
+        "unavailable"
+      ],
+      "type": "string"
+    },
+    "Marker": {
+      "enum": [
+        "off",
+        "microphone",
+        "text"
+      ],
+      "type": "string"
+    },
+    "Microphone": {
+      "enum": [
+        "authorized",
+        "notDetermined",
+        "denied",
+        "restricted",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "MicrophoneDevice": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "type": "object"
+    },
+    "Permissions": {
+      "additionalProperties": false,
+      "properties": {
+        "accessibility": {
+          "type": "boolean"
+        },
+        "microphone": {
+          "$ref": "#/definitions/Microphone"
+        }
+      },
+      "required": [
+        "accessibility",
+        "microphone"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "acceleration": {
+      "$ref": "#/definitions/Acceleration"
+    },
+    "alwaysOnMicrophone": {
+      "type": "boolean",
+      "x-serde-omitted": true
+    },
+    "durationMode": {
+      "$ref": "#/definitions/Duration"
+    },
+    "inputChannel": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": [
+        "integer",
+        "null"
+      ],
+      "x-serde-omitted": true
+    },
+    "inputChannels": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": "integer",
+      "x-serde-omitted": true
+    },
+    "keepModelLoaded": {
+      "type": "boolean",
+      "x-serde-omitted": true
+    },
+    "launchAtLogin": {
+      "$ref": "#/definitions/Login"
+    },
+    "markerMinimum": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "maxMinutes": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "microphoneId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "microphones": {
+      "items": {
+        "$ref": "#/definitions/MicrophoneDevice"
+      },
+      "type": "array"
+    },
+    "muteAudio": {
+      "type": "boolean"
+    },
+    "permissions": {
+      "$ref": "#/definitions/Permissions"
+    },
+    "playSounds": {
+      "type": "boolean"
+    },
+    "pushToTalk": {
+      "type": "boolean",
+      "x-serde-omitted": true
+    },
+    "voiceMarker": {
+      "$ref": "#/definitions/Marker"
+    }
+  },
+  "required": [
+    "acceleration",
+    "durationMode",
+    "launchAtLogin",
+    "markerMinimum",
+    "maxMinutes",
+    "microphones",
+    "muteAudio",
+    "permissions",
+    "playSounds",
+    "voiceMarker"
+  ],
+  "title": "DictationSnapshot",
+  "type": "object"
+}

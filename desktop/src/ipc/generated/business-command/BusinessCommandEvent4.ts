@@ -1,0 +1,4 @@
+// @generated from shared/core serde JSON Schema; do not edit.
+import type { BusinessCommandFailure } from './BusinessCommandFailure';
+import type { BusinessCommandRetryHint } from './BusinessCommandRetryHint';
+export type BusinessCommandEvent4 = { "kind": "beginRequest" } | { "kind": "deadline"; "normal": number } | { "cancelled": boolean; "failure": BusinessCommandFailure; "jitter": number; "kind": "finishRequest"; "retry_after": number; "retry_hints": Array<BusinessCommandRetryHint>; "ticket": number } | { "kind": "demand" } | { "kind": "recording" } | { "kind": "nextProbe" } | { "elapsed": number; "healthy": boolean; "jitter": number; "kind": "finishProbe"; "retry_after": number; "retry_hints": Array<BusinessCommandRetryHint>; "sample_age": number; "ticket": number } | { "kind": "abandonProbe"; "ticket": number };

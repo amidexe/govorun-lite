@@ -1,0 +1,8 @@
+{
+  "identifier": "desktop",
+  "windows": ["main"],
+  "permissions": [
+    "allow-native-command", "allow-native-reconnect", "allow-window-action", "allow-window-layout", "allow-appearance", "allow-setup", "allow-updates",
+    "core:event:allow-listen", "core:event:allow-unlisten"
+  ]
+}

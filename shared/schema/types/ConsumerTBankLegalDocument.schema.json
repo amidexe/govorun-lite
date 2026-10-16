@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "url": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "url",
+    "version"
+  ],
+  "title": "ConsumerTBankLegalDocument",
+  "type": "object",
+  "x-consumer-field-order": [
+    "version",
+    "url"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

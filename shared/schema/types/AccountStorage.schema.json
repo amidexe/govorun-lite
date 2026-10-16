@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "available": {
+      "type": "boolean"
+    },
+    "state": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "available",
+    "state"
+  ],
+  "title": "AccountStorage",
+  "type": "object"
+}

@@ -1,0 +1,2 @@
+// @generated from shared/core serde JSON Schema; do not edit.
+export type BusinessCommandCommand2 = { "kind": "key" } | { "id": string; "key_id": string; "kind": "issue"; "messages": Array<string>; "receipts": Array<string> } | { "id": string; "kind": "deposit"; "receipts": Array<string>; "scope_id": string } | { "body": unknown; "count": number; "kind": "depositResponse" } | { "body": unknown; "kind": "rejectedDeposit"; "status": number };

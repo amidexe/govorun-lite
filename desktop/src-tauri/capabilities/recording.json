@@ -1,0 +1,5 @@
+{
+  "identifier": "recording",
+  "windows": ["recording"],
+  "permissions": ["allow-recording-indicator", "core:event:allow-listen", "core:event:allow-unlisten"]
+}

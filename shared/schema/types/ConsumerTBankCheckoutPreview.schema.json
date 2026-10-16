@@ -1,0 +1,434 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerCheckoutPreviewAction": {
+      "properties": {
+        "canConfirm": {
+          "type": "boolean"
+        },
+        "confirmationPath": {
+          "type": "string"
+        },
+        "receiptContactRequired": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "canConfirm",
+        "confirmationPath",
+        "receiptContactRequired"
+      ],
+      "type": "object"
+    },
+    "ConsumerPromoAccessDays": {
+      "properties": {
+        "days": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "endsAt": {
+          "type": "string"
+        },
+        "planCode": {
+          "type": "string"
+        },
+        "planName": {
+          "type": "string"
+        },
+        "startsAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "days",
+        "endsAt",
+        "planCode",
+        "planName",
+        "startsAt"
+      ],
+      "type": "object"
+    },
+    "ConsumerPromoBillingPeriod": {
+      "properties": {
+        "discountAmountKopeks": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "number": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "payablePriceKopeks": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "standardPriceKopeks": {
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "discountAmountKopeks",
+        "number",
+        "payablePriceKopeks",
+        "standardPriceKopeks"
+      ],
+      "type": "object"
+    },
+    "ConsumerPromoBonus": {
+      "properties": {
+        "credits": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "validDays": {
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "credits",
+        "validDays"
+      ],
+      "type": "object"
+    },
+    "ConsumerPromoOffer": {
+      "properties": {
+        "accessDays": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerPromoAccessDays"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "billingPeriods": {
+          "default": [],
+          "items": {
+            "$ref": "#/definitions/ConsumerPromoBillingPeriod"
+          },
+          "type": "array"
+        },
+        "bonus": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerPromoBonus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "catalogVersion": {
+          "default": "test",
+          "type": "string"
+        },
+        "checkoutRequired": {
+          "default": false,
+          "type": "boolean"
+        },
+        "confirmationBody": {
+          "type": "string"
+        },
+        "confirmationTitle": {
+          "type": "string"
+        },
+        "createsSubscription": {
+          "default": false,
+          "type": "boolean"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "followingPeriodDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "followingPriceKopeks": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "grantsAccessOnConfirmation": {
+          "default": false,
+          "type": "boolean"
+        },
+        "offerId": {
+          "default": "",
+          "type": "string"
+        },
+        "planCode": {
+          "type": "string"
+        },
+        "planName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "confirmationBody",
+        "confirmationTitle",
+        "currency",
+        "planCode",
+        "planName"
+      ],
+      "type": "object"
+    },
+    "ConsumerTBankLegalDocument": {
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "version"
+      ],
+      "type": "object"
+    },
+    "ConsumerTBankLegalDocuments": {
+      "properties": {
+        "privacyNotice": {
+          "$ref": "#/definitions/ConsumerTBankLegalDocument"
+        },
+        "receiptDataConsent": {
+          "$ref": "#/definitions/ConsumerTBankLegalDocument"
+        },
+        "refundPolicy": {
+          "$ref": "#/definitions/ConsumerTBankLegalDocument"
+        },
+        "subscriptionTerms": {
+          "$ref": "#/definitions/ConsumerTBankLegalDocument"
+        },
+        "userAgreement": {
+          "$ref": "#/definitions/ConsumerTBankLegalDocument"
+        }
+      },
+      "required": [
+        "privacyNotice",
+        "receiptDataConsent",
+        "refundPolicy",
+        "subscriptionTerms",
+        "userAgreement"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "amountDueNowKopeks": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "automaticRenewal": {
+      "type": "boolean"
+    },
+    "availablePaymentMethods": {
+      "default": [
+        "card"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "cancellationMethod": {
+      "type": "string"
+    },
+    "catalogVersion": {
+      "default": "test",
+      "type": "string"
+    },
+    "checkoutAvailable": {
+      "default": true,
+      "type": "boolean"
+    },
+    "checkoutIntentToken": {
+      "default": "",
+      "type": "string"
+    },
+    "clientCheckoutPreview": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ConsumerCheckoutPreviewAction"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "currency": {
+      "type": "string"
+    },
+    "firstChargeAmountKopeks": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "firstChargeAt": {
+      "type": "string"
+    },
+    "firstChargeDelaySeconds": {
+      "default": null,
+      "format": "int32",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "freeAccessEndsAt": {
+      "type": "string"
+    },
+    "freeAccessSource": {
+      "type": "string"
+    },
+    "fromPlanCode": {
+      "default": "",
+      "type": "string"
+    },
+    "legalDocuments": {
+      "$ref": "#/definitions/ConsumerTBankLegalDocuments"
+    },
+    "offerId": {
+      "default": "",
+      "type": "string"
+    },
+    "paymentMethodKind": {
+      "default": "card",
+      "type": "string"
+    },
+    "periodDays": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "planCode": {
+      "type": "string"
+    },
+    "priceKopeks": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "promotion": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ConsumerPromoOffer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "purchaseKind": {
+      "type": "string"
+    },
+    "receiptContactState": {
+      "type": "string"
+    },
+    "receiptContactToken": {
+      "default": "",
+      "type": "string"
+    },
+    "receiptEmail": {
+      "default": "",
+      "type": "string"
+    },
+    "receiptEmailMasked": {
+      "default": "",
+      "type": "string"
+    },
+    "renewalAmountKopeks": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "renewalChargeAt": {
+      "type": "string"
+    },
+    "serverConfirmationRequired": {
+      "type": "boolean"
+    },
+    "servicePeriodEndsAt": {
+      "default": "",
+      "type": "string"
+    },
+    "subscriptionConsentInitiallyAccepted": {
+      "type": "boolean"
+    },
+    "subscriptionConsentToken": {
+      "type": "string"
+    },
+    "trialDays": {
+      "format": "int32",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "amountDueNowKopeks",
+    "automaticRenewal",
+    "cancellationMethod",
+    "currency",
+    "firstChargeAmountKopeks",
+    "firstChargeAt",
+    "freeAccessEndsAt",
+    "freeAccessSource",
+    "legalDocuments",
+    "periodDays",
+    "planCode",
+    "priceKopeks",
+    "purchaseKind",
+    "receiptContactState",
+    "renewalAmountKopeks",
+    "renewalChargeAt",
+    "serverConfirmationRequired",
+    "subscriptionConsentInitiallyAccepted",
+    "subscriptionConsentToken",
+    "trialDays"
+  ],
+  "title": "ConsumerTBankCheckoutPreview",
+  "type": "object",
+  "x-consumer-field-order": [
+    "clientCheckoutPreview",
+    "paymentMethodKind",
+    "availablePaymentMethods",
+    "checkoutAvailable",
+    "catalogVersion",
+    "planCode",
+    "offerId",
+    "purchaseKind",
+    "trialDays",
+    "freeAccessSource",
+    "freeAccessEndsAt",
+    "firstChargeAt",
+    "priceKopeks",
+    "periodDays",
+    "currency",
+    "serverConfirmationRequired",
+    "receiptContactState",
+    "receiptEmailMasked",
+    "receiptEmail",
+    "receiptContactToken",
+    "amountDueNowKopeks",
+    "firstChargeAmountKopeks",
+    "renewalChargeAt",
+    "renewalAmountKopeks",
+    "automaticRenewal",
+    "cancellationMethod",
+    "subscriptionConsentInitiallyAccepted",
+    "subscriptionConsentToken",
+    "legalDocuments",
+    "promotion",
+    "fromPlanCode",
+    "checkoutIntentToken",
+    "servicePeriodEndsAt",
+    "firstChargeDelaySeconds"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {
+    "offerId": "\"$planCode.monthly\""
+  }
+}

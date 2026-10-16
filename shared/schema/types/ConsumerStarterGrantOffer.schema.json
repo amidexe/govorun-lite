@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "clientOfferVisible": {
+      "default": false,
+      "type": "boolean"
+    },
+    "creditLimit": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "expires": {
+      "default": false,
+      "type": "boolean"
+    },
+    "requiresAuthentication": {
+      "default": true,
+      "type": "boolean"
+    },
+    "requiresCode": {
+      "default": false,
+      "type": "boolean"
+    },
+    "requiresPaymentMethod": {
+      "default": false,
+      "type": "boolean"
+    },
+    "state": {
+      "default": "disabled",
+      "type": "string"
+    }
+  },
+  "title": "ConsumerStarterGrantOffer",
+  "type": "object",
+  "x-consumer-field-order": [
+    "clientOfferVisible",
+    "state",
+    "creditLimit",
+    "requiresAuthentication",
+    "requiresCode",
+    "requiresPaymentMethod",
+    "expires"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

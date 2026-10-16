@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Preference": {
+      "enum": [
+        "preserve",
+        "copy"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "clipboard": {
+      "$ref": "#/definitions/Preference"
+    }
+  },
+  "required": [
+    "clipboard"
+  ],
+  "title": "ClipboardSnapshot",
+  "type": "object"
+}

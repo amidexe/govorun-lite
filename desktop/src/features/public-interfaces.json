@@ -1,0 +1,105 @@
+{
+  "about": {
+    "dependencies": ["updates", "statistics"],
+    "exports": ["AboutPage.svelte", "model.ts"]
+  },
+  "account": {
+    "dependencies": [],
+    "exports": [
+      "AccountDataConnection.svelte",
+      "AccountStorageNotice.svelte",
+      "host-snapshot.ts",
+      "model.ts",
+      "state.svelte.ts"
+    ]
+  },
+  "appearance": {
+    "dependencies": [],
+    "exports": ["ThemeChooser.svelte", "model.ts", "state.svelte.ts"]
+  },
+  "benchmark": {
+    "dependencies": [],
+    "exports": ["BenchmarkPanel.svelte", "model.ts"]
+  },
+  "billing": {
+    "dependencies": ["styles"],
+    "exports": [
+      "CheckoutConfirmation.svelte",
+      "CheckoutRecovery.svelte",
+      "PaymentBindingQR.svelte",
+      "PromoDialogs.svelte",
+      "model.ts",
+      "payment-source.ts",
+      "promo-program.ts",
+      "state.svelte.ts",
+      "subscription-overview.ts",
+      "subscription.svelte.ts"
+    ]
+  },
+  "clipboard": {
+    "dependencies": [],
+    "exports": ["ClipboardPreference.svelte", "model.ts"]
+  },
+  "diagnostics": {
+    "dependencies": ["benchmark"],
+    "exports": ["DiagnosticsPage.svelte", "model.ts"]
+  },
+  "dictation": {
+    "dependencies": ["benchmark", "clipboard", "hotkeys"],
+    "exports": [
+      "DictationPage.svelte",
+      "RecordingIndicator.svelte",
+      "indicator.ts",
+      "MicrophonePicker.svelte",
+      "PermissionSetup.svelte",
+      "model.ts",
+      "readiness.ts",
+      "runtime.ts",
+      "state.svelte.ts"
+    ]
+  },
+  "dictionary": {
+    "dependencies": [],
+    "exports": ["DictionaryPage.svelte", "model.ts"]
+  },
+  "hotkeys": {
+    "dependencies": [],
+    "exports": ["HotkeysPanel.svelte", "model.ts"]
+  },
+  "recording-diagnostics": {
+    "dependencies": [],
+    "exports": ["RecordingDiagnosticSupport.svelte", "model.ts"]
+  },
+  "self-host": {
+    "dependencies": [],
+    "exports": ["SelfHostPage.svelte", "model.ts"]
+  },
+  "setup": {
+    "dependencies": ["appearance", "dictation", "hotkeys"],
+    "exports": ["OnboardingGate.svelte", "SetupDictation.svelte", "model.ts"]
+  },
+  "statistics": {
+    "dependencies": ["account"],
+    "exports": ["HomeStatistics.svelte", "StatisticsReset.svelte", "model.ts"]
+  },
+  "styles": {
+    "dependencies": [],
+    "exports": [
+      "ApplicationRules.svelte",
+      "StyleBetaNotice.svelte",
+      "StyleChooser.svelte",
+      "StyleOptions.svelte",
+      "StylePresetEditor.svelte",
+      "StyleTerms.svelte",
+      "access-return.ts",
+      "application-rules.ts",
+      "model.ts",
+      "state.svelte.ts",
+      "style-presentation.ts"
+    ]
+  },
+  "updates": {
+    "dependencies": [],
+    "exports": ["UpdateCard.svelte", "model.ts", "state.svelte.ts"]
+  }
+}

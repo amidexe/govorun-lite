@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
+  <title id="title">Ускорение распознавания по платформам</title>
+  <desc id="desc">Android использует CPU, macOS Metal с CPU fallback, Windows Vulkan с CPU fallback</desc>
+  <rect width="1280" height="360" rx="28" fill="#0f172a"/>
+  <g font-family="system-ui, sans-serif">
+    <text x="54" y="58" fill="#f8fafc" font-size="27" font-weight="700">Один ASR-контракт — разные проверяемые backend</text>
+    <g>
+      <rect x="54" y="94" width="356" height="210" rx="24" fill="#14372d" stroke="#34d399" stroke-width="2"/>
+      <rect x="462" y="94" width="356" height="210" rx="24" fill="#312e51" stroke="#a78bfa" stroke-width="2"/>
+      <rect x="870" y="94" width="356" height="210" rx="24" fill="#173752" stroke="#60a5fa" stroke-width="2"/>
+    </g>
+    <g text-anchor="middle">
+      <text x="232" y="144" fill="#86efac" font-size="21" font-weight="700">ANDROID</text>
+      <text x="232" y="196" fill="#ffffff" font-size="32" font-weight="700">CPU · 4 потока</text>
+      <text x="232" y="236" fill="#d1fae5" font-size="18">NNAPI не входит в release path</text>
+      <text x="232" y="270" fill="#a7f3d0" font-size="17">GPU — только отрисовка UI</text>
+      <text x="640" y="144" fill="#c4b5fd" font-size="21" font-weight="700">macOS · APPLE SILICON</text>
+      <text x="640" y="196" fill="#ffffff" font-size="32" font-weight="700">Metal → CPU</text>
+      <text x="640" y="236" fill="#ede9fe" font-size="18">один fallback той же модели</text>
+      <text x="640" y="270" fill="#ddd6fe" font-size="17">без Core ML и MPS</text>
+      <text x="1048" y="144" fill="#93c5fd" font-size="21" font-weight="700">WINDOWS · x64</text>
+      <text x="1048" y="196" fill="#ffffff" font-size="32" font-weight="700">Vulkan → CPU</text>
+      <text x="1048" y="236" fill="#dbeafe" font-size="18">один fallback той же модели</text>
+      <text x="1048" y="270" fill="#bfdbfe" font-size="17">без DirectML и CUDA</text>
+    </g>
+  </g>
+</svg>

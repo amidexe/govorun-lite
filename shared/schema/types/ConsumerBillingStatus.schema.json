@@ -1,0 +1,396 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerBillingNextCharge": {
+      "properties": {
+        "amountKopeks": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "chargeAt": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "noticeAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "amountKopeks",
+        "chargeAt",
+        "currency",
+        "noticeAt"
+      ],
+      "type": "object"
+    },
+    "ConsumerBillingPaymentMethod": {
+      "properties": {
+        "available": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "canRemove": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kind": {
+          "default": "card",
+          "type": "string"
+        },
+        "lastFour": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "default": "unknown",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerBillingRefundRequest": {
+      "properties": {
+        "approvedAmountKopeks": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "currency": {
+          "default": "RUB",
+          "type": "string"
+        },
+        "currentAccessEndsAt": {
+          "default": "",
+          "type": "string"
+        },
+        "decisionCode": {
+          "default": "",
+          "type": "string"
+        },
+        "decisionMode": {
+          "default": "",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "renewalStopped": {
+          "default": true,
+          "type": "boolean"
+        },
+        "requestedAt": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "reasonCode",
+        "requestedAt",
+        "state"
+      ],
+      "type": "object"
+    },
+    "ConsumerBillingRenewalIssue": {
+      "properties": {
+        "accessEndsAt": {
+          "default": "",
+          "type": "string"
+        },
+        "amountKopeks": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "attemptCount": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "chargeKind": {
+          "default": "",
+          "type": "string"
+        },
+        "currency": {
+          "default": "",
+          "type": "string"
+        },
+        "maximumAttempts": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "nextAttemptAt": {
+          "default": "",
+          "type": "string"
+        },
+        "occurredAt": {
+          "default": "",
+          "type": "string"
+        },
+        "paymentMethodSaved": {
+          "default": false,
+          "type": "boolean"
+        },
+        "paymentState": {
+          "default": "",
+          "type": "string"
+        },
+        "resolutionKind": {
+          "default": "",
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "attemptCount",
+        "maximumAttempts",
+        "state"
+      ],
+      "type": "object"
+    },
+    "ConsumerBillingSubscription": {
+      "properties": {
+        "billingSubjectId": {
+          "default": "",
+          "type": "string"
+        },
+        "changeEffectiveAt": {
+          "default": "",
+          "type": "string"
+        },
+        "currentPeriodEndsAt": {
+          "default": "",
+          "type": "string"
+        },
+        "nextCharge": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerBillingNextCharge"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "offerId": {
+          "default": "",
+          "type": "string"
+        },
+        "paymentMethod": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerBillingPaymentMethod"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pendingOfferId": {
+          "default": "",
+          "type": "string"
+        },
+        "pendingPlanCode": {
+          "default": "",
+          "type": "string"
+        },
+        "planCode": {
+          "default": "",
+          "type": "string"
+        },
+        "provider": {
+          "default": "",
+          "type": "string"
+        },
+        "refundRequest": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerBillingRefundRequest"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "renewalIssue": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerBillingRenewalIssue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "renewsAutomatically": {
+          "default": false,
+          "type": "boolean"
+        },
+        "serviceAccessState": {
+          "default": "",
+          "type": "string"
+        },
+        "state": {
+          "default": "none",
+          "type": "string"
+        },
+        "suspendedUntil": {
+          "default": "",
+          "type": "string"
+        },
+        "suspensionReason": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerBillingTrialOffer": {
+      "properties": {
+        "checkoutOpenGrantsAccess": {
+          "default": false,
+          "type": "boolean"
+        },
+        "durationDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "eligible": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresLocalReserveEmpty": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresVerifiedPaymentMethod": {
+          "default": true,
+          "type": "boolean"
+        },
+        "state": {
+          "default": "disabled",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerStarterGrant": {
+      "properties": {
+        "activationAvailable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "balanceKind": {
+          "default": "",
+          "type": "string"
+        },
+        "creditLimit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "eligible": {
+          "default": false,
+          "type": "boolean"
+        },
+        "expires": {
+          "default": false,
+          "type": "boolean"
+        },
+        "remainingToIssue": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "state": {
+          "default": "disabled",
+          "type": "string"
+        },
+        "trialOffer": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerBillingTrialOffer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "type": "object"
+    }
+  },
+  "properties": {
+    "starterGrant": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConsumerStarterGrant"
+        }
+      ],
+      "default": {
+        "activationAvailable": false,
+        "balanceKind": "",
+        "creditLimit": 0,
+        "eligible": false,
+        "expires": false,
+        "remainingToIssue": 0,
+        "state": "disabled",
+        "trialOffer": null
+      }
+    },
+    "subscription": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConsumerBillingSubscription"
+        }
+      ],
+      "default": {
+        "billingSubjectId": "",
+        "changeEffectiveAt": "",
+        "currentPeriodEndsAt": "",
+        "nextCharge": null,
+        "offerId": "",
+        "paymentMethod": null,
+        "pendingOfferId": "",
+        "pendingPlanCode": "",
+        "planCode": "",
+        "provider": "",
+        "refundRequest": null,
+        "renewalIssue": null,
+        "renewsAutomatically": false,
+        "serviceAccessState": "",
+        "state": "none",
+        "suspendedUntil": "",
+        "suspensionReason": ""
+      }
+    }
+  },
+  "title": "ConsumerBillingStatus",
+  "type": "object",
+  "x-consumer-field-order": [
+    "subscription",
+    "starterGrant"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

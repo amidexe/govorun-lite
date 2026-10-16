@@ -1,0 +1,5 @@
+// @generated from shared/core serde JSON Schema; do not edit.
+import type { BusinessCommandKey } from './BusinessCommandKey';
+import type { BusinessCommandMaterial } from './BusinessCommandMaterial';
+import type { BusinessCommandRequestSnapshot } from './BusinessCommandRequestSnapshot';
+export type BusinessCommandCommand4 = { "action": "inspectKey"; "key": BusinessCommandKey } | { "action": "prepareAndroid"; "count": number; "expires_at_millis": number; "key": BusinessCommandKey; "now_millis": number } | { "action": "restoreAndroid"; "key": BusinessCommandKey; "requests": Array<BusinessCommandMaterial> } | { "action": "finalizeAndroid"; "key": BusinessCommandKey; "requests": Array<BusinessCommandMaterial>; "signatures": Array<string> } | { "action": "prepare"; "count": number; "expires_at_millis": number; "key": BusinessCommandKey; "now_millis": number } | { "action": "restore"; "requests": Array<BusinessCommandRequestSnapshot> } | { "action": "finalize"; "requests": Array<BusinessCommandRequestSnapshot>; "signatures": Array<string> };

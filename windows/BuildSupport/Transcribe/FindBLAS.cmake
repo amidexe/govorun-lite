@@ -1,0 +1,5 @@
+if(NOT EXISTS "${OPENBLAS_ROOT}/lib/libopenblas.lib")
+  message(FATAL_ERROR "Pinned OpenBLAS import library missing")
+endif()
+set(BLAS_FOUND TRUE)
+set(BLAS_LIBRARIES "${OPENBLAS_ROOT}/lib/libopenblas.lib")

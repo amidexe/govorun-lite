@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "accessRefreshPending": {
+      "default": false,
+      "type": "boolean"
+    },
+    "canCancel": {
+      "type": "boolean"
+    },
+    "disposition": {
+      "type": "string"
+    },
+    "expiresInSeconds": {
+      "format": "int32",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "launchAction": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "resumeUrl": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "canCancel",
+    "disposition",
+    "message"
+  ],
+  "title": "ConsumerCheckoutPresentation",
+  "type": "object",
+  "x-consumer-field-order": [
+    "disposition",
+    "canCancel",
+    "resumeUrl",
+    "expiresInSeconds",
+    "message",
+    "accessRefreshPending",
+    "launchAction"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

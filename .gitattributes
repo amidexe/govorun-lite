@@ -1,0 +1,5 @@
+# Boundary types and schemas are generated from Rust.
+shared/schema/** linguist-generated=true
+desktop/src/ipc/generated/** linguist-generated=true
+# Preserve upstream license bytes, including their original line endings.
+desktop/THIRD_PARTY_LICENSES.txt -text -whitespace linguist-generated=true

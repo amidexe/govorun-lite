@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "available": {
+      "default": null,
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "canRemove": {
+      "default": false,
+      "type": "boolean"
+    },
+    "kind": {
+      "default": "card",
+      "type": "string"
+    },
+    "lastFour": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "state": {
+      "default": "unknown",
+      "type": "string"
+    }
+  },
+  "title": "ConsumerBillingPaymentMethod",
+  "type": "object",
+  "x-consumer-field-order": [
+    "state",
+    "lastFour",
+    "canRemove",
+    "kind",
+    "available"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

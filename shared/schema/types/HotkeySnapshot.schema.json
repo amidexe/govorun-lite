@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Target": {
+      "enum": [
+        "dictation",
+        "plain",
+        "cancel"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "canCapture": {
+      "type": "boolean"
+    },
+    "cancel": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "captureID": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "dictation": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "inputMode": {
+      "type": "string",
+      "x-serde-omitted": true
+    },
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "plain": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "preview": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "target": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Target"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "canCapture",
+    "cancel",
+    "dictation",
+    "inputMode",
+    "plain",
+    "preview"
+  ],
+  "title": "HotkeySnapshot",
+  "type": "object"
+}

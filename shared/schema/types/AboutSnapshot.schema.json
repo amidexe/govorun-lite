@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "ApplicationLicense": {
+      "additionalProperties": false,
+      "properties": {
+        "copyright": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "spdx": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "copyright",
+        "id",
+        "name",
+        "spdx"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "buildID": {
+      "type": "string"
+    },
+    "keyStorage": {
+      "type": "string"
+    },
+    "licenses": {
+      "items": {
+        "$ref": "#/definitions/ApplicationLicense"
+      },
+      "type": "array"
+    },
+    "nativeBuildID": {
+      "type": "string"
+    },
+    "nativeVersion": {
+      "type": "string"
+    },
+    "platformBuild": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "buildID",
+    "keyStorage",
+    "licenses",
+    "nativeBuildID",
+    "nativeVersion",
+    "platformBuild",
+    "version"
+  ],
+  "title": "AboutSnapshot",
+  "type": "object"
+}

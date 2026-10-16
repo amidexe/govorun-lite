@@ -1,0 +1,28 @@
+// Public Firebase client configuration is an optional build input. Server
+// credentials never belong in this file or the resulting application.
+def configPath = providers.environmentVariable('GOVORUN_FIREBASE_CONFIG_FILE').orNull ?:
+    project.findProperty('govorunFirebaseConfigFile')
+def firebaseConfig = null
+if (configPath) {
+    def input = new File(configPath)
+    if (!input.isFile()) throw new GradleException('Firebase client configuration is unavailable')
+    firebaseConfig = new groovy.json.JsonSlurper().parse(input)
+}
+android.buildTypes.configureEach {
+    def packageName = android.defaultConfig.applicationId + (applicationIdSuffix ?: '')
+    def client = firebaseConfig?.client?.find {
+        it.client_info?.android_client_info?.package_name == packageName
+    }
+    def fields = [
+        FIREBASE_PROJECT_ID: client ? firebaseConfig.project_info.project_id : '',
+        FIREBASE_SENDER_ID: client ? firebaseConfig.project_info.project_number : '',
+        FIREBASE_APP_ID: client ? client.client_info.mobilesdk_app_id : '',
+        FIREBASE_API_KEY: client ? client.api_key?.getAt(0)?.current_key : '',
+    ]
+    if (client && fields.values().any { !it }) {
+        throw new GradleException('Firebase client configuration is incomplete')
+    }
+    fields.each { name, value ->
+        buildConfigField('String', name, groovy.json.JsonOutput.toJson(value ?: ''))
+    }
+}

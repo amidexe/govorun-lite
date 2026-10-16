@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Row": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "compact": {
+          "type": "string",
+          "x-serde-omitted": true
+        },
+        "date": {
+          "type": "string"
+        },
+        "details": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "timing": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "category",
+        "date",
+        "id",
+        "level",
+        "summary"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "events": {
+      "items": {
+        "$ref": "#/definitions/Row"
+      },
+      "type": "array"
+    },
+    "extendedEnabled": {
+      "type": "boolean",
+      "x-serde-omitted": true
+    },
+    "extendedEvents": {
+      "items": {
+        "$ref": "#/definitions/Row"
+      },
+      "type": "array",
+      "x-serde-omitted": true
+    },
+    "maximumEvents": {
+      "format": "uint",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "nativeAvailable": {
+      "type": "boolean",
+      "x-serde-omitted": true
+    }
+  },
+  "required": [
+    "events",
+    "extendedEnabled",
+    "extendedEvents",
+    "maximumEvents",
+    "nativeAvailable"
+  ],
+  "title": "DiagnosticsSnapshot",
+  "type": "object"
+}

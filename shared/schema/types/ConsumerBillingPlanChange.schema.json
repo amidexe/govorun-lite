@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerCheckoutPresentation": {
+      "properties": {
+        "accessRefreshPending": {
+          "default": false,
+          "type": "boolean"
+        },
+        "canCancel": {
+          "type": "boolean"
+        },
+        "disposition": {
+          "type": "string"
+        },
+        "expiresInSeconds": {
+          "format": "int32",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "launchAction": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "resumeUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "canCancel",
+        "disposition",
+        "message"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "carryoverLimit": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "clientCheckout": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ConsumerCheckoutPresentation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "effectiveAt": {
+      "default": "",
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "productId": {
+      "default": "",
+      "type": "string"
+    },
+    "targetOfferId": {
+      "default": "",
+      "type": "string"
+    }
+  },
+  "required": [
+    "mode"
+  ],
+  "title": "ConsumerBillingPlanChange",
+  "type": "object",
+  "x-consumer-field-order": [
+    "mode",
+    "productId",
+    "targetOfferId",
+    "effectiveAt",
+    "carryoverLimit",
+    "clientCheckout"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

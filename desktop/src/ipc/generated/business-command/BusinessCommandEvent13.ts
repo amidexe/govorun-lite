@@ -1,0 +1,5 @@
+// @generated from shared/core serde JSON Schema; do not edit.
+import type { BusinessCommandJournal } from './BusinessCommandJournal';
+import type { BusinessCommandPass } from './BusinessCommandPass';
+import type { BusinessCommandReceipt2 } from './BusinessCommandReceipt2';
+export type BusinessCommandEvent13 = { "kind": "normalize" } | { "compatible": boolean; "kind": "changeScope" } | { "count": number; "id": string; "kind": "lease" } | { "id": string; "kind": "settle"; "restore": boolean } | { "journal": BusinessCommandJournal; "kind": "beginIssuance" } | { "id": string; "kind": "finishIssuance"; "passes": Array<BusinessCommandPass> } | { "discard_receipts": boolean; "id": string; "kind": "discardIssuance"; "scope_epoch": number | null } | { "count": number; "kind": "selectReceipts" } | { "discard": boolean; "kind": "retire"; "receipts": Array<BusinessCommandReceipt2>; "scope_epoch": number; "selected": Array<string> } | { "kind": "returnUnused" } | { "kind": "selectDeposit" } | { "kind": "completeDeposit"; "receipts": Array<string>; "scope_epoch": number };

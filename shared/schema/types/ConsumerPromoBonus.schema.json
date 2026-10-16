@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "credits": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "validDays": {
+      "format": "int32",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "credits",
+    "validDays"
+  ],
+  "title": "ConsumerPromoBonus",
+  "type": "object",
+  "x-consumer-field-order": [
+    "credits",
+    "validDays"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

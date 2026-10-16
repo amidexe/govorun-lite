@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "checkoutOpenGrantsAccess": {
+      "default": false,
+      "type": "boolean"
+    },
+    "durationDays": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "eligible": {
+      "default": false,
+      "type": "boolean"
+    },
+    "requiresLocalReserveEmpty": {
+      "default": false,
+      "type": "boolean"
+    },
+    "requiresVerifiedPaymentMethod": {
+      "default": true,
+      "type": "boolean"
+    },
+    "state": {
+      "default": "disabled",
+      "type": "string"
+    }
+  },
+  "title": "ConsumerBillingTrialOffer",
+  "type": "object",
+  "x-consumer-field-order": [
+    "state",
+    "eligible",
+    "durationDays",
+    "requiresVerifiedPaymentMethod",
+    "checkoutOpenGrantsAccess",
+    "requiresLocalReserveEmpty"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

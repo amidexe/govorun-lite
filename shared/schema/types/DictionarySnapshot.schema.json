@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "DictionaryEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "id",
+        "to"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "enabled": {
+      "type": "boolean"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/definitions/DictionaryEntry"
+      },
+      "type": "array"
+    },
+    "revision": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "enabled",
+    "entries",
+    "revision"
+  ],
+  "title": "DictionarySnapshot",
+  "type": "object"
+}

@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "Mode": {
+      "enum": [
+        "evaluating",
+        "pending",
+        "enabled",
+        "localOnly"
+      ],
+      "type": "string"
+    },
+    "StatisticsDay": {
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "seconds": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "sessions": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "words": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "date",
+        "seconds",
+        "sessions",
+        "words"
+      ],
+      "type": "object"
+    },
+    "StatisticsTotal": {
+      "additionalProperties": false,
+      "properties": {
+        "seconds": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "sessions": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "words": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "seconds",
+        "sessions",
+        "words"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "days": {
+      "items": {
+        "$ref": "#/definitions/StatisticsDay"
+      },
+      "type": "array"
+    },
+    "hasCloudSnapshot": {
+      "type": "boolean"
+    },
+    "signedIn": {
+      "type": "boolean"
+    },
+    "storageReadOnly": {
+      "type": "boolean"
+    },
+    "storageRecovered": {
+      "type": "boolean"
+    },
+    "syncMode": {
+      "$ref": "#/definitions/Mode"
+    },
+    "today": {
+      "type": "string"
+    },
+    "total": {
+      "$ref": "#/definitions/StatisticsTotal"
+    }
+  },
+  "required": [
+    "days",
+    "hasCloudSnapshot",
+    "signedIn",
+    "storageReadOnly",
+    "storageRecovered",
+    "syncMode",
+    "today",
+    "total"
+  ],
+  "title": "StatisticsSnapshot",
+  "type": "object"
+}

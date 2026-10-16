@@ -1,0 +1,42 @@
+[package]
+name = "govorun-os-runtime"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+private-fixtures = ["handy-recorder?/test-backend"]
+benchmark = ["inference", "dep:sha2", "dep:windows-sys", "dep:objc2-foundation"]
+clipboard = ["dep:windows-sys", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation"]
+applications = ["dep:windows-sys", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation"]
+network = ["dep:windows-sys", "dep:block2", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation"]
+capture = ["dep:handy-recorder", "dep:windows", "dep:block2"]
+insertion = ["dep:windows-sys", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation", "dep:objc2-core-foundation", "dep:objc2-core-graphics"]
+keyboard = ["dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation", "dep:handy-keys", "dep:log", "dep:objc2-core-foundation", "dep:objc2-core-graphics", "dep:windows-sys"]
+inference = ["dep:transcribe-cpp", "dep:transcribe-cpp-sys", "dep:libloading"]
+metal = ["inference", "transcribe-cpp/metal"]
+vulkan = ["inference", "transcribe-cpp/vulkan"]
+
+[dependencies]
+govorun-core = { path = "../../shared/core" }
+sha2 = { version = "=0.10.9", optional = true }
+handy-recorder = { version = "=0.1.0", optional = true }
+handy-keys = { version = "=0.3.4", optional = true }
+# The dependency's debug tracing contains keys; it must be compiled out.
+log = { version = "=0.4.34", features = ["max_level_info"], optional = true }
+transcribe-cpp = { version = "=0.2.1", default-features = false, optional = true }
+transcribe-cpp-sys = { version = "=0.2.1", default-features = false, optional = true }
+libloading = { version = "=0.8.9", optional = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = { version = "=0.6.2", optional = true }
+objc2 = { version = "=0.6.4", optional = true }
+objc2-app-kit = { version = "=0.3.2", optional = true, default-features = false, features = ["NSPasteboard", "NSPasteboardItem", "NSSound", "NSWorkspace", "NSRunningApplication", "libc"] }
+objc2-foundation = { version = "=0.3.2", optional = true, features = ["NSArray", "NSData", "NSString", "NSProcessInfo"] }
+objc2-core-foundation = { version = "=0.3.2", optional = true }
+objc2-core-graphics = { version = "=0.3.2", optional = true, features = ["CGEvent", "CGEventTypes", "CGEventSource", "CGRemoteOperation"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "=0.61.3", optional = true, features = ["Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Performance", "Win32_System_Threading", "Win32_Security"] }
+windows-sys = { version = "=0.61.2", optional = true, features = ["Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_LibraryLoader", "Win32_System_RemoteDesktop", "Win32_Graphics_Gdi", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Threading", "Win32_System_Registry", "Win32_Globalization", "Win32_Security", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock", "Win32_Storage_FileSystem", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Environment"] }

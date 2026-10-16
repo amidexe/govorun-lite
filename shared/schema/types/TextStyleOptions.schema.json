@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "emojiMode": {
+      "type": "string"
+    },
+    "profanityFilter": {
+      "type": "boolean"
+    },
+    "reducedPunctuation": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "emojiMode",
+    "profanityFilter",
+    "reducedPunctuation"
+  ],
+  "title": "TextStyleOptions",
+  "type": "object"
+}

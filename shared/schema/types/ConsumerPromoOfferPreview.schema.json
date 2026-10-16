@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerPromoAccessDays": {
+      "properties": {
+        "days": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "endsAt": {
+          "type": "string"
+        },
+        "planCode": {
+          "type": "string"
+        },
+        "planName": {
+          "type": "string"
+        },
+        "startsAt": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "days",
+        "endsAt",
+        "planCode",
+        "planName",
+        "startsAt"
+      ],
+      "type": "object"
+    },
+    "ConsumerPromoBillingPeriod": {
+      "properties": {
+        "discountAmountKopeks": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "number": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "payablePriceKopeks": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "standardPriceKopeks": {
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "discountAmountKopeks",
+        "number",
+        "payablePriceKopeks",
+        "standardPriceKopeks"
+      ],
+      "type": "object"
+    },
+    "ConsumerPromoBonus": {
+      "properties": {
+        "credits": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "validDays": {
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "credits",
+        "validDays"
+      ],
+      "type": "object"
+    },
+    "ConsumerPromoOffer": {
+      "properties": {
+        "accessDays": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerPromoAccessDays"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "billingPeriods": {
+          "default": [],
+          "items": {
+            "$ref": "#/definitions/ConsumerPromoBillingPeriod"
+          },
+          "type": "array"
+        },
+        "bonus": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerPromoBonus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "catalogVersion": {
+          "default": "test",
+          "type": "string"
+        },
+        "checkoutRequired": {
+          "default": false,
+          "type": "boolean"
+        },
+        "confirmationBody": {
+          "type": "string"
+        },
+        "confirmationTitle": {
+          "type": "string"
+        },
+        "createsSubscription": {
+          "default": false,
+          "type": "boolean"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "followingPeriodDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "followingPriceKopeks": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "grantsAccessOnConfirmation": {
+          "default": false,
+          "type": "boolean"
+        },
+        "offerId": {
+          "default": "",
+          "type": "string"
+        },
+        "planCode": {
+          "type": "string"
+        },
+        "planName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "confirmationBody",
+        "confirmationTitle",
+        "currency",
+        "planCode",
+        "planName"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "offer": {
+      "$ref": "#/definitions/ConsumerPromoOffer"
+    },
+    "previewExpiresAt": {
+      "type": "string"
+    },
+    "previewId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "offer",
+    "previewExpiresAt",
+    "previewId"
+  ],
+  "title": "ConsumerPromoOfferPreview",
+  "type": "object",
+  "x-consumer-field-order": [
+    "previewId",
+    "previewExpiresAt",
+    "offer"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

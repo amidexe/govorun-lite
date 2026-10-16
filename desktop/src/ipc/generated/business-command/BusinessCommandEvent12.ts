@@ -1,0 +1,2 @@
+// @generated from shared/core serde JSON Schema; do not edit.
+export type BusinessCommandEvent12 = { "count": number; "kind": "batch" } | { "id": string; "kind": "operation" } | { "count": number; "day": string | null; "kind": "lease"; "scope": string | null } | { "kind": "replay"; "now_millis": number; "replay_until_millis": number } | { "expected_key_id": string; "key_id": string; "kind": "response"; "request_count": number; "signature_count": number };

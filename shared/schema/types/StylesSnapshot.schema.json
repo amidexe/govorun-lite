@@ -1,0 +1,280 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "ApplicationChoice": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "type": "object"
+    },
+    "ApplicationRule": {
+      "additionalProperties": false,
+      "properties": {
+        "emojiMode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "reducedPunctuation": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "style": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "type": "object"
+    },
+    "ProcessingLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "maximumCharacters": {
+          "format": "uint",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "maximumProcessingSeconds": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "minimumCharacters": {
+          "format": "uint",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "stopTailMilliseconds": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "maximumCharacters",
+        "maximumProcessingSeconds",
+        "minimumCharacters",
+        "stopTailMilliseconds"
+      ],
+      "type": "object"
+    },
+    "StyleChoice": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "options": {
+          "$ref": "#/definitions/TextStyleOptions"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "detail",
+        "id",
+        "options",
+        "title"
+      ],
+      "type": "object"
+    },
+    "StylePreset": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "instruction": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "options": {
+          "$ref": "#/definitions/TextStyleOptions"
+        }
+      },
+      "required": [
+        "id",
+        "instruction",
+        "name",
+        "options"
+      ],
+      "type": "object"
+    },
+    "TextStyleOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "emojiMode": {
+          "type": "string"
+        },
+        "profanityFilter": {
+          "type": "boolean"
+        },
+        "reducedPunctuation": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "emojiMode",
+        "profanityFilter",
+        "reducedPunctuation"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "applicationRules": {
+      "items": {
+        "$ref": "#/definitions/ApplicationRule"
+      },
+      "type": "array"
+    },
+    "applications": {
+      "items": {
+        "$ref": "#/definitions/ApplicationChoice"
+      },
+      "type": "array"
+    },
+    "availability": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "availabilityReason": {
+      "type": "string"
+    },
+    "busy": {
+      "type": "boolean"
+    },
+    "canCreatePreset": {
+      "type": "boolean"
+    },
+    "displayState": {
+      "type": "string"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "gate": {
+      "type": "string"
+    },
+    "limitReason": {
+      "type": "string"
+    },
+    "maxPresets": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "onlineServicePaused": {
+      "type": "boolean"
+    },
+    "options": {
+      "$ref": "#/definitions/TextStyleOptions"
+    },
+    "presets": {
+      "items": {
+        "$ref": "#/definitions/StylePreset"
+      },
+      "type": "array"
+    },
+    "processingLimits": {
+      "$ref": "#/definitions/ProcessingLimits"
+    },
+    "processingReadiness": {
+      "type": "string"
+    },
+    "resumeChoice": {
+      "type": "boolean"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "selected": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "styles": {
+      "items": {
+        "$ref": "#/definitions/StyleChoice"
+      },
+      "type": "array"
+    },
+    "termsAccepted": {
+      "type": "boolean"
+    },
+    "termsVersion": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "applicationRules",
+    "applications",
+    "availabilityReason",
+    "busy",
+    "canCreatePreset",
+    "displayState",
+    "enabled",
+    "gate",
+    "limitReason",
+    "maxPresets",
+    "onlineServicePaused",
+    "options",
+    "presets",
+    "processingLimits",
+    "processingReadiness",
+    "resumeChoice",
+    "scope",
+    "styles",
+    "termsAccepted",
+    "termsVersion",
+    "title"
+  ],
+  "title": "StylesSnapshot",
+  "type": "object"
+}

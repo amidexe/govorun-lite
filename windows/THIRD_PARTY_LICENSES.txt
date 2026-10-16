@@ -1,0 +1,96 @@
+Говорун для Windows 2.1.88 — сторонние компоненты фактического Tauri-пакета.
+Этот файл и каталог LICENSES поставляются с native runtime. Полные уведомления
+Rust/npm, включая Tauri, cpal и handy-keys, — desktop/THIRD_PARTY_LICENSES.txt
+(в пакете также THIRD_PARTY_LICENSES.txt верхнего уровня).
+
+Geist Variable Font 1.7.2
+Источник: https://github.com/vercel/geist-font
+Лицензия: SIL Open Font License 1.1
+Copyright 2024 The Geist Project Authors
+Полный текст: LICENSES/Geist-OFL-1.1.txt
+
+===============================================================================
+
+GigaAM v3 E2E RNN-T, GGUF Q8_0
+Исходная модель: https://huggingface.co/ai-sage/GigaAM-v3
+Проверенная конверсия: https://huggingface.co/handy-computer/gigaam-v3-e2e-rnnt-gguf
+Исходный проект: https://github.com/salute-developers/GigaAM
+SHA-256 модели: 78d63b47723b7f8d78c6113a6ef983b5a86e2a86f6c273e1f5cb6967b1c4467a
+Лицензия: MIT
+Copyright (c) 2024 GigaChat Team
+Полный текст: LICENSES/GigaAM-MIT.txt
+
+===============================================================================
+
+transcribe.cpp 0.2.1, включая ggml и miniz
+Источник: https://github.com/handy-computer/transcribe.cpp
+Релиз: transcribe-native-0.2.1-windows-x86_64-cpu-vulkan.tar.gz
+SHA-256 архива: 241bd33754c6816af4ddfaa34d7f8781977d2f1854515b57843a3640edff492d
+Библиотека transcribe.dll пересобрана из тега v0.2.1 с OpenBLAS для CPU-декодера.
+Исходный архив SHA-256: 9da9128a6b9c10aaad20d982dd9d19ac13f9a3561f34ccad8555803c74c503b3
+Рецепт: scripts/build-transcribe-runtime.ps1; исходные ggml DLL сохранены.
+Лицензии: MIT и совместимое разрешение miniz
+Полные тексты: LICENSES/transcribe.cpp-MIT.txt,
+LICENSES/ggml-MIT.txt и LICENSES/miniz.txt
+
+===============================================================================
+
+sherpa-onnx 1.13.1, native C API для Silero VAD
+Источник: https://github.com/k2-fsa/sherpa-onnx
+Лицензия: Apache License 2.0
+Copyright (c) k2-fsa / Next-gen Kaldi contributors
+Полный текст: LICENSES/Apache-2.0.txt
+
+===============================================================================
+
+ONNX Runtime 1.24.4
+Компонент включён в native runtime sherpa-onnx 1.13.1.
+Источник: https://github.com/microsoft/onnxruntime
+Лицензия: MIT
+Copyright (c) Microsoft Corporation
+Полные тексты: LICENSES/ONNX-Runtime-MIT.txt и
+LICENSES/ONNX-Runtime-THIRD-PARTY-NOTICES.txt
+
+===============================================================================
+
+Silero VAD model
+Источник: https://github.com/snakers4/silero-vad
+SHA-256 модели: 9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6
+Лицензия: MIT
+Copyright (c) 2020-present Silero Team
+Полный текст: LICENSES/Silero-VAD-MIT.txt
+
+===============================================================================
+
+OpenBLAS 0.3.34, Windows x64 (LP64), включая LAPACK
+Источник: https://github.com/OpenMathLib/OpenBLAS/releases/tag/v0.3.34
+Архив: OpenBLAS-0.3.34-x64.zip
+SHA-256: e9cb6134541f36c27346d5fc5995652f060fba227cebbbabcbda5a5a44d7c76b
+Лицензия: BSD 3-Clause
+Полные тексты: LICENSES/OpenBLAS-BSD-3-Clause.txt и LICENSES/LAPACK-BSD-3-Clause.txt.
+Бинарная сборка содержит runtime GCC 9.3.0 и MinGW-w64.
+GCC Runtime Library Exception 3.1: LICENSES/GCC-Runtime-Exception-3.1.txt;
+GPL 3: LICENSES/GCC-GPL-3.0.txt; уведомления: LICENSES/MinGW-w64.txt и LICENSES/MinGW-w64-Runtime.txt.
+
+Phosphor Icons — MIT, Copyright (c) 2023 Phosphor Icons
+Источник: https://github.com/phosphor-icons/core
+Commit: 2b75f3ad12b420c9504ef05df8d2564a28f8500e
+SVG входят в общий интерфейс Svelte через desktop/scripts/prepare-assets.mjs.
+Полный текст: LICENSES/Phosphor-MIT.txt; точная карта SVG и SHA-256:
+LICENSES/Phosphor-ASSET-PROVENANCE.txt.
+
+node-qrcode 1.5.4 и dijkstrajs 1.0.3 — MIT
+https://github.com/soldair/node-qrcode
+Полные тексты: LICENSES/node-qrcode-MIT.txt и LICENSES/dijkstrajs-MIT.txt.
+QR-коды формируются локально.
+
+Handy — MIT; Copyright (c) 2025 CJ Pais
+Источник: https://github.com/cjpais/Handy/tree/a94b403e0610049fafa54b0a4077db2945084dd8
+Заимствована конфигурация панели записи; полный текст: LICENSES/Handy.txt.
+handy-keys 0.3.4 — MIT; локальные правки и provenance:
+desktop/vendor/handy-keys/LOCAL_CHANGES.md и UPSTREAM.json, полная лицензия — LICENSE.
+
+Звуки recording-start.wav / recording-stop.wav:
+собственные синтезированные звуки Говоруна, MIT. Происхождение подтверждено
+владельцем 16 октября 2026. SHA-256 и условия —
+LICENSES/Recording-Sounds-PROVENANCE.txt и LICENSE.

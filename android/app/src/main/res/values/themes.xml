@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.GovorunLite" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="fontFamily">@font/geist_variable</item>
+        <item name="android:fontFamily">@font/geist_variable</item>
+        <item name="switchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
+    </style>
+</resources>

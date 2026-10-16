@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>ru</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIconFile</key>
+    <string>$(ASSETCATALOG_COMPILER_APPICON_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(GOVORUN_DISPLAY_NAME)</string>
+    <key>CFBundleDisplayName</key>
+    <string>$(GOVORUN_DISPLAY_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.0.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.govorun.app.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(GOVORUN_CALLBACK_SCHEME)</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>85</string>
+	<key>GovorunBuildID</key>
+	<string>$(GOVORUN_BUILD_ID)</string>
+	<key>ATSApplicationFontsPath</key>
+	<string>Fonts</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.productivity</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.4</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2026</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Говорун использует микрофон для распознавания речи.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Говорун использует Accessibility для вставки текста.</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+</dict>
+</plist>

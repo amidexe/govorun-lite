@@ -1,0 +1,32 @@
+{
+  "name": "govorun-desktop",
+  "version": "2.1.92",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:assets": "node scripts/prepare-assets.mjs",
+    "dev:web": "npm run prepare:assets && vite --host 127.0.0.1",
+    "dev": "tauri dev",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "build": "npm run prepare:assets && vite build",
+    "start": "tauri dev",
+    "package": "tauri build",
+    "format": "prettier --write src vite.config.ts tsconfig.json",
+    "check:format": "prettier --check src vite.config.ts tsconfig.json"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.11.1",
+    "qrcode": "1.5.4",
+    "svelte": "5.57.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "7.3.0",
+    "@tauri-apps/cli": "2.11.4",
+    "@types/node": "25.6.1",
+    "prettier": "3.9.9",
+    "prettier-plugin-svelte": "4.1.1",
+    "svelte-check": "4.4.6",
+    "typescript": "6.0.2",
+    "vite": "8.3.0"
+  }
+}

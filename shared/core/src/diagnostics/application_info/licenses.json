@@ -1,0 +1,139 @@
+{
+  "macos": [
+    {
+      "id": "license-0",
+      "name": "Geist Variable Font",
+      "spdx": "OFL-1.1",
+      "copyright": "Copyright © 2024 The Geist Project Authors",
+      "url": "https://github.com/vercel/geist-font"
+    },
+    {
+      "id": "license-1",
+      "name": "Phosphor Icons",
+      "spdx": "MIT",
+      "copyright": "Copyright © 2023 Phosphor Icons",
+      "url": "https://github.com/phosphor-icons/core"
+    },
+    {
+      "id": "license-2",
+      "name": "BigInt 6.0.0",
+      "spdx": "MIT",
+      "copyright": "Copyright © 2016-2017 Károly Lőrentey",
+      "url": "https://github.com/attaswift/BigInt"
+    },
+    {
+      "id": "license-3",
+      "name": "GigaAM v3",
+      "spdx": "MIT",
+      "copyright": "Copyright © 2024 GigaChat Team",
+      "url": "https://github.com/salute-developers/GigaAM"
+    },
+    {
+      "id": "license-4",
+      "name": "transcribe.cpp v0.2.1",
+      "spdx": "MIT",
+      "copyright": "Copyright © 2026 The transcribe.cpp authors",
+      "url": "https://github.com/handy-computer/transcribe.cpp"
+    },
+    {
+      "id": "license-5",
+      "name": "sherpa-onnx v1.13.1",
+      "spdx": "Apache-2.0",
+      "copyright": "Copyright © 2022–2024 k2-fsa / Next-gen Kaldi Authors",
+      "url": "https://github.com/k2-fsa/sherpa-onnx"
+    },
+    {
+      "id": "license-6",
+      "name": "ONNX Runtime 1.23.2",
+      "spdx": "MIT",
+      "copyright": "Copyright © Microsoft Corporation",
+      "url": "https://github.com/microsoft/onnxruntime"
+    },
+    {
+      "id": "license-7",
+      "name": "Silero VAD",
+      "spdx": "MIT",
+      "copyright": "Copyright © 2020–present Silero Team",
+      "url": "https://github.com/snakers4/silero-vad"
+    }
+  ],
+  "windows": [
+    {
+      "id": "gigaam",
+      "name": "GigaAM v3",
+      "spdx": "MIT",
+      "copyright": "Copyright (c) 2024 GigaChat Team",
+      "url": "https://github.com/salute-developers/GigaAM"
+    },
+    {
+      "id": "transcribe",
+      "name": "transcribe.cpp",
+      "spdx": "MIT",
+      "copyright": "Copyright (c) 2026 The transcribe.cpp authors",
+      "url": "https://github.com/handy-computer/transcribe.cpp"
+    },
+    {
+      "id": "ggml",
+      "name": "ggml",
+      "spdx": "MIT",
+      "copyright": "Copyright (c) 2023–2026 The ggml authors",
+      "url": "https://github.com/ggml-org/ggml"
+    },
+    {
+      "id": "miniz",
+      "name": "miniz",
+      "spdx": "MIT",
+      "copyright": "Copyright 2013–2014 RAD Game Tools and Valve Software; 2010–2014 Rich Geldreich and Tenacious Software LLC",
+      "url": "https://github.com/richgel999/miniz"
+    },
+    {
+      "id": "sherpa",
+      "name": "sherpa-onnx",
+      "spdx": "Apache-2.0",
+      "copyright": "Copyright (c) k2-fsa / Next-gen Kaldi contributors",
+      "url": "https://github.com/k2-fsa/sherpa-onnx"
+    },
+    {
+      "id": "onnx",
+      "name": "ONNX Runtime",
+      "spdx": "MIT",
+      "copyright": "Copyright (c) Microsoft Corporation",
+      "url": "https://github.com/microsoft/onnxruntime"
+    },
+    {
+      "id": "naudio",
+      "name": "NAudio",
+      "spdx": "MIT",
+      "copyright": "Copyright 2008–2026 Mark Heath",
+      "url": "https://github.com/naudio/NAudio"
+    },
+    {
+      "id": "protected-data",
+      "name": "System.Security.Cryptography.ProtectedData",
+      "spdx": "MIT",
+      "copyright": "Copyright (c) .NET Foundation and Contributors",
+      "url": "https://github.com/dotnet/runtime"
+    },
+    {
+      "id": "silero",
+      "name": "Silero VAD",
+      "spdx": "MIT",
+      "copyright": "Copyright (c) 2020–present Silero Team",
+      "url": "https://github.com/snakers4/silero-vad"
+    },
+    {
+      "id": "geist",
+      "name": "Geist",
+      "spdx": "OFL-1.1",
+      "copyright": "Copyright 2024 The Geist Project Authors",
+      "url": "https://github.com/vercel/geist-font"
+    },
+    {
+      "id": "phosphor",
+      "name": "Phosphor Icons",
+      "spdx": "MIT",
+      "copyright": "Copyright © 2023 Phosphor Icons",
+      "url": "https://github.com/phosphor-icons/core"
+    }
+  ]
+}

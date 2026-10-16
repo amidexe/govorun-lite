@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="Логотип Говоруна">
+  <!--
+    Каноническая геометрия фирменного знака «Говоруна».
+    Платформенные и магазинные иконки создаются только механическим экспортом
+    этого вектора; перерисовка и генеративная замена контура запрещены.
+  -->
+  <g id="govorun-mark" fill="none" stroke="#1F1F1F" stroke-linecap="round" stroke-linejoin="round">
+    <path id="body" stroke-width="1.4" d="M21.5,10.5 L17.5,9 C14.5,5.5 9,5.5 6,9.5 L3,8.5 L4,12.5 C5.5,15.5 9,17.5 13,17.5 C16,17.5 18,15.5 18,13 L21.5,11.5 Z"/>
+    <path id="wing" stroke-width="1.1" d="M7.5,11.5 C9.5,13.5 12,14.5 15,14"/>
+    <circle id="eye" cx="15.2" cy="9" r="0.7" fill="#1F1F1F" stroke="none"/>
+  </g>
+</svg>

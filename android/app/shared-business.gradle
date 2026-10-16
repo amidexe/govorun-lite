@@ -1,0 +1,52 @@
+// Thin build/packaging adapter. Product rules are compiled from the shared source.
+def androidSource = rootProject.file('settings.gradle.kts').canonicalFile.parentFile
+def sharedSource = new File(androidSource.parentFile, 'shared')
+def builder = new File(androidSource, 'scripts/build-shared-core.py')
+def sharedInputs = files(new File(sharedSource, 'Cargo.toml'), new File(sharedSource, 'Cargo.lock'),
+    fileTree(new File(sharedSource, 'core')) { include 'Cargo.toml', 'src/**/*.rs' },
+    fileTree(new File(sharedSource, 'styles-http')) { include 'Cargo.toml', 'src/**/*.rs' },
+    fileTree(new File(sharedSource, 'jvm-bridge')) { include 'Cargo.toml', 'src/**/*.rs' }, builder)
+def configurations = [:]
+android.applicationVariants.all { variant ->
+    def field = { name ->
+        def value = variant.buildType.buildConfigFields[name] ?: android.defaultConfig.buildConfigFields[name]
+        new groovy.json.JsonSlurper().parseText(value.value) as String
+    }
+    def origin = field('ACCOUNT_API_URL')
+    def scheme = field('ACCOUNT_RETURN_SCHEME')
+    def stylesOrigin = field('OFFICIAL_STYLES_API_URL')
+    def official = (!origin || origin.replaceAll('/$', '') == 'https://accounts.govorun.club') && scheme == 'govorun'
+    def id = official ? '' : java.security.MessageDigest.getInstance('SHA-256')
+        .digest((origin + '\n' + scheme).getBytes('UTF-8')).encodeHex().toString().substring(0, 12)
+    def binding = configurations[id]
+    if (binding == null) {
+        def root = 'generated/shared-business/' + (id ? id + '/' : '')
+        def jniOutput = layout.buildDirectory.dir(root + 'android')
+        def hostOutput = layout.buildDirectory.dir(root + 'jvm')
+        def buildAndroid = tasks.register('buildSharedBusinessAndroid' + id, Exec) {
+            inputs.files(sharedInputs)
+            inputs.properties(accountOrigin: origin, authScheme: scheme, appVersion: android.defaultConfig.versionName, stylesOrigin: stylesOrigin)
+            outputs.file(jniOutput.map { it.file('arm64-v8a/libgovorun_jvm_bridge.so') })
+            commandLine 'python3', builder.absolutePath, '--account-origin', origin,
+                '--auth-scheme', scheme, '--styles-origin', stylesOrigin, '--output', jniOutput.get().asFile.absolutePath
+        }
+        def buildHost = tasks.register('buildSharedBusinessJvm' + id, Exec) {
+            inputs.files(sharedInputs)
+            inputs.properties(accountOrigin: origin, authScheme: scheme, appVersion: android.defaultConfig.versionName, stylesOrigin: stylesOrigin)
+            outputs.dir(hostOutput)
+            commandLine 'python3', builder.absolutePath, '--host', '--account-origin', origin,
+                '--auth-scheme', scheme, '--styles-origin', stylesOrigin, '--output', hostOutput.get().asFile.absolutePath
+        }
+        binding = [android: buildAndroid, host: buildHost, jni: jniOutput, jvm: hostOutput]
+        configurations[id] = binding
+    }
+    android.sourceSets.getByName(variant.name).jniLibs.srcDir(binding.jni)
+    def variantName = variant.name.capitalize()
+    tasks.named('pre' + variantName + 'Build').configure { dependsOn(binding.android) }
+    tasks.withType(Test).configureEach {
+        if (name == 'test' + variantName + 'UnitTest') {
+            dependsOn(binding.host)
+            systemProperty 'java.library.path', binding.jvm.get().asFile.absolutePath
+        }
+    }
+}

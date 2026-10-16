@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "TextStyleOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "emojiMode": {
+          "type": "string"
+        },
+        "profanityFilter": {
+          "type": "boolean"
+        },
+        "reducedPunctuation": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "emojiMode",
+        "profanityFilter",
+        "reducedPunctuation"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "detail": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "options": {
+      "$ref": "#/definitions/TextStyleOptions"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "detail",
+    "id",
+    "options",
+    "title"
+  ],
+  "title": "StyleChoice",
+  "type": "object"
+}

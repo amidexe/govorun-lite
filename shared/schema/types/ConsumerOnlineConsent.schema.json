@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "acceptedAt": {
+      "default": "",
+      "type": "string"
+    },
+    "acceptedVersion": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "active": {
+      "default": false,
+      "type": "boolean"
+    }
+  },
+  "title": "ConsumerOnlineConsent",
+  "type": "object",
+  "x-consumer-field-order": [
+    "acceptedVersion",
+    "acceptedAt",
+    "active"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

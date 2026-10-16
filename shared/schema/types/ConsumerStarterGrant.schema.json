@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerBillingTrialOffer": {
+      "properties": {
+        "checkoutOpenGrantsAccess": {
+          "default": false,
+          "type": "boolean"
+        },
+        "durationDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "eligible": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresLocalReserveEmpty": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresVerifiedPaymentMethod": {
+          "default": true,
+          "type": "boolean"
+        },
+        "state": {
+          "default": "disabled",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "properties": {
+    "activationAvailable": {
+      "default": false,
+      "type": "boolean"
+    },
+    "balanceKind": {
+      "default": "",
+      "type": "string"
+    },
+    "creditLimit": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "eligible": {
+      "default": false,
+      "type": "boolean"
+    },
+    "expires": {
+      "default": false,
+      "type": "boolean"
+    },
+    "remainingToIssue": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "state": {
+      "default": "disabled",
+      "type": "string"
+    },
+    "trialOffer": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ConsumerBillingTrialOffer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "title": "ConsumerStarterGrant",
+  "type": "object",
+  "x-consumer-field-order": [
+    "state",
+    "creditLimit",
+    "remainingToIssue",
+    "activationAvailable",
+    "expires",
+    "balanceKind",
+    "trialOffer",
+    "eligible"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

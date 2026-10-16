@@ -1,0 +1,17 @@
+Recording cue provenance — confirmed 2026-10-16
+
+Origin: original synthesized audio created for Govorun.
+The project owner confirmed this origin on 2026-10-16 and requested retaining
+these exact generated files. The original synthesis recipe is not retained;
+this record relies on the owner's confirmation, not byte-for-byte regeneration.
+Copyright (c) 2025–2026 Dmitrii Kiselev (amidexe)
+License: MIT; full terms in ../LICENSE and the repository root LICENSE.
+
+Files are compiled into desktop/os-runtime/src/media/mod.rs for macOS/Windows.
+The duplicate copies in windows/Assets have identical SHA-256 values.
+Format: mono PCM16, 44100 Hz.
+
+recording-start.wav SHA-256:
+ecedd5f49b484e46a8a63fc53538b1bf5b98f1174fef447a9295e39e2078d24e
+recording-stop.wav SHA-256:
+cfe12ad98c86a55640aa3d51525d4e34ff31896829d4ca0aea1d784115832147

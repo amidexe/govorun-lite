@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Subscription screen intents; only the server confirms payments.",
+  "enum": [
+    "authenticate",
+    "startFreeAccess",
+    "resumeFreeAccess",
+    "freeAccessCompleted",
+    "choosePlan"
+  ],
+  "title": "SubscriptionInteractionAction",
+  "type": "string"
+}

@@ -1,0 +1,512 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerBillingTrialOffer": {
+      "properties": {
+        "checkoutOpenGrantsAccess": {
+          "default": false,
+          "type": "boolean"
+        },
+        "durationDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "eligible": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresLocalReserveEmpty": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresVerifiedPaymentMethod": {
+          "default": true,
+          "type": "boolean"
+        },
+        "state": {
+          "default": "disabled",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerOnlineConsent": {
+      "properties": {
+        "acceptedAt": {
+          "default": "",
+          "type": "string"
+        },
+        "acceptedVersion": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "active": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerPromoProgram": {
+      "properties": {
+        "accessDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "accessEndsAt": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "accessMode": {
+          "default": "common_end",
+          "type": "string"
+        },
+        "activationAvailable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "campaignId": {
+          "default": "",
+          "type": "string"
+        },
+        "canActivate": {
+          "default": false,
+          "type": "boolean"
+        },
+        "dailyLimit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "endsAt": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enrollmentOpen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "message": {
+          "default": "",
+          "type": "string"
+        },
+        "participated": {
+          "default": false,
+          "type": "boolean"
+        },
+        "periodDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "periodLimit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "programVersion": {
+          "default": "",
+          "type": "string"
+        },
+        "state": {
+          "default": "disabled",
+          "type": "string"
+        },
+        "visible": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerStarterGrant": {
+      "properties": {
+        "activationAvailable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "balanceKind": {
+          "default": "",
+          "type": "string"
+        },
+        "creditLimit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "eligible": {
+          "default": false,
+          "type": "boolean"
+        },
+        "expires": {
+          "default": false,
+          "type": "boolean"
+        },
+        "remainingToIssue": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "state": {
+          "default": "disabled",
+          "type": "string"
+        },
+        "trialOffer": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerBillingTrialOffer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerStyleAccess": {
+      "properties": {
+        "accessEndsAt": {
+          "default": "",
+          "type": "string"
+        },
+        "balanceKind": {
+          "default": "",
+          "type": "string"
+        },
+        "charactersPerCredit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "dailyLimit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "dailyResetsAt": {
+          "default": "",
+          "type": "string"
+        },
+        "endsAt": {
+          "default": "",
+          "type": "string"
+        },
+        "issuanceCountersObserved": {
+          "default": false,
+          "type": "boolean"
+        },
+        "issuedToday": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "issuedTotal": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "maximumCreditsPerRequest": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "nextPeriodAt": {
+          "default": "",
+          "type": "string"
+        },
+        "periodResetCondition": {
+          "default": "",
+          "type": "string"
+        },
+        "periodResetsAt": {
+          "default": "",
+          "type": "string"
+        },
+        "planCode": {
+          "default": "",
+          "type": "string"
+        },
+        "quotaUnit": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "remainingToday": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "remainingTotal": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "reserveReturnProtocol": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "startsAt": {
+          "default": "",
+          "type": "string"
+        },
+        "state": {
+          "default": "none",
+          "type": "string"
+        },
+        "stylizationProtocol": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "totalLimit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "type": {
+          "default": "none",
+          "type": "string"
+        },
+        "usageBalance": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConsumerStyleUsageBalance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerStyleRequestCount": {
+      "properties": {
+        "count": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "credits": {
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "count",
+        "credits"
+      ],
+      "type": "object"
+    },
+    "ConsumerStyleUsageBalance": {
+      "properties": {
+        "consumedToday": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "consumedTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "dailySettlementScopeIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "day": {
+          "type": "string"
+        },
+        "deviceDays": {
+          "additionalProperties": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "default": {},
+          "type": "object"
+        },
+        "deviceRequests": {
+          "additionalProperties": {
+            "$ref": "#/definitions/ConsumerStyleRequestCount"
+          },
+          "default": {},
+          "type": "object"
+        },
+        "remainingToday": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "remainingTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "revision": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "scopeId": {
+          "type": "string"
+        },
+        "serverTime": {
+          "type": "string"
+        },
+        "settlementScopeIds": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "version": {
+          "default": 1,
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "consumedToday",
+        "consumedTotal",
+        "day",
+        "remainingToday",
+        "remainingTotal",
+        "revision",
+        "scopeId",
+        "serverTime"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "clientFreeAccessAvailable": {
+      "default": false,
+      "type": "boolean"
+    },
+    "currentDeviceId": {
+      "type": "string"
+    },
+    "deviceLimit": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "hasSyncedData": {
+      "default": null,
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "onlineConsent": {
+      "$ref": "#/definitions/ConsumerOnlineConsent"
+    },
+    "onlineServiceState": {
+      "default": "unknown",
+      "type": "string"
+    },
+    "onlineTermsVersion": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "promoProgram": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConsumerPromoProgram"
+        }
+      ],
+      "default": {
+        "accessDays": 0,
+        "accessEndsAt": null,
+        "accessMode": "common_end",
+        "activationAvailable": false,
+        "campaignId": "",
+        "canActivate": false,
+        "dailyLimit": 0,
+        "endsAt": null,
+        "enrollmentOpen": false,
+        "message": "",
+        "participated": false,
+        "periodDays": 0,
+        "periodLimit": 0,
+        "programVersion": "",
+        "state": "disabled",
+        "visible": false
+      }
+    },
+    "starterGrant": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConsumerStarterGrant"
+        }
+      ],
+      "default": {
+        "activationAvailable": false,
+        "balanceKind": "",
+        "creditLimit": 0,
+        "eligible": false,
+        "expires": false,
+        "remainingToIssue": 0,
+        "state": "disabled",
+        "trialOffer": null
+      }
+    },
+    "styleAccess": {
+      "$ref": "#/definitions/ConsumerStyleAccess"
+    },
+    "styleUsageAccountingAvailable": {
+      "default": false,
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "currentDeviceId",
+    "deviceLimit",
+    "displayName",
+    "id",
+    "onlineConsent",
+    "onlineTermsVersion",
+    "styleAccess"
+  ],
+  "title": "ConsumerProfile",
+  "type": "object",
+  "x-consumer-field-order": [
+    "id",
+    "displayName",
+    "currentDeviceId",
+    "deviceLimit",
+    "onlineTermsVersion",
+    "styleAccess",
+    "onlineConsent",
+    "onlineServiceState",
+    "starterGrant",
+    "promoProgram",
+    "clientFreeAccessAvailable",
+    "styleUsageAccountingAvailable",
+    "hasSyncedData"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Configuration": {
+      "additionalProperties": false,
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/Provider"
+        },
+        "proxyEnabled": {
+          "type": "boolean"
+        },
+        "proxyURL": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "endpoint",
+        "model",
+        "prompt",
+        "provider",
+        "proxyEnabled",
+        "proxyURL"
+      ],
+      "type": "object"
+    },
+    "KeyState": {
+      "enum": [
+        "missing",
+        "saved",
+        "inaccessible",
+        "staleReference"
+      ],
+      "type": "string"
+    },
+    "Provider": {
+      "enum": [
+        "ollama",
+        "openai",
+        "gemini"
+      ],
+      "type": "string"
+    }
+  },
+  "properties": {
+    "busy": {
+      "type": "boolean"
+    },
+    "cancelling": {
+      "type": "boolean"
+    },
+    "configuration": {
+      "$ref": "#/definitions/Configuration"
+    },
+    "configured": {
+      "type": "boolean"
+    },
+    "consent": {
+      "type": "boolean"
+    },
+    "failed": {
+      "type": "boolean"
+    },
+    "keyState": {
+      "$ref": "#/definitions/KeyState"
+    },
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "operation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "operationID": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "routeEnabled": {
+      "type": "boolean"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "stylingEnabled": {
+      "type": "boolean"
+    },
+    "verified": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "busy",
+    "cancelling",
+    "configuration",
+    "configured",
+    "consent",
+    "failed",
+    "keyState",
+    "routeEnabled",
+    "scope",
+    "stylingEnabled",
+    "verified"
+  ],
+  "title": "SelfHostSnapshot",
+  "type": "object"
+}

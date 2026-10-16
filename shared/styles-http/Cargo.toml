@@ -1,0 +1,18 @@
+[package]
+name = "govorun-styles-http"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+govorun-core = { path = "../core" }
+serde_json.workspace = true
+tokio = { workspace = true, features = ["net"] }
+url = "=2.5.8"
+hyper = { version = "=1.11.1", features = ["client", "http1"] }
+hyper-util = { version = "=0.1.20", features = ["tokio", "client-legacy", "http1"] }
+http-body-util = "=0.1.5"
+tower-service = "=0.3.3"
+rustls = { version = "=0.23.40", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = { version = "=0.26.4", default-features = false, features = ["ring", "tls12"] }
+webpki-roots = "=1.0.7"

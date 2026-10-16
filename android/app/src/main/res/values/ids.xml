@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="bubble_a11y_action_quick_input" type="id" />
+    <item name="bubble_a11y_action_cancel_recording" type="id" />
+</resources>

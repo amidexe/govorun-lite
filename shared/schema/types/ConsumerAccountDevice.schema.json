@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "activatedAt": {
+      "type": "string"
+    },
+    "current": {
+      "default": false,
+      "type": "boolean"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "lastSeenAt": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "activatedAt",
+    "displayName",
+    "id",
+    "lastSeenAt",
+    "platform"
+  ],
+  "title": "ConsumerAccountDevice",
+  "type": "object",
+  "x-consumer-field-order": [
+    "id",
+    "platform",
+    "displayName",
+    "activatedAt",
+    "lastSeenAt",
+    "current"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

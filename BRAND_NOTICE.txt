@@ -1,0 +1,86 @@
+GOVORUN BRAND NOTICE / УВЕДОМЛЕНИЕ О БРЕНДЕ
+
+Code license / Лицензия на код
+
+Except for the Brand Assets identified below and third-party components under
+their own notices, the source code in this repository is licensed under the MIT
+License in LICENSE.
+
+За исключением перечисленных ниже брендовых материалов и сторонних компонентов
+с собственными уведомлениями, исходный код этого репозитория распространяется
+по MIT License из файла LICENSE.
+
+No brand license / Права на бренд не предоставляются
+
+The MIT License does not grant permission to use the Govorun or Говорун names,
+the bird design, official logos, application icons, presentation artwork, or
+other visual identifiers of the official Govorun product (the "Brand Assets").
+Copyright (c) 2025–2026 Dmitrii Kiselev (amidexe). All rights reserved for the Brand Assets.
+
+MIT License не предоставляет права использовать названия Govorun или «Говорун»,
+изображение птицы, официальные логотипы, иконки приложений, презентационные
+изображения и другие визуальные обозначения официального продукта «Говорун»
+(далее — «Брендовые материалы»). Copyright (c) 2025–2026 Dmitrii Kiselev (amidexe). Все права
+на Брендовые материалы сохраняются.
+
+GitHub forks and independent projects / Форки и самостоятельные проекты
+
+An unmodified GitHub fork or working copy may retain the Brand Assets only as
+needed to view the repository, reproduce the official source, or prepare a
+contribution back to the official project through GitHub functionality.
+
+Before a fork, modified build, derivative product, service, or package is
+presented or distributed as an independent project, it must use a different
+product name, logo, application icons, and visual identity; replace or remove
+the Brand Assets listed below; and must not state or imply that it is official,
+affiliated with, approved by, or endorsed by Govorun or Dmitry Kiselev. Any
+other use requires prior written permission. Truthful references to the origin
+of the code remain permitted to the extent required by applicable law.
+
+Неизменённый GitHub fork или рабочая копия может сохранять Брендовые материалы
+только для просмотра репозитория, воспроизведения официального исходного кода
+или подготовки вклада обратно в официальный проект средствами GitHub.
+
+До публикации или распространения форка, изменённой сборки, производного
+продукта, сервиса или пакета как самостоятельного проекта необходимо выбрать
+другое название, логотип, иконки приложений и визуальное оформление; заменить
+или удалить перечисленные ниже Брендовые материалы; не заявлять и не создавать
+впечатление официальности, связи, одобрения или поддержки со стороны «Говоруна»
+или Дмитрия Киселёва. Иное использование требует предварительного письменного
+разрешения. Достоверное указание происхождения кода допускается в пределах,
+предусмотренных применимым законодательством.
+
+Reserved Brand Asset paths / Пути Брендовых материалов
+
+assets/acceleration.svg
+assets/architecture.svg
+assets/govorun-mark.svg
+assets/hero.png
+assets/gallery/01-govorun-golos-stanovitsya-tekstom.png
+assets/gallery/02-diktuyte-v-lyubom-prilozhenii.png
+assets/gallery/03-uluchshayte-tekst-neyrosetyu.png
+android/app/src/main/res/drawable/ic_bird_24.xml
+android/app/src/main/res/drawable/ic_bird_eye_24.xml
+android/app/src/main/res/drawable/ic_bird_power_off_24.xml
+android/app/src/main/res/drawable/ic_launcher_foreground.xml
+android/app/src/main/res/drawable/logo_bird.xml
+desktop/src/assets/bird.svg
+desktop/src-tauri/icons/icon.png
+desktop/src-tauri/icons/icon.ico
+macos/Govorun/Assets.xcassets/AppIcon.appiconset/icon_16x16.png
+macos/Govorun/Assets.xcassets/AppIcon.appiconset/icon_32x32.png
+macos/Govorun/Assets.xcassets/AppIcon.appiconset/icon_64x64.png
+macos/Govorun/Assets.xcassets/AppIcon.appiconset/icon_128x128.png
+macos/Govorun/Assets.xcassets/AppIcon.appiconset/icon_256x256.png
+macos/Govorun/Assets.xcassets/AppIcon.appiconset/icon_512x512.png
+macos/Govorun/Assets.xcassets/AppIcon.appiconset/icon_1024x1024.png
+windows/Assets/icon.ico
+windows/Installer/MSIX/Assets/Square44x44Logo.png
+windows/Installer/MSIX/Assets/Square150x150Logo.png
+windows/Installer/MSIX/Assets/StoreLogo.png
+
+This notice does not change the separate licenses and notices that apply to
+third-party components.
+
+Это уведомление не изменяет отдельные лицензии и уведомления сторонних
+компонентов.

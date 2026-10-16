@@ -1,0 +1,14 @@
+[workspace]
+members = ["os-runtime", "src-tauri"]
+resolver = "2"
+
+[workspace.dependencies]
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+tokio = { version = "=1.53.1", features = ["rt-multi-thread", "macros", "process", "io-util", "sync", "time"] }
+
+[profile.release]
+strip = true
+
+[patch.crates-io]
+handy-keys = { path = "vendor/handy-keys" }

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "seconds": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "sessions": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "words": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "seconds",
+    "sessions",
+    "words"
+  ],
+  "title": "StatisticsTotal",
+  "type": "object"
+}

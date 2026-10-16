@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerStyleRequestCount": {
+      "properties": {
+        "count": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "credits": {
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "count",
+        "credits"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "consumedToday": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "consumedTotal": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "dailySettlementScopeIds": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "day": {
+      "type": "string"
+    },
+    "deviceDays": {
+      "additionalProperties": {
+        "format": "int32",
+        "type": "integer"
+      },
+      "default": {},
+      "type": "object"
+    },
+    "deviceRequests": {
+      "additionalProperties": {
+        "$ref": "#/definitions/ConsumerStyleRequestCount"
+      },
+      "default": {},
+      "type": "object"
+    },
+    "remainingToday": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "remainingTotal": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "revision": {
+      "format": "int64",
+      "type": "integer"
+    },
+    "scopeId": {
+      "type": "string"
+    },
+    "serverTime": {
+      "type": "string"
+    },
+    "settlementScopeIds": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "version": {
+      "default": 1,
+      "format": "int32",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "consumedToday",
+    "consumedTotal",
+    "day",
+    "remainingToday",
+    "remainingTotal",
+    "revision",
+    "scopeId",
+    "serverTime"
+  ],
+  "title": "ConsumerStyleUsageBalance",
+  "type": "object",
+  "x-consumer-field-order": [
+    "scopeId",
+    "revision",
+    "day",
+    "serverTime",
+    "consumedToday",
+    "consumedTotal",
+    "remainingToday",
+    "remainingTotal",
+    "deviceDays",
+    "settlementScopeIds",
+    "dailySettlementScopeIds",
+    "deviceRequests",
+    "version"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

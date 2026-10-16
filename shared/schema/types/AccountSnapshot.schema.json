@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "AccountDevice": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmation": {
+          "type": "string"
+        },
+        "current": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "confirmation",
+        "current",
+        "id",
+        "name",
+        "subtitle"
+      ],
+      "type": "object"
+    },
+    "AccountProvider": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "enabled",
+        "id"
+      ],
+      "type": "object"
+    },
+    "AccountStorage": {
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "available",
+        "state"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "busy": {
+      "type": "boolean"
+    },
+    "deviceLimit": {
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "devices": {
+      "items": {
+        "$ref": "#/definitions/AccountDevice"
+      },
+      "type": "array"
+    },
+    "displayName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "messageCode": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "providerNoticeCode": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "providers": {
+      "items": {
+        "$ref": "#/definitions/AccountProvider"
+      },
+      "type": "array"
+    },
+    "replacingDevice": {
+      "type": "boolean"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "storage": {
+      "$ref": "#/definitions/AccountStorage"
+    },
+    "syncMode": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "busy",
+    "deviceLimit",
+    "devices",
+    "providers",
+    "replacingDevice",
+    "scope",
+    "status",
+    "storage",
+    "syncMode"
+  ],
+  "title": "AccountSnapshot",
+  "type": "object"
+}

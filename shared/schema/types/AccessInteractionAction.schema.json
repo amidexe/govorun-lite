@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Finite access intents; unknown wire actions fail before planning an effect.",
+  "enum": [
+    "terms",
+    "freeAccess",
+    "resumeFreeAccess",
+    "enable"
+  ],
+  "title": "AccessInteractionAction",
+  "type": "string"
+}

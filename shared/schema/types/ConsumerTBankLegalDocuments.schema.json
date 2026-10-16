@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerTBankLegalDocument": {
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "privacyNotice": {
+      "$ref": "#/definitions/ConsumerTBankLegalDocument"
+    },
+    "receiptDataConsent": {
+      "$ref": "#/definitions/ConsumerTBankLegalDocument"
+    },
+    "refundPolicy": {
+      "$ref": "#/definitions/ConsumerTBankLegalDocument"
+    },
+    "subscriptionTerms": {
+      "$ref": "#/definitions/ConsumerTBankLegalDocument"
+    },
+    "userAgreement": {
+      "$ref": "#/definitions/ConsumerTBankLegalDocument"
+    }
+  },
+  "required": [
+    "privacyNotice",
+    "receiptDataConsent",
+    "refundPolicy",
+    "subscriptionTerms",
+    "userAgreement"
+  ],
+  "title": "ConsumerTBankLegalDocuments",
+  "type": "object",
+  "x-consumer-field-order": [
+    "subscriptionTerms",
+    "userAgreement",
+    "refundPolicy",
+    "privacyNotice",
+    "receiptDataConsent"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

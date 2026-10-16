@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "billingPeriodLabel": {
+      "default": "",
+      "type": "string"
+    },
+    "clientLimitCopy": {
+      "default": "",
+      "type": "string"
+    },
+    "clientMultiplierCopy": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "code": {
+      "type": "string"
+    },
+    "dailyLimit": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "name": {
+      "type": "string"
+    },
+    "offerId": {
+      "default": "",
+      "type": "string"
+    },
+    "periodDays": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "periodLimit": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "priceKopeks": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "recommended": {
+      "default": false,
+      "type": "boolean"
+    },
+    "ruStoreProductId": {
+      "default": "",
+      "type": "string"
+    }
+  },
+  "required": [
+    "code",
+    "dailyLimit",
+    "name",
+    "periodDays",
+    "periodLimit",
+    "priceKopeks"
+  ],
+  "title": "ConsumerBillingPlan",
+  "type": "object",
+  "x-consumer-field-order": [
+    "code",
+    "name",
+    "priceKopeks",
+    "dailyLimit",
+    "periodLimit",
+    "periodDays",
+    "recommended",
+    "ruStoreProductId",
+    "offerId",
+    "billingPeriodLabel",
+    "clientMultiplierCopy",
+    "clientLimitCopy"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {
+    "billingPeriodLabel": "\"$periodDays дней\"",
+    "offerId": "code"
+  }
+}

@@ -1,0 +1,3 @@
+// @generated from shared/core serde JSON Schema; do not edit.
+import type { BusinessCommandScope } from './BusinessCommandScope';
+export type BusinessCommandCommand = { "facts": unknown; "kind": "controls" } | { "access": unknown; "kind": "facts" } | { "first": unknown; "kind": "period"; "second": unknown } | { "current": BusinessCommandScope; "kind": "match"; "scope": BusinessCommandScope } | { "kind": "prewire"; "same_scope": boolean } | { "kind": "refreshFailure"; "status": number | null } | { "consent": boolean; "enabled": boolean; "kind": "enabled"; "processing_ready": boolean; "protocol_supported": boolean; "self_hosted": boolean };

@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "BenchmarkDevice": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": "string"
+        },
+        "failureCode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BenchmarkResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stage": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "backend",
+        "id",
+        "name",
+        "stage",
+        "state"
+      ],
+      "type": "object"
+    },
+    "BenchmarkResult": {
+      "additionalProperties": false,
+      "properties": {
+        "cold": {
+          "$ref": "#/definitions/BenchmarkTiming"
+        },
+        "loadMs": {
+          "format": "double",
+          "type": "number"
+        },
+        "longAudioMs": {
+          "format": "double",
+          "type": "number"
+        },
+        "longer": {
+          "$ref": "#/definitions/BenchmarkTiming"
+        },
+        "model": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "requestedBackend": {
+          "type": "string"
+        },
+        "shortAudioMs": {
+          "format": "double",
+          "type": "number"
+        },
+        "suite": {
+          "type": "string"
+        },
+        "warm": {
+          "$ref": "#/definitions/BenchmarkTiming"
+        }
+      },
+      "required": [
+        "cold",
+        "loadMs",
+        "longAudioMs",
+        "longer",
+        "model",
+        "platform",
+        "requestedBackend",
+        "shortAudioMs",
+        "suite",
+        "warm"
+      ],
+      "type": "object"
+    },
+    "BenchmarkTiming": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": "string"
+        },
+        "milliseconds": {
+          "format": "double",
+          "type": "number"
+        }
+      },
+      "required": [
+        "backend",
+        "milliseconds"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "activeDeviceId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "devices": {
+      "items": {
+        "$ref": "#/definitions/BenchmarkDevice"
+      },
+      "type": "array"
+    },
+    "failureCode": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "report": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "devices",
+    "report",
+    "stage",
+    "state"
+  ],
+  "title": "BenchmarkSnapshot",
+  "type": "object"
+}

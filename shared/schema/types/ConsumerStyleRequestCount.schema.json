@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "count": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "credits": {
+      "format": "int32",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "count",
+    "credits"
+  ],
+  "title": "ConsumerStyleRequestCount",
+  "type": "object",
+  "x-consumer-field-order": [
+    "count",
+    "credits"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

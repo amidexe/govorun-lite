@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "BenchmarkTiming": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "type": "string"
+        },
+        "milliseconds": {
+          "format": "double",
+          "type": "number"
+        }
+      },
+      "required": [
+        "backend",
+        "milliseconds"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "cold": {
+      "$ref": "#/definitions/BenchmarkTiming"
+    },
+    "loadMs": {
+      "format": "double",
+      "type": "number"
+    },
+    "longAudioMs": {
+      "format": "double",
+      "type": "number"
+    },
+    "longer": {
+      "$ref": "#/definitions/BenchmarkTiming"
+    },
+    "model": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "requestedBackend": {
+      "type": "string"
+    },
+    "shortAudioMs": {
+      "format": "double",
+      "type": "number"
+    },
+    "suite": {
+      "type": "string"
+    },
+    "warm": {
+      "$ref": "#/definitions/BenchmarkTiming"
+    }
+  },
+  "required": [
+    "cold",
+    "loadMs",
+    "longAudioMs",
+    "longer",
+    "model",
+    "platform",
+    "requestedBackend",
+    "shortAudioMs",
+    "suite",
+    "warm"
+  ],
+  "title": "BenchmarkResult",
+  "type": "object"
+}

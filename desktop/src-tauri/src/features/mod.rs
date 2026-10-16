@@ -1,0 +1,24 @@
+//! One routing boundary. A feature moves by changing its owner here, once.
+pub mod about;
+pub use govorun_core::features::account;
+pub mod benchmark;
+pub use govorun_core::features::billing;
+pub use govorun_core::features::clipboard;
+pub mod diagnostics;
+pub use govorun_core::features::dictionary;
+pub mod dictation;
+pub mod documents;
+pub use govorun_core::features::dto;
+pub mod hotkeys;
+pub mod runtime;
+pub mod recording_support;
+pub mod permission_setup;
+pub mod self_host;
+pub use govorun_core::features::snapshot_gate;
+pub use govorun_core::features::statistics;
+pub use govorun_core::features::style_library;
+pub use govorun_core::features::styles;
+pub use govorun_core::features::stylization;
+pub use govorun_core::features::sync;
+pub use govorun_core::features::sync_documents;
+pub use govorun_core::features::{route, routes, Route};

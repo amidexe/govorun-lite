@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "canConfirm": {
+      "type": "boolean"
+    },
+    "confirmationPath": {
+      "type": "string"
+    },
+    "receiptContactRequired": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "canConfirm",
+    "confirmationPath",
+    "receiptContactRequired"
+  ],
+  "title": "ConsumerCheckoutPreviewAction",
+  "type": "object",
+  "x-consumer-field-order": [
+    "canConfirm",
+    "confirmationPath",
+    "receiptContactRequired"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

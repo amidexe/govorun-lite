@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "accessDays": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "accessMode": {
+      "type": "string"
+    },
+    "canActivate": {
+      "type": "boolean"
+    },
+    "dailyLimit": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "endsAt": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "enrollmentOpen": {
+      "type": "boolean"
+    },
+    "message": {
+      "type": "string"
+    },
+    "participated": {
+      "type": "boolean"
+    },
+    "periodDays": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "periodLimit": {
+      "format": "uint64",
+      "minimum": 0.0,
+      "type": "integer"
+    },
+    "programVersion": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "visible": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "accessDays",
+    "accessMode",
+    "canActivate",
+    "dailyLimit",
+    "enrollmentOpen",
+    "message",
+    "participated",
+    "periodDays",
+    "periodLimit",
+    "programVersion",
+    "state",
+    "visible"
+  ],
+  "title": "PromoProgram",
+  "type": "object"
+}

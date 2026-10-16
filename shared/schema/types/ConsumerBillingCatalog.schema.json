@@ -1,0 +1,365 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerBillingPlan": {
+      "properties": {
+        "billingPeriodLabel": {
+          "default": "",
+          "type": "string"
+        },
+        "clientLimitCopy": {
+          "default": "",
+          "type": "string"
+        },
+        "clientMultiplierCopy": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "code": {
+          "type": "string"
+        },
+        "dailyLimit": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "offerId": {
+          "default": "",
+          "type": "string"
+        },
+        "periodDays": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "periodLimit": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "priceKopeks": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "recommended": {
+          "default": false,
+          "type": "boolean"
+        },
+        "ruStoreProductId": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "dailyLimit",
+        "name",
+        "periodDays",
+        "periodLimit",
+        "priceKopeks"
+      ],
+      "type": "object"
+    },
+    "ConsumerBillingStorefront": {
+      "properties": {
+        "message": {
+          "default": "",
+          "type": "string"
+        },
+        "state": {
+          "default": "open",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerBillingTrialOffer": {
+      "properties": {
+        "checkoutOpenGrantsAccess": {
+          "default": false,
+          "type": "boolean"
+        },
+        "durationDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "eligible": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresLocalReserveEmpty": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresVerifiedPaymentMethod": {
+          "default": true,
+          "type": "boolean"
+        },
+        "state": {
+          "default": "disabled",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerPromoProgram": {
+      "properties": {
+        "accessDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "accessEndsAt": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "accessMode": {
+          "default": "common_end",
+          "type": "string"
+        },
+        "activationAvailable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "campaignId": {
+          "default": "",
+          "type": "string"
+        },
+        "canActivate": {
+          "default": false,
+          "type": "boolean"
+        },
+        "dailyLimit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "endsAt": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enrollmentOpen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "message": {
+          "default": "",
+          "type": "string"
+        },
+        "participated": {
+          "default": false,
+          "type": "boolean"
+        },
+        "periodDays": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "periodLimit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "programVersion": {
+          "default": "",
+          "type": "string"
+        },
+        "state": {
+          "default": "disabled",
+          "type": "string"
+        },
+        "visible": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ConsumerStarterGrantOffer": {
+      "properties": {
+        "clientOfferVisible": {
+          "default": false,
+          "type": "boolean"
+        },
+        "creditLimit": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "expires": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresAuthentication": {
+          "default": true,
+          "type": "boolean"
+        },
+        "requiresCode": {
+          "default": false,
+          "type": "boolean"
+        },
+        "requiresPaymentMethod": {
+          "default": false,
+          "type": "boolean"
+        },
+        "state": {
+          "default": "disabled",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "properties": {
+    "catalogVersion": {
+      "default": "",
+      "type": "string"
+    },
+    "clientTrialDays": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "currency": {
+      "default": "RUB",
+      "type": "string"
+    },
+    "plans": {
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/ConsumerBillingPlan"
+      },
+      "type": "array"
+    },
+    "programControlVersion": {
+      "default": "",
+      "type": "string"
+    },
+    "promoProgram": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConsumerPromoProgram"
+        }
+      ],
+      "default": {
+        "accessDays": 0,
+        "accessEndsAt": null,
+        "accessMode": "common_end",
+        "activationAvailable": false,
+        "campaignId": "",
+        "canActivate": false,
+        "dailyLimit": 0,
+        "endsAt": null,
+        "enrollmentOpen": false,
+        "message": "",
+        "participated": false,
+        "periodDays": 0,
+        "periodLimit": 0,
+        "programVersion": "",
+        "state": "disabled",
+        "visible": false
+      }
+    },
+    "publishedAt": {
+      "default": "",
+      "type": "string"
+    },
+    "refreshAfterSeconds": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "ruStoreEnabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "schemaVersion": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "starterGrant": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConsumerStarterGrantOffer"
+        }
+      ],
+      "default": {
+        "clientOfferVisible": false,
+        "creditLimit": 0,
+        "expires": false,
+        "requiresAuthentication": true,
+        "requiresCode": false,
+        "requiresPaymentMethod": false,
+        "state": "disabled"
+      }
+    },
+    "storefront": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConsumerBillingStorefront"
+        }
+      ],
+      "default": {
+        "message": "",
+        "state": "open"
+      }
+    },
+    "tBankEnabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "tBankPreviewEnabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "trialOffer": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConsumerBillingTrialOffer"
+        }
+      ],
+      "default": {
+        "checkoutOpenGrantsAccess": false,
+        "durationDays": 0,
+        "eligible": false,
+        "requiresLocalReserveEmpty": false,
+        "requiresVerifiedPaymentMethod": true,
+        "state": "disabled"
+      }
+    }
+  },
+  "title": "ConsumerBillingCatalog",
+  "type": "object",
+  "x-consumer-field-order": [
+    "schemaVersion",
+    "catalogVersion",
+    "publishedAt",
+    "refreshAfterSeconds",
+    "currency",
+    "ruStoreEnabled",
+    "tBankEnabled",
+    "tBankPreviewEnabled",
+    "trialOffer",
+    "starterGrant",
+    "plans",
+    "storefront",
+    "programControlVersion",
+    "promoProgram",
+    "clientTrialDays"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {
+    "tBankPreviewEnabled": "tBankEnabled"
+  }
+}

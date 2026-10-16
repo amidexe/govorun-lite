@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "current": {
+      "type": "boolean"
+    },
+    "id": {
+      "type": "string"
+    },
+    "limit": {
+      "type": "string"
+    },
+    "multiplier": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "period": {
+      "type": "string"
+    },
+    "price": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "trial": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "current",
+    "id",
+    "limit",
+    "period",
+    "price",
+    "title",
+    "trial"
+  ],
+  "title": "BillingPlan",
+  "type": "object"
+}

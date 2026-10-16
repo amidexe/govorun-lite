@@ -1,0 +1,188 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerCheckoutPresentation": {
+      "properties": {
+        "accessRefreshPending": {
+          "default": false,
+          "type": "boolean"
+        },
+        "canCancel": {
+          "type": "boolean"
+        },
+        "disposition": {
+          "type": "string"
+        },
+        "expiresInSeconds": {
+          "format": "int32",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "launchAction": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "resumeUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "canCancel",
+        "disposition",
+        "message"
+      ],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "browserReturnGrantsAccess": {
+      "type": "boolean"
+    },
+    "canRestartBinding": {
+      "default": false,
+      "type": "boolean"
+    },
+    "cancellationPending": {
+      "default": false,
+      "type": "boolean"
+    },
+    "catalogVersion": {
+      "default": "test",
+      "type": "string"
+    },
+    "checkoutSessionId": {
+      "type": "string"
+    },
+    "clientCheckout": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ConsumerCheckoutPresentation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "currency": {
+      "type": "string"
+    },
+    "expiresInSeconds": {
+      "default": null,
+      "format": "int32",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "firstChargeAt": {
+      "type": "string"
+    },
+    "firstChargeDelaySeconds": {
+      "default": null,
+      "format": "int32",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "freeAccessEndsAt": {
+      "type": "string"
+    },
+    "freeAccessSource": {
+      "type": "string"
+    },
+    "offerId": {
+      "default": "",
+      "type": "string"
+    },
+    "paymentMethodKind": {
+      "default": "card",
+      "type": "string"
+    },
+    "paymentUrl": {
+      "default": "",
+      "type": "string"
+    },
+    "periodDays": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "planCode": {
+      "type": "string"
+    },
+    "priceKopeks": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "purchaseKind": {
+      "type": "string"
+    },
+    "serverConfirmationRequired": {
+      "type": "boolean"
+    },
+    "state": {
+      "type": "string"
+    },
+    "trialDays": {
+      "format": "int32",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "browserReturnGrantsAccess",
+    "checkoutSessionId",
+    "currency",
+    "firstChargeAt",
+    "freeAccessEndsAt",
+    "freeAccessSource",
+    "periodDays",
+    "planCode",
+    "priceKopeks",
+    "purchaseKind",
+    "serverConfirmationRequired",
+    "state",
+    "trialDays"
+  ],
+  "title": "ConsumerTBankCheckoutSession",
+  "type": "object",
+  "x-consumer-field-order": [
+    "paymentMethodKind",
+    "catalogVersion",
+    "checkoutSessionId",
+    "state",
+    "planCode",
+    "offerId",
+    "purchaseKind",
+    "trialDays",
+    "freeAccessSource",
+    "freeAccessEndsAt",
+    "firstChargeAt",
+    "priceKopeks",
+    "periodDays",
+    "currency",
+    "browserReturnGrantsAccess",
+    "serverConfirmationRequired",
+    "paymentUrl",
+    "firstChargeDelaySeconds",
+    "canRestartBinding",
+    "cancellationPending",
+    "expiresInSeconds",
+    "clientCheckout"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {
+    "offerId": "\"$planCode.monthly\""
+  }
+}
