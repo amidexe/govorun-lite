@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Говорун</title>
+<style>
+  :root {
+    --bg: #F5F5F7;
+    --surface: #FFFFFF;
+    --surface-hover: #ECECEF;
+    --on-surface: #14141A;
+    --on-surface-variant: #4A4A52;
+    --primary: #14141A;
+    --outline-variant: #C8C8CE;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--on-surface);
+    line-height: 1.6;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 64px 24px;
+  }
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 16px 0 8px;
+  }
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+  .tagline {
+    color: var(--on-surface-variant);
+    font-size: 18px;
+    margin: 0 0 32px;
+  }
+  .links { list-style: none; padding: 0; margin: 0; }
+  .links li { margin: 12px 0; }
+  .links a {
+    display: block;
+    background: var(--surface);
+    padding: 16px 20px;
+    border-radius: 16px;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .links a:hover { background: var(--surface-hover); }
+  .version { background: var(--surface); border-radius: 16px; padding: 20px; margin: 12px 0; }
+  .version h2 { font-size: 18px; margin: 0 0 4px; }
+  .version p { margin: 0 0 12px; color: var(--on-surface-variant); }
+  .version .actions a { color: var(--primary); font-weight: 500; margin-right: 16px; }
+  .banner { width: 100%; height: auto; border-radius: 16px; margin-bottom: 32px; }
+  .rustore-btn {
+    display: inline-block;
+    flex-shrink: 0;
+    transition: transform 150ms ease, filter 150ms ease;
+  }
+  .rustore-btn img { display: block; width: 140px; height: auto; }
+  .rustore-btn:hover {
+    transform: translateY(-1px);
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+  }
+</style>
+</head>
+<body>
+<main class="container">
+  <img class="banner" src="banner.svg" alt="Говорун — голосовой ввод на русском без интернета">
+  <div class="title-row">
+    <h1>Говорун</h1>
+    <a class="rustore-btn" href="https://www.rustore.ru/catalog/app/com.govorun.lite" aria-label="Скачать в RuStore">
+      <img src="rustore-badge.svg" alt="Скачать в RuStore">
+    </a>
+  </div>
+  <p class="tagline">Голосовой ввод на русском. Речь распознаётся прямо на устройстве.</p>
+  <section class="version">
+    <h2>Говорун 2</h2>
+    <p>Android, macOS и Windows. Офлайн-диктовка и, по желанию, улучшение текста нейросетью.</p>
+    <div class="actions">
+      <a href="https://govorun.club">govorun.club</a>
+      <a href="https://github.com/amidexe/govorun-lite/releases/latest">Скачать на GitHub</a>
+      <a href="https://govorun.club/legal">Условия и политика</a>
+    </div>
+  </section>
+  <section class="version">
+    <h2>Говорун 1</h2>
+    <p>Только офлайн-диктовка, без интернета и аккаунтов. Android.</p>
+    <div class="actions">
+      <a href="https://www.rustore.ru/catalog/app/com.govorun.lite">RuStore</a>
+      <a href="privacy.html">Политика конфиденциальности</a>
+    </div>
+  </section>
+</main>
+</body>
+</html>
