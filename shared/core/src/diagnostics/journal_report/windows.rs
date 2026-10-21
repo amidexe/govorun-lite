@@ -100,6 +100,9 @@ fn event_detail(name: &str, detail: &str) -> String {
     {
         return support::windows(name, detail);
     }
+    if let Some(title) = super::input::sync_reason_title(detail) {
+        return format!("{title} ({detail})");
+    }
     if ["http_500", "http_502", "http_503", "http_504"].contains(&detail) {
         return format!(
             "Ошибка сервиса. Повторите проверку позже (HTTP {})",

@@ -151,3 +151,44 @@ internal fun buildAnchoredContextualGeometry(
         ),
     )
 }
+
+/** Android's minimum touch target (Material and accessibility guidance). */
+internal const val MIN_TOUCH_TARGET_DP = 48f
+
+/** Bird circle diameter at 100 %: the rail's height, so the circle only stretches sideways. */
+internal const val BUBBLE_BASE_DP = 48f
+
+/** The earlier circle size the idle touch window is still measured from. */
+internal const val BUBBLE_TOUCH_BASE_DP = 56f
+
+/**
+ * Idle touch window: the earlier 56 dp circle plus 40 %, rounded exactly as before,
+ * so the slimmer circle is as easy to hit and sits at the same place.
+ */
+internal fun bubbleTouchExtentPx(density: Float, sizeScale: Float): Int {
+    val base = (BUBBLE_TOUCH_BASE_DP * density * sizeScale).toInt()
+    return base + (base * 0.4f).toInt()
+}
+
+/**
+ * True when [x] belongs to the cancel action of the confirmation control.
+ *
+ * Cancel is the secondary action, so it gets only the minimum touch target
+ * centred on its icon; everything else, including the dots between the two
+ * icons, confirms. The target never grows past the rail, so on a narrow
+ * control it stays at the far edge instead of eating the confirm side.
+ */
+internal fun isCancelTarget(
+    x: Float,
+    cancelX: Float,
+    rail: RectF,
+    anchoredLeft: Boolean,
+    minTargetPx: Float,
+): Boolean {
+    val half = minTargetPx / 2f
+    return if (anchoredLeft) {
+        x >= minOf(cancelX - half, rail.right - minTargetPx)
+    } else {
+        x <= maxOf(cancelX + half, rail.left + minTargetPx)
+    }
+}

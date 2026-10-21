@@ -91,7 +91,9 @@ class SettingsActivity : ComponentActivity() {
                 AccessibilityHelper.openAccessibilitySettings(this)
             SettingsEvent.OpenJournal -> Unit // Nested navigation is owned by SettingsScreen.
             SettingsEvent.ConfirmDisableService -> {
+                // A dead service cannot disable itself; send the user to the switch.
                 LiteAccessibilityService.instance?.disableSelf()
+                    ?: AccessibilityHelper.openAccessibilitySettings(this)
                 window.decorView.postDelayed(::refresh, 350)
             }
             SettingsEvent.ClearDiagnostics ->
@@ -116,6 +118,7 @@ class SettingsActivity : ComponentActivity() {
                 GovorunAccountRepository.requestSynchronizedStatsReset(this)
             }
             SettingsEvent.Reset -> settings.reset()
+            SettingsEvent.ResetAppearance -> settings.resetAppearance()
         }
         if (event.updatesSnapshot) refresh()
     }

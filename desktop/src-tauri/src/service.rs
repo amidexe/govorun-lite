@@ -243,11 +243,18 @@ impl Services {
                         let store=Arc::new(crate::agent::storage::AgentStore::new(client.clone()));
                         let self_host_app=app.clone();
                         let self_host_account=Arc::downgrade(&account);
-                        if snapshot["platform"] == "macos" {
-                            let clipboard_app=app.clone();
-                            *self.clipboard.lock().await=Some(crate::features::clipboard::Clipboard::new(store.clone(),
-                                Arc::new(move|event,data| deliver(&clipboard_app,NativeEvent {event:event.into(),data}))));
-                        }
+                        let clipboard_app=app.clone();
+                        let clipboard_recording=self.recording.clone();
+                        *self.clipboard.lock().await=Some(crate::features::clipboard::Clipboard::new(store.clone(),
+                            Arc::new(move|event,data| {
+                                // Apply «После вставки текста» and «Помнить последнюю диктовку» without a restart.
+                                let recording=clipboard_recording.clone();
+                                tokio::spawn(async move {
+                                    let host=recording.lock().await.clone();
+                                    if let Some(host)=host { let _=host.settings.refresh_execution().await; }
+                                });
+                                deliver(&clipboard_app,NativeEvent {event:event.into(),data})
+                            })));
                         let owner=crate::features::self_host::SelfHost::new(store.clone(),store,
                             Arc::new(crate::features::self_host::network::Http),Arc::new(move|event,data| {
                                 if event == "styles.changed" {
@@ -347,6 +354,7 @@ impl Services {
                 owner.invoke(method,params).await
             }
             crate::features::Route::Clipboard => {
+                if let Some(reply)=crate::last_dictation::invoke(method,&params) { return reply; }
                 let owner=self.clipboard.lock().await.clone().ok_or("clipboard_unavailable")?;
                 owner.invoke(method,params).await
             }

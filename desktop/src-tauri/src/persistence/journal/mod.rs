@@ -88,6 +88,7 @@ impl Journal {
                 Input::Failure {
                     name: "self_host_request_failed",
                     status,
+                    ..
                 } => return macos::append(self.store.as_ref(), MacEvent {
                     id: uuid::Uuid::new_v4().to_string().to_uppercase(),
                     date: now.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
@@ -135,10 +136,11 @@ impl Journal {
                 Input::InsertionFailure(code) => ("insertion_failed", code.into()),
                 Input::CaptureTiming(detail) => ("audio_capture_ready", detail),
                 Input::CaptureFailure(code) => ("audio_capture_failed", code.into()),
-                Input::Failure { name, status } => (
+                Input::Failure { name, status, reason } => (
                     name,
                     status
                         .map(|code| format!("http_{code}"))
+                        .or(reason.map(Into::into))
                         .unwrap_or_default(),
                 ),
             };

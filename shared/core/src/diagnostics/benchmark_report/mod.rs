@@ -13,6 +13,15 @@ const FAILURES: &[&str] = &[
     "initialization_failed",
     "recognition_failed",
 ];
+/// Closed engine reasons behind a failed device. Report text only; never
+/// exception bodies, paths or driver messages.
+pub const FAILURE_DETAILS: &[&str] = &[
+    "recognition_engine_out_of_memory",
+    "recognition_engine_backend_failed",
+    "recognition_engine_model_failed",
+    "recognition_device_fallback",
+    "recognition_devices_unavailable",
+];
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -49,6 +58,8 @@ pub struct Device {
     pub stage: String,
     pub result: Option<Measurement>,
     pub failure_code: Option<String>,
+    #[serde(default)]
+    pub failure_detail: Option<String>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -99,6 +110,9 @@ impl Facts {
                     .contains(&device.state.as_str())
                 || !STAGES.contains(&device.stage.as_str())
                 || !failure(&device.failure_code, &device.state)
+                || device.failure_detail.as_ref().is_some_and(|detail| {
+                    device.failure_code.is_none() || !FAILURE_DETAILS.contains(&detail.as_str())
+                })
             {
                 return false;
             }
@@ -139,11 +153,11 @@ impl Facts {
                     !["pending", "running", "cancelled"].contains(&device.state.as_str())
                 }))
     }
-    pub fn snapshot(self, journal: &str) -> Result<Snapshot, &'static str> {
+    pub fn snapshot(self) -> Result<Snapshot, &'static str> {
         if !self.checked() {
             return Err("benchmark_invalid_facts");
         }
-        let report = report::suite(&self, journal);
+        let report = report::suite(&self);
         if report.len() > 131_072 {
             return Err("benchmark_report_too_large");
         }

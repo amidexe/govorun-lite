@@ -8,6 +8,7 @@ pub mod callback;
 pub mod launch;
 mod launch_policy;
 pub mod setup;
+pub mod erase;
 pub mod setup_store;
 pub mod model_store;
 mod updates;
@@ -46,6 +47,7 @@ mod recording_origin;
 mod recording_position;
 mod account_storage;
 mod tray;
+pub mod last_dictation;
 pub mod attention;
 mod attention_state;
 mod tray_state;
@@ -85,7 +87,7 @@ pub fn builder() -> tauri::Builder<tauri::Wry> {
         .plugin(tauri_plugin_single_instance::init(|app, arguments, _| {
             launch::second_instance(app, arguments);
         }))
-        .invoke_handler(tauri::generate_handler![commands::native_command, commands::native_reconnect, commands::window_action, commands::window_layout, appearance::appearance, setup::setup, updates::updates, recording_indicator::recording_indicator])
+        .invoke_handler(tauri::generate_handler![commands::native_command, commands::native_reconnect, commands::window_action, commands::window_layout, appearance::appearance, setup::setup, erase::erase_local_data, updates::updates, recording_indicator::recording_indicator])
         .on_window_event(|window, event| {
             focus::observed(window, event);
             if matches!(event, WindowEvent::Focused(true)) {

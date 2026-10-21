@@ -111,7 +111,7 @@
         ><option value="text">Подробный — строка в конце</option></select
       >
     </label>
-    {#if platform === 'macos'}<ClipboardPreference {recordingBusy} />{/if}
+    <ClipboardPreference {recordingBusy} />
   </section>
   <section class="surface">
     <h2>Звук</h2>

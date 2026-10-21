@@ -35,6 +35,8 @@ export async function installDesktopApi(): Promise<DesktopApi> {
       if (method === 'setup.save') return invoke('setup', { change: params });
       if (method === 'setup.reset' && params.confirmed === true)
         return invoke('setup', { reset: true });
+      if (method === 'data.erase' && params.confirmed === true)
+        return invoke('erase_local_data', { confirmed: true });
       if (!desktopMethods.includes(method as DesktopMethod)) {
         throw new Error('unsupported_command');
       }

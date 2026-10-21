@@ -6,6 +6,8 @@ sealed interface SettingsChange {
     data class SetBubbleSide(val value: String) : SettingsChange
     data class SetBubbleSize(val value: Float) : SettingsChange
     data class SetBubbleAlpha(val value: Float) : SettingsChange
+    data class SetBubbleRecordingAlpha(val value: Float) : SettingsChange
+    data class SetBirdColor(val value: String) : SettingsChange
     data class SetEdgeMargin(val value: Int) : SettingsChange
     data class SetRecordingMode(val value: String) : SettingsChange
     data class SetHaptics(val enabled: Boolean) : SettingsChange
@@ -14,5 +16,6 @@ sealed interface SettingsChange {
     data class SetVoiceMarkerMode(val mode: VoiceMarkerMode) : SettingsChange
     data class SetHideInSearch(val enabled: Boolean) : SettingsChange
     data class SetKeepScreenOn(val enabled: Boolean) : SettingsChange
+    data class SetRememberLastDictation(val enabled: Boolean) : SettingsChange
     data class SetAutoStop(val minutes: Int) : SettingsChange
 }

@@ -18,6 +18,7 @@ internal class StylizedTextDelivery(
     private val voiceMarkerMode: () -> String,
     private val recordInsertionFailure: () -> Unit,
     private val collectAttempt: suspend (suspend () -> Unit) -> Unit = { it() },
+    private val rememberOriginal: (String) -> Unit = {},
 ) {
     suspend fun deliver(
         text: String,
@@ -31,6 +32,8 @@ internal class StylizedTextDelivery(
             result.usedFallback, result.outcomePass != null, result.latencyBucket != "unknown")
         currentCoroutineContext().ensureActive()
         val inserted = plan.insert && attemptTextInsertion(insert = { insert(plan.text) })
+        // The inserter has just remembered the improved text; keep what was said beside it.
+        if (plan.insert && !result.usedFallback && result.text != text) rememberOriginal(text)
         val effects = if (inserted) plan.success else plan.failure
         if (effects.recordFailure) recordInsertionFailure()
         val outcomePass = result.outcomePass

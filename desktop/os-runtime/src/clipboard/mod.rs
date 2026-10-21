@@ -3,14 +3,14 @@
 mod macos;
 #[cfg(target_os = "windows")]
 mod windows;
-pub const MAXIMUM: usize = 131_072;
+pub const MAXIMUM: usize = govorun_core::journal_report::EXPORT_LIMIT;
 pub fn copy(text: &str) -> Result<(), &'static str> {
     if text.len() > MAXIMUM {
         return Err("diagnostics_report_too_large");
     }
     #[cfg(target_os = "macos")]
     {
-        macos::copy("NSGeneralPboard", text)
+        macos::copy(None, text)
     }
     #[cfg(target_os = "windows")]
     {
@@ -22,5 +22,5 @@ pub fn copy_named(name: &str, text: &str) -> Result<(), &'static str> {
     if !name.starts_with("govorun.synthetic.") || name.len() > 200 || text.len() > MAXIMUM {
         return Err("invalid_parameters");
     }
-    macos::copy(name, text)
+    macos::copy(Some(name), text)
 }

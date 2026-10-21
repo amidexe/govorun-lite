@@ -23,6 +23,9 @@ internal fun createStylizedTextDelivery(
     showFallback = showFallback,
     voiceMarkerMode = { VoiceMarkerPrefs.deliveryMarker(context) },
     collectAttempt = { action -> DiagnosticAttempt.collect(context, action) },
+    rememberOriginal = { original ->
+        LastDictation.attachOriginal(context, com.govorun.lite.transcriber.Dictionary.applyReplacements(context, original))
+    },
     recordInsertionFailure = {
         StylizationDiagnosticsStore.record(
             context,

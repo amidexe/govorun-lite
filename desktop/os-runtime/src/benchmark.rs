@@ -31,7 +31,8 @@ fn classify_runtime(code: &'static str) -> &'static str {
     ) {
         "runtime_incompatible"
     } else {
-        "initialization_failed"
+        // The core keeps closed engine reasons and classifies the rest by stage.
+        code
     }
 }
 pub fn fixture(bytes: &[u8], expected: &str) -> Result<Vec<f32>, &'static str> {
@@ -112,8 +113,22 @@ pub fn run(
         decode(session, pcm)?;
         Ok::<f64, &'static str>(start.elapsed().as_secs_f64() * 1000.0)
     };
-    let warm_ms = measure(&mut session, &short, "warm")?;
-    let long_ms = measure(&mut session, &long, "long")?;
+    // GPU backends build pipelines and buffers on the first input of each length
+    // (seconds on Vulkan) and ramp clocks up. That belongs to cold start, not to
+    // speed: warm the long input untimed and report the median of three runs.
+    let rounds = if device.backend == "cpu" { 1 } else { 3 };
+    if rounds > 1 {
+        measure(&mut session, &long, "warm")?;
+    }
+    let mut repeat = |pcm: &[f32], stage| {
+        let mut runs = (0..rounds)
+            .map(|_| measure(&mut session, pcm, stage))
+            .collect::<Result<Vec<_>, _>>()?;
+        runs.sort_by(f64::total_cmp);
+        Ok::<f64, &'static str>(runs[runs.len() / 2])
+    };
+    let warm_ms = repeat(&short, "warm")?;
+    let long_ms = repeat(&long, "long")?;
     check()?;
     if session.backend.to_ascii_lowercase() != device.backend {
         return Err("recognition_failed");

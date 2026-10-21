@@ -6,7 +6,11 @@ import { appearanceSnapshot } from '../features/appearance/model.ts';
 import { aboutSnapshot } from '../features/about/model.ts';
 import { benchmarkSnapshot } from '../features/benchmark/model.ts';
 import { billingSnapshot } from '../features/billing/model.ts';
-import { clipboardSnapshot } from '../features/clipboard/model.ts';
+import {
+  clipboardSnapshot,
+  lastDictationCopy,
+  lastDictationSnapshot,
+} from '../features/clipboard/model.ts';
 import { diagnosticsSnapshot } from '../features/diagnostics/model.ts';
 import { dictationSnapshot } from '../features/dictation/model.ts';
 import { hotkeySnapshot } from '../features/hotkeys/model.ts';
@@ -57,6 +61,8 @@ export const responses: {
   'statistics.reset': statisticsSnapshot,
   'clipboard.snapshot': clipboardSnapshot,
   'clipboard.action': clipboardSnapshot,
+  'lastDictation.snapshot': lastDictationSnapshot,
+  'lastDictation.copy': lastDictationCopy,
   'diagnostics.snapshot': diagnosticsSnapshot,
   'diagnostics.action': diagnosticsResponse,
   'recordingDiagnostics.snapshot': recordingDiagnosticState,
@@ -77,4 +83,5 @@ export const responses: {
   'setup.snapshot': setupSnapshot,
   'setup.save': setupSnapshot,
   'setup.reset': setupSnapshot,
+  'data.erase': completed,
 };

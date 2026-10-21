@@ -6,6 +6,7 @@ pub enum Input {
     Failure {
         name: &'static str,
         status: Option<u16>,
+        reason: Option<&'static str>,
     },
     CaptureFailure(String),
     InsertionFailure(&'static str),
@@ -15,9 +16,10 @@ pub enum Input {
 }
 pub fn parse(value: &Value) -> Result<Input> {
     let fields = value.as_object().ok_or(Error::InvalidRequest)?;
+    let event = fields.get("event").and_then(Value::as_str);
     if fields.len() != 2 && !(fields.len() == 3
-        && fields.get("event").and_then(Value::as_str) == Some("audio_capture_failed")
-        && fields.contains_key("native")) {
+        && (event == Some("audio_capture_failed") && fields.contains_key("native")
+            || event.is_some_and(|name| SYNC_FAILURES.contains(&name)) && fields.contains_key("reason"))) {
         return Err(Error::InvalidRequest);
     }
     let name = fields
@@ -79,7 +81,45 @@ pub fn parse(value: &Value) -> Result<Input> {
                 .ok_or(Error::InvalidRequest)? as u16,
         )
     };
-    Ok(Input::Failure { name, status })
+    let reason = match fields.get("reason") {
+        None => None,
+        Some(value) => Some(
+            value
+                .as_str()
+                .and_then(sync_reason)
+                .filter(|_| status.is_none() && SYNC_FAILURES.contains(&name))
+                .ok_or(Error::InvalidRequest)?,
+        ),
+    };
+    Ok(Input::Failure { name, status, reason })
+}
+
+const SYNC_FAILURES: &[&str] = &[
+    "content_sync_failed",
+    "preferences_sync_failed",
+    "stats_sync_failed",
+    "account_sync_driver_failed",
+];
+/// Closed sync failure codes kept when the server sent no HTTP status, so a
+/// row says whether the network, storage or a response failed. No content.
+pub const SYNC_REASONS: &[(&str, &str)] = &[
+    ("sync_transport_failed", "Нет связи с сервером"),
+    ("sync_invalid_response", "Сервер вернул неожиданный ответ"),
+    ("sync_invalid_request", "Неверный запрос синхронизации"),
+    ("sync_storage_unavailable", "Локальные данные недоступны"),
+    ("sync_storage_invalid", "Локальные данные не прочитаны"),
+    ("sync_stage_panicked", "Внутренняя ошибка синхронизации"),
+    ("sync_conflict", "Данные изменились на другом устройстве"),
+    ("account_invalid_response", "Сервер аккаунтов вернул неожиданный ответ"),
+    ("account_signed_out", "Вход в аккаунт не выполнен"),
+    ("account_consent_unconfirmed", "Согласие не подтверждено"),
+    ("documents_invalid_configuration", "Синхронизация не настроена"),
+];
+pub fn sync_reason(code: &str) -> Option<&'static str> {
+    SYNC_REASONS.iter().map(|(known, _)| *known).find(|known| *known == code)
+}
+pub fn sync_reason_title(code: &str) -> Option<&'static str> {
+    SYNC_REASONS.iter().find(|(known, _)| *known == code).map(|(_, title)| *title)
 }
 
 pub fn self_host_failure_message(status: Option<u16>) -> String {

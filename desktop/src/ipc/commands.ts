@@ -6,7 +6,11 @@ import type { AppearanceSnapshot, ThemeMode } from '../features/appearance/model
 import type { AboutSnapshot, AboutOpenLink } from './generated/about';
 import type { BenchmarkSnapshot } from '../features/benchmark/model';
 import type { BillingSnapshot } from '../features/billing/model';
-import type { ClipboardSnapshot } from '../features/clipboard/model';
+import type {
+  ClipboardChange,
+  ClipboardSnapshot,
+  LastDictationSnapshot,
+} from '../features/clipboard/model';
 import type { DiagnosticsSnapshot } from '../features/diagnostics/model';
 import type { DictationSnapshot } from '../features/dictation/model';
 import type { HotkeySnapshot } from '../features/hotkeys/model';
@@ -58,7 +62,9 @@ export interface DesktopCommands {
   'statistics.snapshot': Command<undefined, StatisticsSnapshot>;
   'statistics.reset': Command<{ confirmed: true }, StatisticsSnapshot>;
   'clipboard.snapshot': Command<undefined, ClipboardSnapshot>;
-  'clipboard.action': Command<ClipboardSnapshot, ClipboardSnapshot>;
+  'clipboard.action': Command<ClipboardChange, ClipboardSnapshot>;
+  'lastDictation.snapshot': Command<undefined, LastDictationSnapshot>;
+  'lastDictation.copy': Command<{ original: boolean }, { copied: boolean }>;
   'diagnostics.snapshot': Command<undefined, DiagnosticsSnapshot>;
   'diagnostics.action': Command<
     | { action: 'clear'; confirmed: true }
@@ -87,6 +93,7 @@ export interface DesktopCommands {
   'setup.snapshot': Command<undefined, SetupSnapshot>;
   'setup.save': Command<{ expectedRevision: number; progress: SetupProgress }, SetupSnapshot>;
   'setup.reset': Command<{ confirmed: true }, SetupSnapshot>;
+  'data.erase': Command<{ confirmed: true }, void>;
 }
 
 export type DesktopCommand = keyof DesktopCommands;

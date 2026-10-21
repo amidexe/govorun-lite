@@ -14,6 +14,8 @@ data class HomeUiState(
     val stylization: StylizationOfferState,
     val account: AccountSummaryState,
     val showStarterGuidance: Boolean = false,
+    val lastDictation: String? = null,
+    val lastDictationOriginal: String? = null,
 ) {
     companion object {
         fun loading() = HomeUiState(
@@ -127,6 +129,7 @@ enum class SetupIssue {
     MICROPHONE,
     ACCESSIBILITY,
     ACCESSIBILITY_RESTART,
+    AUTOSTART,
     ACCESSIBILITY_SHORTCUT,
     BATTERY,
 }
@@ -147,6 +150,7 @@ sealed interface HomeEvent {
     data object OpenReview : HomeEvent
     data object OpenProducts : HomeEvent
     data object OpenAccessibility : HomeEvent
+    data object OpenAutostart : HomeEvent
     data object OpenAppDetails : HomeEvent
     data object RequestBattery : HomeEvent
     data object DismissStarterGuidance : HomeEvent

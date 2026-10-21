@@ -12,10 +12,15 @@
   "properties": {
     "clipboard": {
       "$ref": "#/definitions/Preference"
+    },
+    "rememberLast": {
+      "description": "Off unless the person turns it on: the last dictation stays in memory for the tray copy.",
+      "type": "boolean"
     }
   },
   "required": [
-    "clipboard"
+    "clipboard",
+    "rememberLast"
   ],
   "title": "ClipboardSnapshot",
   "type": "object"

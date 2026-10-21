@@ -64,6 +64,14 @@ internal fun DictationSettings(
             )
         }
     }
+    SettingsSection("Последняя диктовка") {
+        SettingsSwitchRow(
+            title = "Помнить последнюю диктовку",
+            summary = "Только в памяти, до следующей диктовки. Скопировать её можно на главном экране",
+            checked = state.rememberLastDictation,
+            onCheckedChange = { onEvent(SettingsEvent.Change(SettingsChange.SetRememberLastDictation(it))) },
+        )
+    }
 
 }
 

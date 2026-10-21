@@ -40,4 +40,18 @@ interface IRecognitionService {
         IContinuousRecognitionCallback callback
     );
     int getCapabilities();
+
+    /**
+     * Like recognize, but the result arrives through IRecognitionCallback.onFinalResultTimed.
+     * Requires CAPABILITY_WORD_TIMESTAMPS.
+     */
+    void recognizeTimed(
+        String clientPackage,
+        String sessionId,
+        in ParcelFileDescriptor pcmAudio,
+        int sampleRateHz,
+        int channelCount,
+        int bitsPerSample,
+        IRecognitionCallback callback
+    );
 }

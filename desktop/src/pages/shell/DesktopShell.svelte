@@ -200,6 +200,7 @@
               {platform}
               {recordingBusy}
             />{:else if page.id === 'about'}<AboutPage
+              {platform}
             />{:else if page.id === 'dictionary'}<DictionaryPage />{/if}
         </div>{/key}
     </main>
@@ -269,6 +270,7 @@
     box-shadow: none;
   }
   .home-cards :global(.home-statistics),
+  .home-cards :global(.last-dictation),
   .home-cards :global(.styles-panel.compact) {
     padding: 0;
   }

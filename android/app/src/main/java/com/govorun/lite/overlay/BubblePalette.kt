@@ -4,28 +4,33 @@ import android.content.Context
 import android.graphics.Paint
 import android.util.TypedValue
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 
 internal class BubblePalette(
     private val context: Context,
     private val invalidate: () -> Unit,
 ) {
     private var idleAlphaFraction = DEFAULT_IDLE_ALPHA
-    private var idleFillRgb = themeRgb(
-        com.google.android.material.R.attr.colorPrimaryContainer,
-        FALLBACK_IDLE_FILL,
-    )
-    private var idleBirdTint = themeRgb(
-        com.google.android.material.R.attr.colorOnPrimaryContainer,
-        FALLBACK_IDLE_TINT,
-    ) or OPAQUE
+    private var recordingAlphaFraction = DEFAULT_RECORDING_ALPHA
+    private var birdColor = BirdColors.DEFAULT
 
     private var onSurfaceColor = themeColor(com.google.android.material.R.attr.colorOnSurface, 0xFF1D1B20.toInt())
+    private var surfaceColor = themeColor(com.google.android.material.R.attr.colorSurfaceContainerHigh, FALLBACK_SURFACE)
 
-    val basePaint = fillPaint(composeIdleFill())
-    val legacyRecordingPaint = fillPaint(LEGACY_RECORDING_FILL)
-    val legacyRecordingHaloPaint = fillPaint(0x40E53935)
-    val idleHaloPaint = fillPaint(haloBaseColor())
-    val dotPaint = fillPaint(idleBirdColor())
+    // Resolved from the bird colour and theme by [resolve].
+    private var fillRgb = 0
+    private var onFill = 0
+
+    val basePaint = fillPaint(0)
+    val legacyRecordingPaint = fillPaint(0)
+    val railPaint = fillPaint(0)
+    val legacyRecordingHaloPaint = fillPaint(0)
+    val idleHaloPaint = fillPaint(0)
+    val dotPaint = fillPaint(0)
+
+    init {
+        resolve()
+    }
 
     fun setIdlePulseColor(color: Int) {
         idleHaloPaint.color = (color and RGB) or OPAQUE
@@ -34,52 +39,78 @@ internal class BubblePalette(
 
     fun setIdleAlpha(alpha: Float) {
         idleAlphaFraction = alpha.coerceIn(0f, 1f)
-        basePaint.color = composeIdleFill()
-        invalidate()
+        resolve()
+    }
+
+    fun setRecordingAlpha(alpha: Float) {
+        recordingAlphaFraction = alpha.coerceIn(0f, 1f)
+        resolve()
+    }
+
+    fun setBirdColor(id: String) {
+        birdColor = BirdColors.normalize(id)
+        resolve()
+    }
+
+    fun idleBirdColor(): Int = foregroundOn(composeIdleFill())
+
+    fun recordingForeground(): Int = foregroundOn(composeRecordingFill())
+
+    /**
+     * Glyphs stay opaque whatever the fill transparency: the colour drawn on the
+     * fill, or onSurface once the fill is too faint for it to read.
+     */
+    private fun foregroundOn(fill: Int): Int {
+        val plain = onSurfaceColor or OPAQUE
+        val backdrop = ColorUtils.compositeColors(fill, surfaceColor or OPAQUE)
+        return if (ColorUtils.calculateContrast(onFill, backdrop) >= ColorUtils.calculateContrast(plain, backdrop)) {
+            onFill
+        } else {
+            plain
+        }
     }
 
     /**
-     * The circle and expanded control share primaryContainer and its foreground.
-     * As their single background fades, keep every glyph opaque and move its
-     * colour towards onSurface for the content underneath.
+     * One fill for the whole rail. [recordingShare] 0 is the idle surface, 1 the
+     * recording fill; blending both ways (alpha included) means the rail never
+     * snaps between two backgrounds when a recording starts or ends.
      */
-    fun idleBirdColor(): Int = lerpColor(onSurfaceColor, idleBirdTint, idleAlphaFraction)
+    fun railFill(recordingShare: Float): Int =
+        ColorUtils.blendARGB(composeIdleFill(), composeRecordingFill(), recordingShare.coerceIn(0f, 1f))
+
+    fun railForeground(recordingShare: Float): Int =
+        ColorUtils.blendARGB(idleBirdColor(), recordingForeground(), recordingShare.coerceIn(0f, 1f))
 
     fun setThemeColors(colors: BubbleThemeColors) {
-        idleFillRgb = colors.primaryContainer and RGB
-        idleBirdTint = colors.onPrimaryContainer or OPAQUE
         onSurfaceColor = colors.onSurface
-        basePaint.color = composeIdleFill()
-        idleHaloPaint.color = colors.primaryContainer
-        dotPaint.color = idleBirdColor()
-        invalidate()
+        surfaceColor = colors.surfaceContainerHigh
+        resolve()
     }
 
     fun refresh() {
-        idleFillRgb = themeRgb(
-            com.google.android.material.R.attr.colorPrimaryContainer,
-            FALLBACK_IDLE_FILL,
-        )
-        idleBirdTint = themeRgb(
-            com.google.android.material.R.attr.colorOnPrimaryContainer,
-            FALLBACK_IDLE_TINT,
-        ) or OPAQUE
         onSurfaceColor = themeColor(com.google.android.material.R.attr.colorOnSurface, onSurfaceColor)
+        surfaceColor = themeColor(com.google.android.material.R.attr.colorSurfaceContainerHigh, surfaceColor)
+        resolve()
+    }
+
+    /** One colour for every state; only the idle and recording transparency differ. */
+    private fun resolve() {
+        val tone = BirdColors.tone(context, birdColor)
+        fillRgb = tone.fill and RGB
+        onFill = tone.onFill or OPAQUE
         basePaint.color = composeIdleFill()
-        idleHaloPaint.color = haloBaseColor()
+        legacyRecordingPaint.color = composeRecordingFill()
+        legacyRecordingHaloPaint.color = RECORDING_HALO_ALPHA or fillRgb
+        idleHaloPaint.color = fillRgb or OPAQUE
         dotPaint.color = idleBirdColor()
         invalidate()
     }
 
-    private fun haloBaseColor() =
-        themeRgb(com.google.android.material.R.attr.colorPrimaryContainer, FALLBACK_IDLE_FILL) or OPAQUE
+    private fun composeRecordingFill(): Int =
+        ((recordingAlphaFraction * 255).toInt() shl 24) or fillRgb
 
-    private fun composeIdleFill(): Int {
-        val alpha = (idleAlphaFraction.coerceIn(0f, 1f) * 255).toInt()
-        return (alpha shl 24) or (idleFillRgb and RGB)
-    }
-
-    private fun themeRgb(attribute: Int, fallback: Int) = themeColor(attribute, fallback) and RGB
+    private fun composeIdleFill(): Int =
+        ((idleAlphaFraction * 255).toInt() shl 24) or fillRgb
 
     private fun themeColor(attribute: Int, fallback: Int): Int {
         val value = TypedValue()
@@ -87,19 +118,6 @@ internal class BubblePalette(
         return if (!resolved) fallback
         else if (value.resourceId != 0) ContextCompat.getColor(context, value.resourceId)
         else value.data
-    }
-
-    private fun lerpColor(from: Int, to: Int, fraction: Float): Int {
-        val progress = fraction.coerceIn(0f, 1f)
-        fun channel(shift: Int): Int {
-            val start = (from shr shift) and 0xFF
-            val end = (to shr shift) and 0xFF
-            return start + ((end - start) * progress).toInt()
-        }
-        return (OPAQUE) or
-            (channel(16) shl 16) or
-            (channel(8) shl 8) or
-            channel(0)
     }
 
     private fun fillPaint(color: Int) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -110,9 +128,9 @@ internal class BubblePalette(
     private companion object {
         const val RGB = 0x00FFFFFF
         const val OPAQUE = 0xFF000000.toInt()
-        const val FALLBACK_IDLE_FILL = 0x80404040.toInt()
-        const val FALLBACK_IDLE_TINT = 0xFFFFFFFF.toInt()
-        const val LEGACY_RECORDING_FILL = 0xFFE53935.toInt()
-        const val DEFAULT_IDLE_ALPHA = 12f / 14f
+        const val RECORDING_HALO_ALPHA = 0x40000000
+        const val FALLBACK_SURFACE = 0xFFECE6F0.toInt()
+        const val DEFAULT_IDLE_ALPHA = 9f / 14f
+        const val DEFAULT_RECORDING_ALPHA = 1f
     }
 }

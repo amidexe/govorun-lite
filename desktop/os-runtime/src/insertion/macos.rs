@@ -104,7 +104,13 @@ impl Port for Mac {
         target.0 != 0 && Target::capture().0 == target.0
     }
     fn target(&mut self, target: &Target, cancelled: &dyn Fn() -> bool) -> bool {
-        target.0 != 0 && !cancelled() && Target::capture().0 == target.0
+        if target.0 == 0 || cancelled() {
+            return false;
+        }
+        // Chrome pages (Gemini's Quill editor) often drop a paste sent right
+        // after a fresh pasteboard write; Handy waits 60 ms here as well.
+        thread::sleep(Duration::from_millis(60));
+        !cancelled() && Target::capture().0 == target.0
     }
     fn press(&mut self, keys: &Keys) -> bool {
         for event in &keys.0[..3] {

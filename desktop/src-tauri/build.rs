@@ -26,6 +26,6 @@ fn main() {
     std::fs::write(std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap()).join("bird.rgba"),
         pixmap.data()).expect("generated tray pixels");
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
-        tauri_build::AppManifest::new().commands(&["native_command", "native_reconnect", "window_action", "window_layout", "appearance", "setup", "updates", "recording_indicator"]),
+        tauri_build::AppManifest::new().commands(&["native_command", "native_reconnect", "window_action", "window_layout", "appearance", "setup", "erase_local_data", "updates", "recording_indicator"]),
     )).expect("build desktop application permissions");
 }

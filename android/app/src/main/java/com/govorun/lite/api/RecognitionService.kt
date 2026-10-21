@@ -1,5 +1,7 @@
 package com.govorun.lite.api
 
+import com.govorun.lite.transcriber.TimedTranscript
+import com.govorun.lite.transcriber.TimedWord
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
@@ -28,7 +30,7 @@ class RecognitionService : Service() {
     private lateinit var identities: CallerIdentityResolver
     private lateinit var authorizations: RecognitionAuthorizationStore
     private val sessionLock = Any()
-    private var activeSession: RecognitionProviderSession? = null
+    private val sessions = mutableListOf<RecognitionProviderSession>()
 
     override fun onCreate() {
         super.onCreate()
@@ -41,7 +43,7 @@ class RecognitionService : Service() {
         binder.takeIf { intent?.action == RecognitionApi.SERVICE_ACTION }
 
     override fun onDestroy() {
-        synchronized(sessionLock) { activeSession?.cancel(notify = false) }
+        synchronized(sessionLock) { sessions.toList() }.forEach { it.cancel(notify = false) }
         RecognitionApiControl.detach(this)
         scope.cancel()
         super.onDestroy()
@@ -96,53 +98,31 @@ class RecognitionService : Service() {
                 channelCount: Int,
                 bitsPerSample: Int,
                 callback: IRecognitionCallback?,
-            ) {
-                val safeSessionId = sessionId.orEmpty()
-                val safeCallback = callback ?: run {
-                    pcmAudio?.closeQuietly()
-                    return
-                }
-                val identity = authenticatedCaller(clientPackage)
-                if (identity == null || !authorizations.isAuthorized(identity)) {
-                    pcmAudio?.closeQuietly()
-                    safeCallback.error(safeSessionId, RecognitionApi.ERROR_UNAUTHORIZED, "Доступ не разрешён")
-                    return
-                }
-                if (safeSessionId.isBlank() || pcmAudio == null) {
-                    pcmAudio?.closeQuietly()
-                    safeCallback.error(safeSessionId, RecognitionApi.ERROR_INVALID_AUDIO, "Некорректная аудиозапись")
-                    return
-                }
-                PcmAudioValidator.metadataError(sampleRateHz, channelCount, bitsPerSample)?.let { code ->
-                    pcmAudio.closeQuietly()
-                    safeCallback.error(safeSessionId, code, "Поддерживается PCM 16 кГц, mono, 16 bit")
-                    return
-                }
-                if (!GigaAmModel.isInstalled(this@RecognitionService)) {
-                    pcmAudio.closeQuietly()
-                    safeCallback.error(safeSessionId, RecognitionApi.ERROR_MODEL_UNAVAILABLE, "Модель ещё не готова")
-                    return
-                }
+            ) = startOneShotRecognition(
+                clientPackage, sessionId, pcmAudio, sampleRateHz, channelCount, bitsPerSample, callback, timed = false,
+            )
 
-                val session = ActiveSession(identity.uid, identity.packageName, safeSessionId, pcmAudio, safeCallback)
-                if (!registerExternal(session)) {
-                    pcmAudio.closeQuietly()
-                    safeCallback.error(safeSessionId, RecognitionApi.ERROR_BUSY, "Распознавание уже занято")
-                    return
-                }
-                session.start()
-            }
+            override fun recognizeTimed(
+                clientPackage: String?,
+                sessionId: String?,
+                pcmAudio: ParcelFileDescriptor?,
+                sampleRateHz: Int,
+                channelCount: Int,
+                bitsPerSample: Int,
+                callback: IRecognitionCallback?,
+            ) = startOneShotRecognition(
+                clientPackage, sessionId, pcmAudio, sampleRateHz, channelCount, bitsPerSample, callback, timed = true,
+            )
 
             override fun cancel(clientPackage: String?, sessionId: String?) {
                 val identity = authenticatedCaller(clientPackage) ?: return
                 synchronized(sessionLock) {
-                    activeSession
-                        ?.takeIf {
-                            it.uid == identity.uid &&
-                                it.packageName == identity.packageName &&
-                                it.sessionId == sessionId
-                        }?.cancel(notify = true)
-                }
+                    sessions.firstOrNull {
+                        it.uid == identity.uid &&
+                            it.packageName == identity.packageName &&
+                            it.sessionId == sessionId
+                    }
+                }?.cancel(notify = true)
             }
 
             override fun supportsContinuousRecognition(): Boolean = true
@@ -155,18 +135,10 @@ class RecognitionService : Service() {
                 channelCount: Int,
                 bitsPerSample: Int,
                 callback: IContinuousRecognitionCallback?,
-            ) {
-                startContinuousRecognition(
-                    clientPackage = clientPackage,
-                    sessionId = sessionId,
-                    pcmStream = pcmStream,
-                    sampleRateHz = sampleRateHz,
-                    channelCount = channelCount,
-                    bitsPerSample = bitsPerSample,
-                    profile = RecognitionApi.CONTINUOUS_PROFILE_DEFAULT,
-                    callback = callback,
-                )
-            }
+            ) = recognizeContinuousWithProfile(
+                clientPackage, sessionId, pcmStream, sampleRateHz, channelCount, bitsPerSample,
+                RecognitionApi.CONTINUOUS_PROFILE_DEFAULT, callback,
+            )
 
             override fun recognizeContinuousWithProfile(
                 clientPackage: String?,
@@ -177,21 +149,45 @@ class RecognitionService : Service() {
                 bitsPerSample: Int,
                 profile: Int,
                 callback: IContinuousRecognitionCallback?,
-            ) {
-                startContinuousRecognition(
-                    clientPackage = clientPackage,
-                    sessionId = sessionId,
-                    pcmStream = pcmStream,
-                    sampleRateHz = sampleRateHz,
-                    channelCount = channelCount,
-                    bitsPerSample = bitsPerSample,
-                    profile = profile,
-                    callback = callback,
-                )
-            }
+            ) = startContinuousRecognition(
+                clientPackage, sessionId, pcmStream, sampleRateHz, channelCount, bitsPerSample, profile, callback,
+            )
 
             override fun getCapabilities(): Int = RecognitionApi.CAPABILITIES
         }
+
+    private fun startOneShotRecognition(
+        clientPackage: String?,
+        sessionId: String?,
+        pcmAudio: ParcelFileDescriptor?,
+        sampleRateHz: Int,
+        channelCount: Int,
+        bitsPerSample: Int,
+        callback: IRecognitionCallback?,
+        timed: Boolean,
+    ) {
+        val safeSessionId = sessionId.orEmpty()
+        val safeCallback = callback ?: return pcmAudio?.closeQuietly() ?: Unit
+        val identity = authenticatedCaller(clientPackage)
+        val failure =
+            if (identity == null || !authorizations.isAuthorized(identity)) {
+                RecognitionApi.ERROR_UNAUTHORIZED to "Доступ не разрешён"
+            } else {
+                inputFailure(safeSessionId, pcmAudio, sampleRateHz, channelCount, bitsPerSample, "Некорректная аудиозапись")
+            }
+        if (failure != null) {
+            pcmAudio?.closeQuietly()
+            return safeCallback.error(safeSessionId, failure.first, failure.second)
+        }
+        identity!!; pcmAudio!!
+        val session = ActiveSession(identity.uid, identity.packageName, safeSessionId, pcmAudio, safeCallback, timed)
+        if (!registerExternal(session)) {
+            pcmAudio.closeQuietly()
+            safeCallback.error(safeSessionId, RecognitionApi.ERROR_BUSY, "Распознавание уже занято")
+            return
+        }
+        session.start()
+    }
 
     private fun startContinuousRecognition(
         clientPackage: String?,
@@ -204,32 +200,19 @@ class RecognitionService : Service() {
         callback: IContinuousRecognitionCallback?,
     ) {
         val safeSessionId = sessionId.orEmpty()
-        val safeCallback = callback ?: run {
-            pcmStream?.closeQuietly()
-            return
-        }
+        val safeCallback = callback ?: return pcmStream?.closeQuietly() ?: Unit
         val identity = authenticatedCaller(clientPackage)
-        if (identity == null || !authorizations.isAuthorized(identity)) {
+        val failure =
+            if (identity == null || !authorizations.isAuthorized(identity)) {
+                RecognitionApi.ERROR_UNAUTHORIZED to "Доступ не разрешён"
+            } else {
+                inputFailure(safeSessionId, pcmStream, sampleRateHz, channelCount, bitsPerSample, "Некорректный аудиопоток")
+            }
+        if (failure != null) {
             pcmStream?.closeQuietly()
-            safeCallback.error(safeSessionId, RecognitionApi.ERROR_UNAUTHORIZED, "Доступ не разрешён")
-            return
+            return safeCallback.error(safeSessionId, failure.first, failure.second)
         }
-        if (safeSessionId.isBlank() || pcmStream == null) {
-            pcmStream?.closeQuietly()
-            safeCallback.error(safeSessionId, RecognitionApi.ERROR_INVALID_AUDIO, "Некорректный аудиопоток")
-            return
-        }
-        PcmAudioValidator.metadataError(sampleRateHz, channelCount, bitsPerSample)?.let { code ->
-            pcmStream.closeQuietly()
-            safeCallback.error(safeSessionId, code, "Поддерживается PCM 16 кГц, mono, 16 bit")
-            return
-        }
-        if (!GigaAmModel.isInstalled(this@RecognitionService)) {
-            pcmStream.closeQuietly()
-            safeCallback.error(safeSessionId, RecognitionApi.ERROR_MODEL_UNAVAILABLE, "Модель ещё не готова")
-            return
-        }
-
+        identity!!; pcmStream!!
         val minimumSilenceSeconds =
             ContinuousRecognitionProfile.minimumSilenceSeconds(
                 profile = profile,
@@ -237,12 +220,9 @@ class RecognitionService : Service() {
             )
         val session =
             ContinuousSession(
-                identity.uid,
-                identity.packageName,
-                safeSessionId,
-                pcmStream,
-                minimumSilenceSeconds,
-                safeCallback,
+                identity.uid, identity.packageName, safeSessionId, pcmStream, minimumSilenceSeconds, safeCallback,
+                ContinuousRecognitionProfile.wordTimestampsRequested(profile),
+                ContinuousRecognitionProfile.dictationSignalRequested(profile),
             )
         if (!registerExternal(session)) {
             pcmStream.closeQuietly()
@@ -252,18 +232,30 @@ class RecognitionService : Service() {
         session.start()
     }
 
+    /** The first reason the input cannot start a session (code and message), or null. */
+    private fun inputFailure(
+        sessionId: String,
+        descriptor: ParcelFileDescriptor?,
+        sampleRateHz: Int,
+        channelCount: Int,
+        bitsPerSample: Int,
+        invalidMessage: String,
+    ): Pair<Int, String>? =
+        when {
+            sessionId.isBlank() || descriptor == null -> RecognitionApi.ERROR_INVALID_AUDIO to invalidMessage
+            else -> PcmAudioValidator.metadataError(sampleRateHz, channelCount, bitsPerSample)?.let { it to "Поддерживается PCM 16 кГц, mono, 16 bit" }
+                ?: if (GigaAmModel.isInstalled(this)) null else RecognitionApi.ERROR_MODEL_UNAVAILABLE to "Модель ещё не готова"
+        }
+
     private fun registerExternal(session: RecognitionProviderSession): Boolean =
         synchronized(sessionLock) {
-            if (activeSession != null) return@synchronized false
-            activeSession = session
-            val lease = RecognitionSessionCoordinator.process.acquireExternal(session::preempt)
-            if (lease == null) {
-                activeSession = null
-                false
-            } else {
-                session.attach(lease)
-                true
-            }
+            if (sessions.any { it.uid == session.uid && it.sessionId == session.sessionId }) return@synchronized false
+            val lease =
+                RecognitionSessionCoordinator.process.acquireExternal(session.uid, session.onPrimaryChange, session::preempt)
+                    ?: return@synchronized false
+            session.attach(lease)
+            sessions += session
+            true
         }
 
     private fun authenticatedCaller(clientPackage: String?): CallerIdentity? =
@@ -275,6 +267,7 @@ class RecognitionService : Service() {
         override val sessionId: String,
         private val descriptor: ParcelFileDescriptor,
         private val callback: IRecognitionCallback,
+        private val timed: Boolean = false,
     ) : RecognitionProviderSession {
         override var recognitionLease: RecognitionSessionArbiter.Lease? = null
         private val terminal = AtomicBoolean(false)
@@ -287,8 +280,8 @@ class RecognitionService : Service() {
                 scope.launch(start = CoroutineStart.LAZY) {
                     try {
                         val transcript =
-                            OneShotRecognitionRunner(this@RecognitionService, descriptor).run()
-                        if (transcript.isBlank()) {
+                            OneShotRecognitionRunner(this@RecognitionService, descriptor).runTimed(timed)
+                        if (transcript.text.isBlank()) {
                             finishError(RecognitionApi.ERROR_RECOGNITION_FAILED, "Речь не распознана")
                         } else {
                             finishResult(transcript)
@@ -331,16 +324,26 @@ class RecognitionService : Service() {
             job?.cancel()
         }
 
-        private fun finishResult(text: String) {
+        private fun finishResult(transcript: TimedTranscript) {
             if (!terminal.compareAndSet(false, true)) return
             releaseActiveSlot()
-            runCatching { callback.onFinalResult(sessionId, text) }
+            if (timed) {
+                runCatching {
+                    callback.onFinalResultTimed(
+                        sessionId,
+                        transcript.text,
+                        LongArray(transcript.words.size) { transcript.words[it].startMs },
+                        LongArray(transcript.words.size) { transcript.words[it].endMs },
+                        Array(transcript.words.size) { transcript.words[it].text },
+                    )
+                }
+            } else {
+                runCatching { callback.onFinalResult(sessionId, transcript.text) }
+            }
         }
 
         private fun releaseActiveSlot() {
-            synchronized(sessionLock) {
-                if (activeSession === this) activeSession = null
-            }
+            synchronized(sessionLock) { sessions.remove(this) }
             RecognitionSessionCoordinator.process.release(recognitionLease)
             recognitionLease = null
         }
@@ -370,11 +373,20 @@ class RecognitionService : Service() {
         private val descriptor: ParcelFileDescriptor,
         private val minimumSilenceSeconds: Float,
         private val callback: IContinuousRecognitionCallback,
+        private val wordTimestamps: Boolean = false,
+        dictationSignal: Boolean = false,
     ) : RecognitionProviderSession {
         override var recognitionLease: RecognitionSessionArbiter.Lease? = null
         private val terminal = AtomicBoolean(false)
         private val deathRecipient = IBinder.DeathRecipient { cancel(notify = false) }
         private var job: Job? = null
+        private val hold =
+            if (dictationSignal) {
+                DictationHold({ active, at -> runCatching { callback.onPrimaryDictation(sessionId, active, at) } })
+            } else {
+                null
+            }
+        override val onPrimaryChange: (() -> Unit)? = hold?.let { it::sync }
 
         fun start() {
             if (terminal.get()) return
@@ -392,6 +404,8 @@ class RecognitionService : Service() {
                             onResult = { sequence, text ->
                                 runCatching { callback.onFinalResult(sessionId, sequence, text) }
                             },
+                            onTimedResult = if (wordTimestamps) ::deliverTimed else null,
+                            hold = hold,
                         ).run()
                         finishStopped()
                     } catch (_: CancellationException) {
@@ -409,6 +423,23 @@ class RecognitionService : Service() {
                     return
                 }
             work.start()
+        }
+
+        private fun deliverTimed(
+            sequence: Long,
+            text: String,
+            words: List<TimedWord>,
+        ) {
+            runCatching {
+                callback.onFinalResultTimed(
+                    sessionId,
+                    sequence,
+                    text,
+                    LongArray(words.size) { words[it].startMs },
+                    LongArray(words.size) { words[it].endMs },
+                    Array(words.size) { words[it].text },
+                )
+            }
         }
 
         override fun cancel(notify: Boolean) {
@@ -441,9 +472,7 @@ class RecognitionService : Service() {
         }
 
         private fun releaseActiveSlot() {
-            synchronized(sessionLock) {
-                if (activeSession === this) activeSession = null
-            }
+            synchronized(sessionLock) { sessions.remove(this) }
             RecognitionSessionCoordinator.process.release(recognitionLease)
             recognitionLease = null
         }
@@ -456,9 +485,8 @@ class RecognitionService : Service() {
     }
 
     internal fun cancelPackage(packageName: String) {
-        synchronized(sessionLock) {
-            activeSession?.takeIf { it.packageName == packageName }?.cancel(notify = true)
-        }
+        synchronized(sessionLock) { sessions.filter { it.packageName == packageName } }
+            .forEach { it.cancel(notify = true) }
     }
 
 }

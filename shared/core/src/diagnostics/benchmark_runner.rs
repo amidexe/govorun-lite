@@ -153,9 +153,12 @@ impl Runner {
     fn fail(&self, generation: u64, code: &str) {
         if let Ok(mut state) = self.state.lock() {
             let facts = state.facts();
+            let detail = govorun_core::benchmark_report::FAILURE_DETAILS
+                .contains(&code)
+                .then_some(code);
             let code =
                 govorun_core::benchmark_report::run::public_failure(&facts.stage, code);
-            let _ = state.failed(generation, code);
+            let _ = state.failed(generation, code, detail);
         }
         self.publish();
     }

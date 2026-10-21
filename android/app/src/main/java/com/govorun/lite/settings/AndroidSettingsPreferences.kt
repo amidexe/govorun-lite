@@ -25,6 +25,8 @@ internal class AndroidSettingsPreferences(context: Context) : SettingsPreference
             is SettingsChange.SetBubbleSide -> Prefs.setBubbleSide(context, change.value)
             is SettingsChange.SetBubbleSize -> Prefs.setBubbleSize(context, change.value)
             is SettingsChange.SetBubbleAlpha -> Prefs.setBubbleAlpha(context, change.value)
+            is SettingsChange.SetBubbleRecordingAlpha -> Prefs.setBubbleRecordingAlpha(context, change.value)
+            is SettingsChange.SetBirdColor -> Prefs.setBirdColor(context, change.value)
             is SettingsChange.SetEdgeMargin -> Prefs.setBubbleEdgeMargin(context, change.value)
             is SettingsChange.SetRecordingMode -> RecordingModePrefs.write(context, change.value)
             is SettingsChange.SetHaptics -> Prefs.setHapticsEnabled(context, change.enabled)
@@ -33,19 +35,27 @@ internal class AndroidSettingsPreferences(context: Context) : SettingsPreference
             is SettingsChange.SetVoiceMarkerMode -> VoiceMarkerPrefs.write(context, change.mode)
             is SettingsChange.SetHideInSearch -> Prefs.setHideInSearchEnabled(context, change.enabled)
             is SettingsChange.SetKeepScreenOn -> Prefs.setKeepScreenOnEnabled(context, change.enabled)
+            is SettingsChange.SetRememberLastDictation ->
+                com.govorun.lite.service.LastDictation.setEnabled(context, change.enabled)
             is SettingsChange.SetAutoStop -> Prefs.setAutoStopMinutes(context, change.minutes)
         }
     }
 
+    override fun resetAppearance() {
+        Prefs.setBubbleSize(context, Prefs.BUBBLE_SIZE_DEFAULT)
+        Prefs.setBubbleSide(context, Prefs.BUBBLE_SIDE_RIGHT)
+        Prefs.setBubbleAlpha(context, Prefs.BUBBLE_ALPHA_DEFAULT)
+        Prefs.setBubbleRecordingAlpha(context, Prefs.BUBBLE_RECORDING_ALPHA_DEFAULT)
+        Prefs.setBirdColor(context, com.govorun.lite.overlay.BirdColors.DEFAULT)
+        Prefs.clearBubbleEdgeMargin(context)
+    }
+
     override fun reset(defaults: JSONObject) {
         UiAppearancePrefs.reset(context)
-        Prefs.setBubbleSize(context, Prefs.BUBBLE_SIZE_DEFAULT)
-        Prefs.setBubbleAlpha(context, Prefs.BUBBLE_ALPHA_DEFAULT)
-        Prefs.setBubbleEdgeMargin(context, Prefs.BUBBLE_EDGE_MARGIN_DEFAULT)
+        resetAppearance()
         RecordingModePrefs.write(context, defaults.getString("recordingMode"))
         Prefs.setHapticsEnabled(context, false)
         Prefs.setHideInSearchEnabled(context, false)
-        Prefs.setBubbleSide(context, Prefs.BUBBLE_SIDE_RIGHT)
         Prefs.resetBubbleY(context)
         Prefs.setPauseLength(context, Prefs.PAUSE_DEFAULT)
         HomePreferences.setShowDictionaryOnHome(
@@ -53,6 +63,7 @@ internal class AndroidSettingsPreferences(context: Context) : SettingsPreference
             HomePreferences.DEFAULT_SHOW_DICTIONARY_ON_HOME,
         )
         Prefs.setKeepScreenOnEnabled(context, false)
+        com.govorun.lite.service.LastDictation.setEnabled(context, false)
         Prefs.setAutoStopMinutes(context, Prefs.AUTO_STOP_DEFAULT)
         Prefs.setStylizationEnabled(context, defaults.getBoolean("stylizationEnabled"))
         Prefs.setStylizationStyle(context, defaults.getString("defaultStyle"))

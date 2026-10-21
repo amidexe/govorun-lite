@@ -1,14 +1,30 @@
 package com.govorun.lite.ui.settings
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import com.govorun.lite.overlay.BirdColors
+import androidx.compose.material3.Icon
+import androidx.compose.ui.platform.LocalContext
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Check
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,18 +36,17 @@ import androidx.compose.material3.Text
 import com.govorun.lite.model.settings.SettingsChange
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import com.govorun.lite.overlay.BubbleView
-import com.govorun.lite.overlay.BubbleThemeColors
 import com.govorun.lite.ui.design.GovorunSpacing
 import com.govorun.lite.util.Prefs
 import com.govorun.lite.util.RecordingModePrefs
@@ -50,6 +65,10 @@ internal fun AppearanceSettings(
             onEvent(SettingsEvent.Change(SettingsChange.SetBubbleSide(it)))
         }
         SettingsDivider()
+        BirdColorSetting(state.birdColor) {
+            onEvent(SettingsEvent.Change(SettingsChange.SetBirdColor(it)))
+        }
+        SettingsDivider()
         SliderSetting(
             title = "Размер",
             valueText = "${(state.bubbleSize * 100).roundToInt()}%",
@@ -60,24 +79,41 @@ internal fun AppearanceSettings(
         )
         SettingsDivider()
         SliderSetting(
-            title = "Прозрачность фона",
+            title = "Прозрачность в покое",
             valueText = "${(state.bubbleAlpha * 100).roundToInt()}%",
             value = state.bubbleAlpha,
             range = Prefs.BUBBLE_ALPHA_MIN..Prefs.BUBBLE_ALPHA_MAX,
             steps = 13,
             onValueChange = { onEvent(SettingsEvent.Change(SettingsChange.SetBubbleAlpha(it))) },
         )
+        SliderSetting(
+            title = "Прозрачность при записи",
+            valueText = "${(state.recordingAlpha * 100).roundToInt()}%",
+            value = state.recordingAlpha,
+            range = Prefs.BUBBLE_ALPHA_MIN..Prefs.BUBBLE_ALPHA_MAX,
+            steps = 13,
+            onValueChange = {
+                onEvent(SettingsEvent.Change(SettingsChange.SetBubbleRecordingAlpha(it)))
+            },
+        )
         SettingsDivider()
         SliderSetting(
             title = "Отступ от края",
             valueText = if (state.edgeMarginCustomized) "${state.edgeMargin} dp" else "Стандартный",
-            value = state.edgeMargin.toFloat(),
+            value = state.edgeMargin.coerceAtMost(state.edgeMarginMax).toFloat(),
             range = Prefs.BUBBLE_EDGE_MARGIN_MIN.toFloat()..
-                Prefs.BUBBLE_EDGE_MARGIN_MAX.toFloat(),
-            steps = 8,
+                state.edgeMarginMax.toFloat(),
+            steps = (state.edgeMarginMax - Prefs.BUBBLE_EDGE_MARGIN_MIN) /
+                Prefs.BUBBLE_EDGE_MARGIN_STEP - 1,
             onValueChange = {
                 onEvent(SettingsEvent.Change(SettingsChange.SetEdgeMargin(it.roundToInt())))
             },
+        )
+        SettingsDivider()
+        SettingsLinkRow(
+            title = "Сбросить внешний вид",
+            summary = "Сторона, цвет, размер, прозрачность и отступ — как при установке",
+            onClick = { onEvent(SettingsEvent.ResetAppearance) },
         )
     }
     SettingsSection("Управление") {
@@ -150,83 +186,131 @@ private fun RecordingModeSetting(
 }
 
 @Composable
-private fun BubblePreview(state: SettingsUiState) {
-    val scheme = MaterialTheme.colorScheme
-    val bubbleColors = BubbleThemeColors(
-        primary = scheme.primary.toArgb(),
-        onPrimary = scheme.onPrimary.toArgb(),
-        primaryContainer = scheme.primaryContainer.toArgb(),
-        onPrimaryContainer = scheme.onPrimaryContainer.toArgb(),
-        onSurface = scheme.onSurface.toArgb(),
-        surfaceContainerHigh = scheme.surfaceContainerHigh.toArgb(),
-        error = scheme.error.toArgb(),
+@OptIn(ExperimentalMaterial3Api::class)
+private fun BubbleSideSetting(
+    selected: String,
+    onSelected: (String) -> Unit,
+) {
+    val options = listOf(
+        Prefs.BUBBLE_SIDE_LEFT to "Слева",
+        Prefs.BUBBLE_SIDE_RIGHT to "Справа",
     )
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 92.dp)
-            .padding(horizontal = ProductTokens.Spacing.Section),
+            .padding(horizontal = GovorunSpacing.xLarge, vertical = GovorunSpacing.medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text("Предпросмотр", style = MaterialTheme.typography.bodyMedium)
-            Text(
-                "Размер и прозрачность",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Text("Сторона экрана", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        SingleChoiceSegmentedButtonRow {
+            options.forEachIndexed { index, (value, label) ->
+                SegmentedButton(
+                    selected = value == selected,
+                    onClick = { onSelected(value) },
+                    shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                ) { Text(label) }
+            }
         }
-        Box(
-            modifier = Modifier
-                .width(132.dp)
-                .height(92.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            AndroidView(
-                factory = { context ->
-                    BubbleView(context).apply {
-                        importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                        setThemeColors(bubbleColors)
-                        setIdleAlpha(state.bubbleAlpha)
-                        setAnchoredLeft(false)
-                    }
-                },
-                update = { bubble ->
-                    bubble.setThemeColors(bubbleColors)
-                    bubble.applySizeScaleFromPrefs()
-                    bubble.setIdleAlpha(state.bubbleAlpha)
-                    bubble.setAnchoredLeft(false)
-                },
+    }
+}
+
+/** The strong (recording) tone of a bird colour and the colour drawn on it. */
+@Composable
+private fun birdAccent(id: String): Pair<Color, Color> {
+    val tone = BirdColors.tone(LocalContext.current, id)
+    return Color(tone.fill) to Color(tone.onFill)
+}
+
+/** A Material colour swatch: a filled circle, ringed and ticked when selected. */
+@Composable
+private fun BirdSwatch(id: String, selected: Boolean, size: Dp) {
+    val (accent, onAccent) = birdAccent(id)
+    Box(
+        modifier = Modifier
+            .size(size)
+            .then(
+                if (selected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape).padding(4.dp)
+                else Modifier,
+            )
+            .clip(CircleShape)
+            .background(accent),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (selected) {
+            Icon(
+                PhosphorIcons.Regular.Check,
+                contentDescription = null,
+                tint = onAccent,
+                modifier = Modifier.size(size * 0.4f),
             )
         }
     }
 }
 
 @Composable
-private fun BubbleSideSetting(
+@OptIn(ExperimentalMaterial3Api::class)
+private fun BirdColorSetting(
     selected: String,
     onSelected: (String) -> Unit,
 ) {
     var sheetOpen by remember { mutableStateOf(false) }
-    val options = listOf(
-        Prefs.BUBBLE_SIDE_LEFT to "Слева",
-        Prefs.BUBBLE_SIDE_RIGHT to "Справа",
-    )
-    val current = options.firstOrNull { it.first == selected } ?: options.last()
-    SettingsLinkRow(
-        title = "Сторона экрана",
-        value = current.second,
-        onClick = { sheetOpen = true },
-    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { sheetOpen = true }
+            .padding(horizontal = GovorunSpacing.xLarge, vertical = GovorunSpacing.large),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Цвет птички", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                BirdColors.label(selected),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        BirdSwatch(selected, selected = false, size = 28.dp)
+    }
     if (sheetOpen) {
-        SettingsChoiceSheet(
-            title = "Сторона экрана",
-            selected = current,
-            options = options,
-            optionLabel = Pair<String, String>::second,
-            onSelected = { onSelected(it.first) },
+        ModalBottomSheet(
             onDismissRequest = { sheetOpen = false },
-        )
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Column(modifier = Modifier.padding(horizontal = ProductTokens.Spacing.Screen).padding(bottom = ProductTokens.Spacing.Screen)) {
+                Text("Цвет птички", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(GovorunSpacing.large))
+                BirdColors.ids.chunked(3).forEach { row ->
+                    Row(modifier = Modifier.fillMaxWidth().selectableGroup()) {
+                        row.forEach { id ->
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .selectable(
+                                        selected = id == selected,
+                                        role = Role.RadioButton,
+                                        onClick = {
+                                            onSelected(id)
+                                            sheetOpen = false
+                                        },
+                                    )
+                                    .padding(vertical = GovorunSpacing.medium),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                BirdSwatch(id, selected = id == selected, size = 48.dp)
+                                Text(
+                                    BirdColors.label(id),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(top = GovorunSpacing.small),
+                                )
+                            }
+                        }
+                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+            }
+        }
     }
 }
 

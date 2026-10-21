@@ -29,7 +29,11 @@ data class SettingsUiState(
     val diagnosticEvents: List<DiagnosticEventRow> = emptyList(),
     val birdConnectionNeedsAttention: Boolean = false,
     val edgeMarginCustomized: Boolean = false,
+    val recordingAlpha: Float = Prefs.BUBBLE_RECORDING_ALPHA_DEFAULT,
+    val birdColor: String = com.govorun.lite.overlay.BirdColors.DEFAULT,
+    val edgeMarginMax: Int = Prefs.BUBBLE_EDGE_MARGIN_MAX,
     val legacyVoiceMarker: Boolean = false,
+    val rememberLastDictation: Boolean = false,
 ) {
     companion object {
         fun loading() = SettingsUiState(
@@ -84,6 +88,7 @@ sealed interface SettingsEvent {
     data object CopyDiagnostics : SettingsEvent
     data object ResetStatistics : SettingsEvent
     data object Reset : SettingsEvent
+    data object ResetAppearance : SettingsEvent
 
     val updatesSnapshot: Boolean
         get() = this !is Back &&

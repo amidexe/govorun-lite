@@ -18,6 +18,8 @@ mod windows_catalog;
 use serde::{Deserialize, Serialize};
 
 pub const MAXIMUM: usize = 200;
+/// A full journal with stage timings exceeds 128 KiB; copies and saved reports stay bounded.
+pub const EXPORT_LIMIT: usize = 1_048_576;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]

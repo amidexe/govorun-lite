@@ -157,6 +157,12 @@
   {:else if showAccount}<section class="surface">
     <h2>Улучшение текста</h2>
     <AccountPage connectionOnly embedded onconnected={connected} />
+    <button
+      class="quiet"
+      onclick={() => {
+        showAccount = false;
+      }}>Не сейчас</button
+    >
   </section>
   {:else if value.gate === 'account'}
     <section class="surface promotion">
@@ -192,8 +198,6 @@
     </section>
   {:else}
     <section class="surface styles-panel" class:compact>
-      {#if !compact && value.gate !== 'storage' && value.gate !== 'selfHosted' && value.gate !== 'selfHostedSetup'}<StyleBetaNotice
-        />{/if}
       {#if !compact && value.gate !== 'storage'}<p
           class="style-status"
           class:active={presentation?.active && !value.onlineServicePaused && !stylesState.styles.failed}
@@ -275,13 +279,6 @@
                 editor = { scope: value!.scope, preset: null };
               }}
             />
-            {#if !compact && value.gate !== 'selfHosted' && value.gate !== 'selfHostedSetup'}<p
-                class="length-hint"
-              >
-                Улучшение применяется после завершения записи к тексту от {value.processingLimits.minimumCharacters} до {new Intl.NumberFormat('ru-RU').format(value.processingLimits.maximumCharacters).replaceAll('\u00a0', ' ')} символов.
-                Длинный текст может обрабатываться до {value.processingLimits.maximumProcessingSeconds} секунд. Более короткий или длинный текст
-                вставляется без улучшения.
-              </p>{/if}
             {#if !compact && value.enabled && value.gate !== 'selfHosted' && value.gate !== 'selfHostedSetup'}<div
                 class="options"
               >
@@ -358,11 +355,6 @@
   }
   .style-status.active {
     color: var(--green);
-  }
-  .length-hint {
-    margin-top: 12px;
-    color: var(--secondary);
-    font-size: 12px;
   }
   .styles-panel.compact {
     padding: 0;

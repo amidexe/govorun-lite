@@ -6,8 +6,14 @@ const LABELS: &[&str] = &[
     "Повторное распознавание",
     "Длинная запись",
 ];
-pub(super) fn suite(facts: &Facts, journal: &str) -> String {
-    let mut text=format!("Говорун — диагностический отчёт v2\n{}\nРезультат: {}\nВсе доступные устройства проверяются по очереди на одинаковых встроенных записях.\nНабор: gigaam-samples-v1 · 11290 / 71250 мс\nСкорость каждого устройства рассчитана по повторному и длинному замерам.\n",facts.system.render(),facts.state);
+pub(super) fn suite(facts: &Facts) -> String {
+    let passed = facts.devices.iter().filter(|device| device.state == "done").count();
+    let result = if facts.devices.is_empty() || facts.state == "running" {
+        facts.state.clone()
+    } else {
+        format!("{} · прошли проверку: {passed} из {}", facts.state, facts.devices.len())
+    };
+    let mut text=format!("Говорун — диагностический отчёт v2\n{}\nРезультат: {}\nВсе доступные устройства проверяются по очереди на одинаковых встроенных записях.\nНабор: gigaam-samples-v1 · 11290 / 71250 мс\nСкорость каждого устройства рассчитана по повторному и длинному замерам.\n",facts.system.render(),result);
     for device in &facts.devices {
         text += &format!(
             "\n{} · {} · {}\n",
@@ -46,6 +52,9 @@ pub(super) fn suite(facts: &Facts, journal: &str) -> String {
         }
         if let Some(failure) = &device.failure_code {
             text += &format!("\nКод: {failure} · этап: {}", device.stage);
+            if let Some(detail) = &device.failure_detail {
+                text += &format!(" · причина: {detail}");
+            }
         }
         text += "\n";
     }
@@ -62,10 +71,6 @@ pub(super) fn suite(facts: &Facts, journal: &str) -> String {
         );
     }
     text+="\nGPU проверяется без перехода на CPU. Неудачный тест не мешает проверке остальных устройств.\nМикрофон, горячие клавиши, вставка и онлайн-обработка не тестировались. Текст записей в отчёт не включён.\nУспешное распознавание подтверждает эту нагрузку, а не исправность всех драйверов.";
-    if !journal.is_empty() {
-        text += "\n\nПоследние события приложения:\n";
-        text += &journal.chars().take(8000).collect::<String>();
-    }
     text
 }
 pub(super) fn measurement(result: &Measurement) -> String {

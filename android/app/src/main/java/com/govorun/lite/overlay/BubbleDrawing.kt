@@ -3,6 +3,8 @@ package com.govorun.lite.overlay
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.drawable.Drawable
+import kotlin.math.PI
+import kotlin.math.sin
 
 internal fun drawDrawable(
     canvas: Canvas,
@@ -38,14 +40,28 @@ internal inline fun withPaintAlpha(paint: Paint, alpha: Int, block: () -> Unit) 
     paint.alpha = previous
 }
 
-internal fun insideAction(
-    x: Float,
-    y: Float,
+/** Three dots with a travelling wave; [chasing] strengthens the wave. */
+internal fun drawActivityDots(
+    canvas: Canvas,
+    paint: Paint,
     centerX: Float,
     centerY: Float,
-    radius: Float,
-): Boolean {
-    val dx = x - centerX
-    val dy = y - centerY
-    return dx * dx + dy * dy <= radius * radius
+    reveal: Float,
+    chasing: Boolean,
+    tint: Int,
+    phase: Float,
+    spacing: Float,
+    baseRadius: Float,
+) {
+    val alphaProgress = ((reveal - 0.28f) / 0.52f).coerceIn(0f, 1f)
+    val start = centerX - spacing
+    repeat(3) { index ->
+        val wave = (sin(phase * 2f * PI.toFloat() - index * 0.9f) + 1f) / 2f
+        paint.color = tint
+        paint.alpha = (
+            alphaProgress * if (chasing) 90 + wave * 165 else 145 + wave * 90
+        ).toInt().coerceIn(0, 255)
+        canvas.drawCircle(start + spacing * index, centerY, baseRadius * (0.82f + wave * 0.32f), paint)
+    }
+    paint.alpha = 255
 }

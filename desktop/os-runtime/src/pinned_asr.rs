@@ -167,14 +167,16 @@ impl Session {
         )
     }
     fn open(api: Arc<Api>, path: CString, backend: Backend) -> Result<Self, &'static str> {
-        Self::open_on(api, path, backend, ptr::null_mut())
+        Self::open_status(api, path, backend, ptr::null_mut()).map_err(|(code, _)| code)
     }
-    fn open_on(
+    /// The engine status of a failed open stays beside the public code so the
+    /// benchmark can name the closed reason; dictation keeps the public code.
+    fn open_status(
         api: Arc<Api>,
         path: CString,
         backend: Backend,
         device: sys::transcribe_device_t,
-    ) -> Result<Self, &'static str> {
+    ) -> Result<Self, (&'static str, Option<sys::transcribe_status>)> {
         let mut parameters = sys::transcribe_model_load_params {
             struct_size: std::mem::size_of::<sys::transcribe_model_load_params>() as u64,
             backend: match backend {
@@ -182,7 +184,7 @@ impl Session {
                 Backend::Cpu => sys::transcribe_backend_request::TRANSCRIBE_BACKEND_CPU,
                 Backend::Metal => sys::transcribe_backend_request::TRANSCRIBE_BACKEND_METAL,
                 Backend::Vulkan => sys::transcribe_backend_request::TRANSCRIBE_BACKEND_VULKAN,
-                _ => return Err("recognition_backend_invalid"),
+                _ => return Err(("recognition_backend_invalid", None)),
             },
             device,
         };
@@ -194,13 +196,14 @@ impl Session {
                     (api.close)(raw);
                 }
             }
-            return Err(
+            return Err((
                 if status == sys::transcribe_status::TRANSCRIBE_ERR_BACKEND {
                     "recognition_compute_backend_unavailable"
                 } else {
                     "recognition_model_unavailable"
                 },
-            );
+                Some(status),
+            ));
         }
         let mut session = Self {
             api,
@@ -210,11 +213,11 @@ impl Session {
         };
         let model = unsafe { (session.api.model)(session.raw) };
         if model.is_null() {
-            return Err("recognition_backend_unavailable");
+            return Err(("recognition_backend_unavailable", None));
         }
         let name = unsafe { (session.api.backend)(model) };
         if name.is_null() {
-            return Err("recognition_backend_unavailable");
+            return Err(("recognition_backend_unavailable", None));
         }
         session.backend = unsafe { CStr::from_ptr(name) }
             .to_string_lossy()

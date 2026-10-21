@@ -6,6 +6,8 @@
   import DesktopShell from './pages/shell/DesktopShell.svelte';
   import HomeStatistics from './features/statistics/HomeStatistics.svelte';
   import UpdateCard from './features/updates/UpdateCard.svelte';
+  import HotkeyHint from './features/hotkeys/HotkeyHint.svelte';
+  import LastDictationCard from './features/clipboard/LastDictationCard.svelte';
   import StylesPanel from './pages/styles/StylesPanel.svelte';
   import SetupDictation from './features/setup/SetupDictation.svelte';
   import { dictationReady } from './features/setup/model';
@@ -20,7 +22,11 @@
   let preparing = $state(false),
     prepareError = $state('');
   let status = $derived(homeStatus(snapshot));
-  let allReady = $derived(!failure && dictationReady(snapshot) && ['Всё готово', 'Диктовка готова'].includes(status.title));
+  let allReady = $derived(
+    !failure &&
+      dictationReady(snapshot) &&
+      ['Всё готово', 'Диктовка готова'].includes(status.title),
+  );
   $effect(() => {
     if (snapshot) document.documentElement.dataset.platform = snapshot.platform;
   });
@@ -113,14 +119,9 @@
       snapshot?.phase === 'processing'}
     onreconnect={reconnect}
   >
-    <section
-      class="surface readiness-card"
-      class:ready={allReady}
-      aria-live="polite"
-    >
+    <section class="surface readiness-card" class:ready={allReady} aria-live="polite">
       <div class="status-line">
-        {#if allReady}<span class="success"
-            ><Icon name="ph_check_circle_fill" size={16} /></span
+        {#if allReady}<span class="success"><Icon name="ph_check_circle_fill" size={16} /></span
           >{/if}
         <h2>{failure ? 'Диктовка недоступна' : status.title}</h2>
         {#if failure || status.detail}<p>
@@ -142,7 +143,14 @@
       {#if prepareError}<p class="error" role="alert">{prepareError}</p>{/if}
     </section>
     {#if repairing && !failure}<SetupDictation runtime={snapshot} />{/if}
-    {#if snapshot?.capabilities.includes('styles.snapshot')}<StylesPanel compact processingStatus={snapshot.styleStatus ?? 'idle'} />{/if}
+    {#if allReady && snapshot?.capabilities.includes('statistics.snapshot')}<HotkeyHint />{/if}
+    {#if snapshot?.capabilities.includes('lastDictation.snapshot')}<LastDictationCard
+        phase={snapshot.phase}
+      />{/if}
+    {#if snapshot?.capabilities.includes('styles.snapshot')}<StylesPanel
+        compact
+        processingStatus={snapshot.styleStatus ?? 'idle'}
+      />{/if}
     {#if snapshot?.capabilities.includes('statistics.snapshot')}<HomeStatistics />{/if}
     <UpdateCard compact />
   </DesktopShell>

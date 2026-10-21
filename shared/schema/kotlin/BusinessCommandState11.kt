@@ -6,6 +6,7 @@ data class BusinessCommandState11(
     val `clock`: Long,
     val `epoch`: Long,
     val `explicitDemand`: Boolean,
+    val `failures`: Int,
     val `freshFollowup`: Boolean,
     val `localNotBefore`: Long,
     val `pendingDemand`: Boolean,

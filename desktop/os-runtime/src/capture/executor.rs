@@ -351,9 +351,24 @@ impl<D: Driver, R: Speech, F> Worker<D, R, F> {
                         (self.events)(Event::Cancelled { id });
                         continue;
                     }
+                    // Open the input first: a cold model load must not discard
+                    // speech that already started. The device queue keeps it.
+                    admission.input_opening();
+                    if let Err(code) = self.owner.begin(id, admission.clone(), preferences) {
+                        self.clear(id);
+                        (self.events)(if admission.is_cancelled() {
+                            Event::Cancelled { id }
+                        } else if let Some(native) = admission.native_failure() {
+                            Event::FailedNative { id, code, native }
+                        } else {
+                            Event::Failed { id, code }
+                        });
+                        continue;
+                    }
                     let record = match (self.speech)(&speech) {
                         Ok(record) => record,
                         Err(code) => {
+                            self.owner.cancel(id);
                             self.clear(id);
                             (self.events)(Event::Failed { id, code });
                             continue;
@@ -367,21 +382,9 @@ impl<D: Driver, R: Speech, F> Worker<D, R, F> {
                     }
                     if admission.is_cancelled() || self.stopping.load(Ordering::Acquire) {
                         cancel();
+                        self.owner.cancel(id);
                         self.clear(id);
                         (self.events)(Event::Cancelled { id });
-                        continue;
-                    }
-                    admission.input_opening();
-                    if let Err(code) = self.owner.begin(id, admission.clone(), preferences) {
-                        cancel();
-                        self.clear(id);
-                        (self.events)(if admission.is_cancelled() {
-                            Event::Cancelled { id }
-                        } else if let Some(native) = admission.native_failure() {
-                            Event::FailedNative { id, code, native }
-                        } else {
-                            Event::Failed { id, code }
-                        });
                         continue;
                     }
                     admission.input_opened();

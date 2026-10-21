@@ -127,8 +127,20 @@ class OfflineTranscriber private constructor(
         rate: Int,
         width: Int,
         channels: Int,
-    ): String = withContext(Dispatchers.Default) {
-        if (pcmData.isEmpty()) return@withContext ""
+    ): String = decode(pcmData, withWords = false).text
+
+    override suspend fun transcribeTimed(
+        pcmData: ByteArray,
+        rate: Int,
+        width: Int,
+        channels: Int,
+    ): TimedTranscript = decode(pcmData, withWords = true)
+
+    private suspend fun decode(
+        pcmData: ByteArray,
+        withWords: Boolean,
+    ): TimedTranscript = withContext(Dispatchers.Default) {
+        if (pcmData.isEmpty()) return@withContext TimedTranscript("", emptyList())
 
         val buf = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
         val samples = FloatArray(buf.remaining()) { buf.get().toFloat() / 32768f }
@@ -139,18 +151,25 @@ class OfflineTranscriber private constructor(
         // lock we also check isReleased — VadRecorder may have captured
         // this instance before release() ran, in which case we must NOT
         // dereference the freed recognizer.
-        val text = synchronized(nativeLock) {
+        val transcript = synchronized(nativeLock) {
             if (isReleased) {
                 Log.w(TAG, "transcribe called on released instance — dropping ${pcmData.size}B")
-                return@synchronized ""
+                return@synchronized TimedTranscript("", emptyList())
             }
             val stream = recognizer.createStream()
             stream.acceptWaveform(samples, sampleRate = 16000)
             recognizer.decode(stream)
             val result = recognizer.getResult(stream)
             stream.release()
-            result.text.trim()
+            val words =
+                if (withWords) {
+                    WordTimestamps.fromTokens(result.tokens, result.timestamps, samples.size * 1000L / 16000)
+                } else {
+                    emptyList()
+                }
+            TimedTranscript(result.text.trim(), words)
         }
+        val text = transcript.text
 
         // Privacy: log only the length, never the recognised text content.
         // logcat is visible to anyone who runs `adb logcat` while the app is
@@ -158,7 +177,7 @@ class OfflineTranscriber private constructor(
         // volatile, leaking the user's dictated text there violates the
         // "nothing leaves the device" promise that's the project's main USP.
         Log.i(TAG, "Offline transcript: ${text.length} chars")
-        text
+        transcript
     }
 
 }

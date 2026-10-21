@@ -81,19 +81,13 @@ impl Physical {
         })
     }
     pub async fn keep_clipboard(&self) -> Result<bool, &'static str> {
-        #[cfg(target_os = "macos")]
-        {
-            let value = govorun_core::clipboard_settings::ClipboardSettings::new(
-                self.store.clone(),
-            )
+        let value = govorun_core::clipboard_settings::ClipboardSettings::new(self.store.clone())
             .invoke("clipboard.snapshot", json!({}))
             .await?;
-            Ok(value["clipboard"] == "copy")
+        if crate::last_dictation::set_enabled(value["rememberLast"] == true) {
+            crate::tray::rebuild_menu(&self.app);
         }
-        #[cfg(not(target_os = "macos"))]
-        {
-            Ok(false)
-        }
+        Ok(value["clipboard"] == "copy")
     }
     pub fn cached(&self) -> Result<Snapshot, &'static str> {
         self.observed

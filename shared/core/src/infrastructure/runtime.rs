@@ -23,7 +23,7 @@ pub fn project(mut snapshot: Value, documents_available: bool) -> Result<Value, 
         if *route != Route::Agent
             && crate::features::capabilities::renderer_command_allowed(method)
             && (if *route == Route::Clipboard {
-                snapshot["platform"] == "macos"
+                matches!(snapshot["platform"].as_str(), Some("macos" | "windows"))
                     && (capabilities.iter().any(|v| v == "clipboard.snapshot")
                         || ["storage.read", "storage.write"]
                             .iter()

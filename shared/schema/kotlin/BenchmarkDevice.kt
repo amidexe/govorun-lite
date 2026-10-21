@@ -4,6 +4,7 @@ package com.govorun.core.generated
 data class BenchmarkDevice(
     val `backend`: String,
     val `failureCode`: String?,
+    val `failureDetail`: String?,
     val `id`: String,
     val `name`: String,
     val `result`: BenchmarkResult?,

@@ -146,6 +146,7 @@ impl Transport {
                     | "sync.enrollment"
                     | "styles.document"
                     | "selfHost.document"
+                    | "clipboard.document"
                     | "hotkeys.document"
                     | "recording.document"
             )

@@ -81,6 +81,13 @@
         "null"
       ]
     },
+    "failureDetail": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "id": {
       "type": "string"
     },

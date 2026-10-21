@@ -7,7 +7,8 @@ import androidx.compose.runtime.mutableStateOf
 
 data class UiAppearance(
     val themeMode: UiThemeMode = UiThemeMode.SYSTEM,
-    val dynamicColor: Boolean = true,
+    // Off by default, as in DayPlan: the Govorun palette unless the user opts in.
+    val dynamicColor: Boolean = false,
 )
 
 /**
@@ -32,7 +33,7 @@ object UiAppearancePrefs {
         val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
         return UiAppearance(
             themeMode = UiThemeMode.fromId(prefs.getString(KEY_THEME_MODE, null)),
-            dynamicColor = prefs.getBoolean(KEY_DYNAMIC_COLOR, true),
+            dynamicColor = prefs.getBoolean(KEY_DYNAMIC_COLOR, false),
         )
     }
 

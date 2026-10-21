@@ -21,6 +21,9 @@ fn menu(app: &AppHandle, reason: Option<Reason>) -> tauri::Result<Menu<tauri::Wr
     if let Some(reason) = reason {
         menu.append(&MenuItem::with_id(app, "attention", reason.caption(), true, None::<&str>)?)?;
     }
+    if crate::last_dictation::enabled() {
+        menu.append(&MenuItem::with_id(app, "copyLastDictation", "Скопировать последнюю диктовку", true, None::<&str>)?)?;
+    }
     menu.append_items(&[&settings, &separator, &quit])?;
     Ok(menu)
 }
@@ -43,6 +46,7 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
             match event.id.as_ref() {
                 "home" => { let _ = crate::windows::navigate(app, "home"); }
                 "settings" => { let _ = crate::windows::show(app, "settings", ""); }
+                "copyLastDictation" => { let _ = crate::last_dictation::copy(false); }
                 "attention" => { if let Some(reason) = crate::attention::reason(app) {
                     let _ = crate::windows::navigate(app, reason.route());
                 } }
@@ -93,6 +97,13 @@ pub fn refresh(app: &AppHandle) {
 fn macos_attention_title(tray: &tauri::tray::TrayIcon, active: bool, test: bool) -> tauri::Result<()> {
     let title = match (active, test) { (true, true) => "! Т", (true, false) => "!", (false, true) => "Т", _ => "" };
     tray.set_title(Some(title))
+}
+
+/// Shows or hides «Скопировать последнюю диктовку» after the setting changed.
+pub fn rebuild_menu(app: &AppHandle) {
+    if let (Some(tray), Ok(menu)) = (app.tray_by_id(ID), menu(app, crate::attention::reason(app))) {
+        let _ = tray.set_menu(Some(menu));
+    }
 }
 
 pub fn refresh_window(app: &AppHandle) -> tauri::Result<()> {

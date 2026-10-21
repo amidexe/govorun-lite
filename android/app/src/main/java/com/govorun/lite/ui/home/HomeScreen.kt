@@ -80,6 +80,7 @@ internal fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(ProductTokens.Spacing.Md),
             ) {
                 item { ReadinessCard(state, onEvent) }
+                state.lastDictation?.let { text -> item { LastDictationCard(text, state.lastDictationOriginal) } }
                 paymentAlert?.let { alert ->
                     item { PaymentAlertCard(alert, onEvent) }
                 }
@@ -300,6 +301,12 @@ private fun issueContent(issue: SetupIssue): IssueContent = when (issue) {
         "Перезапустите Говоруна",
         "Выключите и снова включите службу",
         HomeEvent.OpenAccessibility,
+    )
+    SetupIssue.AUTOSTART -> IssueContent(
+        PhosphorIcons.Regular.Clock,
+        "Разрешите автозапуск",
+        "Чтобы оболочка не выгружала птичку",
+        HomeEvent.OpenAutostart,
     )
     SetupIssue.ACCESSIBILITY_SHORTCUT -> IssueContent(
         PhosphorIcons.Regular.Warning,

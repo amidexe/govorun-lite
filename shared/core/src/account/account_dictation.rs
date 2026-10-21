@@ -29,6 +29,7 @@ pub trait OsEffects: Send {
     fn prepared_request_id(&self) -> Option<String> { None }
     fn recognize(&mut self) -> impl Future<Output = Result<Recognition, Failure>> + Send;
     fn paste(&mut self, text: String) -> impl Future<Output = bool> + Send;
+    fn keep_original(&mut self, _original: &str) {}
     fn progress(&self, stage: Stage);
     fn style_progress(
         &self,
@@ -362,6 +363,9 @@ impl<O: OsEffects> Ports for DictationAttempt<O> {
     }
     async fn paste(&mut self, text: String) -> bool {
         self.os.paste(text).await
+    }
+    fn keep_original(&mut self, original: &str) {
+        self.os.keep_original(original);
     }
     fn did_style(&mut self) {
         let host = self.host.clone();

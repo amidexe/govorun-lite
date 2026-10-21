@@ -11,6 +11,9 @@ internal interface RecognitionProviderSession {
     fun cancel(notify: Boolean)
     fun cancelWithError(code: Int, message: String)
 
+    /** Set by a live stream that rides out Govorun's dictation instead of being preempted. */
+    val onPrimaryChange: (() -> Unit)? get() = null
+
     fun attach(lease: RecognitionSessionArbiter.Lease) {
         recognitionLease = lease
     }

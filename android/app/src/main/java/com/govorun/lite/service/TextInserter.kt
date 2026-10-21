@@ -49,6 +49,8 @@ internal class TextInserter(
     fun insert(rawText: String): Boolean {
         if (rawText.isBlank()) return false
         val replaced = Dictionary.applyReplacements(service, rawText)
+        // Before the attempts: the text that "all paths failed" would drop stays copyable.
+        LastDictation.remember(service, replaced)
         if (replaced != rawText) {
             AppLog.log(service, "Dictionary applied (raw=${rawText.length} → result=${replaced.length})")
         }

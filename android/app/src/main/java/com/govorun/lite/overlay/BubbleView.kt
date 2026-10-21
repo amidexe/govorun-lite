@@ -11,9 +11,7 @@ import android.view.animation.PathInterpolator
 import androidx.core.content.ContextCompat
 import com.govorun.lite.R
 import com.govorun.lite.util.Prefs
-import kotlin.math.PI
 import kotlin.math.max
-import kotlin.math.sin
 
 /**
  * Floating control whose primary tap target never moves.
@@ -47,7 +45,7 @@ class BubbleView @JvmOverloads constructor(
     private var sizeScale = Prefs.getBubbleSize(context)
     private var bubbleSize = scaledPx(BASE_BUBBLE_DP)
     private var iconSize = scaledPx(BASE_ICON_DP)
-    private var idleExtent = bubbleSize + (bubbleSize * IDLE_PADDING_FRACTION).toInt()
+    private var idleExtent = bubbleTouchExtentPx(dp, sizeScale)
     private var windowExtent = scaledPx(MAX_CONTROL_WIDTH_DP).coerceAtLeast(idleExtent)
     private var onboardingPresentation = false
 
@@ -72,6 +70,7 @@ class BubbleView @JvmOverloads constructor(
     init {
         elevation = 6 * dp
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        palette.setBirdColor(Prefs.getBirdColor(context))
         updateContentDescription()
     }
 
@@ -146,24 +145,23 @@ class BubbleView @JvmOverloads constructor(
 
     fun isProcessing(): Boolean = presentation == Presentation.PROCESSING
 
+    /**
+     * The whole touch window is active, not just the drawn rail, so misses
+     * around the pill still count. Cancel keeps the minimum touch target at the
+     * far end; every other point confirms (see [isCancelTarget]).
+     */
     fun actionAt(x: Float, y: Float): Action {
         if (!isConfirmationRecording()) return Action.NONE
+        if (y < 0f || y > height) return Action.NONE
         val geometry = contextualGeometry()
-        if (insideAction(x, y, geometry.anchorX, geometry.centerY, geometry.actionRadius)) {
-            return Action.CONFIRM
-        }
-        return if (insideAction(
-                x,
-                y,
-                geometry.cancelX,
-                geometry.centerY,
-                geometry.actionRadius * 0.82f,
-            )
-        ) {
-            Action.CANCEL
-        } else {
-            Action.NONE
-        }
+        val cancels = isCancelTarget(
+            x = x,
+            cancelX = geometry.cancelX,
+            rail = geometry.rail,
+            anchoredLeft = anchoredLeft,
+            minTargetPx = MIN_TOUCH_TARGET_DP * dp,
+        )
+        return if (cancels) Action.CANCEL else Action.CONFIRM
     }
 
     fun actionAtControl(x: Float, y: Float): Action {
@@ -191,19 +189,23 @@ class BubbleView @JvmOverloads constructor(
 
     fun setIdleAlpha(alpha: Float) = palette.setIdleAlpha(alpha)
 
-    /** Ignores floating-overlay preferences for the centred onboarding action. */
+    fun setRecordingAlpha(alpha: Float) = palette.setRecordingAlpha(alpha)
+
+    fun setBirdColor(id: String) = palette.setBirdColor(id)
+
+    /** Ignores size and side preferences for the centred onboarding action; keeps the colour. */
     fun configureForOnboarding(compactModePreview: Boolean = false) {
         if (onboardingPresentation) return
         onboardingPresentation = true
         sizeScale = if (compactModePreview) 0.75f else 1f
         bubbleSize = scaledPx(BASE_BUBBLE_DP)
         iconSize = scaledPx(BASE_ICON_DP)
-        idleExtent = if (compactModePreview) bubbleSize + (bubbleSize * IDLE_PADDING_FRACTION).toInt()
+        idleExtent = if (compactModePreview) bubbleTouchExtentPx(dp, sizeScale)
             else scaledPx(ONBOARDING_EXTENT_DP)
         windowExtent = if (compactModePreview) scaledPx(MAX_CONTROL_WIDTH_DP) else idleExtent
         animatedWidth = idleExtent.toFloat()
         anchoredLeft = true
-        palette.setIdleAlpha(1f)
+        palette.setIdleAlpha(Prefs.getBubbleAlpha(context))
         updateContentDescription()
         animations.sync(presentation, bubbleSize)
         requestLayout()
@@ -217,7 +219,7 @@ class BubbleView @JvmOverloads constructor(
         sizeScale = newScale
         bubbleSize = scaledPx(BASE_BUBBLE_DP)
         iconSize = scaledPx(BASE_ICON_DP)
-        idleExtent = bubbleSize + (bubbleSize * IDLE_PADDING_FRACTION).toInt()
+        idleExtent = bubbleTouchExtentPx(dp, sizeScale)
         windowExtent = scaledPx(MAX_CONTROL_WIDTH_DP).coerceAtLeast(idleExtent)
         animatedWidth = targetWidth(presentation).toFloat()
         requestLayout()
@@ -263,14 +265,24 @@ class BubbleView @JvmOverloads constructor(
             val reveal = 1f - transitionProgress
             drawRail(canvas, contextualGeometry(reveal))
         }
-        drawRoundBubble(canvas, recording = false, drawBackground = !collapsing)
+        drawRoundBubble(
+            canvas,
+            recording = false,
+            drawBackground = !collapsing,
+            birdColor = if (collapsing) palette.railForeground(recordingShare()) else null,
+        )
     }
 
     private fun drawLegacyRecording(canvas: Canvas) {
         drawRoundBubble(canvas, recording = true)
     }
 
-    private fun drawRoundBubble(canvas: Canvas, recording: Boolean, drawBackground: Boolean = true) {
+    private fun drawRoundBubble(
+        canvas: Canvas,
+        recording: Boolean,
+        drawBackground: Boolean = true,
+        birdColor: Int? = null,
+    ) {
         val cx = anchorCenterX()
         val cy = height / 2f
         val idleAnimating = animations.idleHaloActive && !recording
@@ -306,7 +318,7 @@ class BubbleView @JvmOverloads constructor(
             cx,
             cy,
             iconSize,
-            if (recording) 0xFFFFFFFF.toInt() else palette.idleBirdColor(),
+            if (recording) palette.recordingForeground() else birdColor ?: palette.idleBirdColor(),
             rotationDegrees = 0f,
         )
     }
@@ -314,7 +326,8 @@ class BubbleView @JvmOverloads constructor(
     private fun drawContextual(canvas: Canvas, content: ContextualContent) {
         val reveal = contextualReveal()
         val geometry = contextualGeometry(reveal)
-        val foreground = palette.idleBirdColor()
+        val share = recordingShare()
+        val foreground = palette.railForeground(share)
         drawRail(canvas, geometry)
 
         when (content) {
@@ -329,7 +342,7 @@ class BubbleView @JvmOverloads constructor(
                     foreground,
                     rotationDegrees = 0f,
                 )
-                drawDots(canvas, geometry.dotsX, geometry.centerY, reveal, chasing = false)
+                drawDots(canvas, geometry.dotsX, geometry.centerY, reveal, chasing = false, tint = foreground)
             }
             ContextualContent.PROCESSING -> {
                 drawDrawable(
@@ -365,7 +378,7 @@ class BubbleView @JvmOverloads constructor(
         geometry: ContextualGeometry,
         reveal: Float,
     ) {
-        val foreground = palette.idleBirdColor()
+        val foreground = palette.railForeground(recordingShare())
         drawDrawable(
             canvas,
             birdIcon,
@@ -375,7 +388,7 @@ class BubbleView @JvmOverloads constructor(
             foreground,
             rotationDegrees = 0f,
         )
-        drawDots(canvas, geometry.dotsX, geometry.centerY, reveal, chasing = false)
+        drawDots(canvas, geometry.dotsX, geometry.centerY, reveal, chasing = false, tint = foreground)
 
         val cancelProgress = ((reveal - 0.48f) / 0.52f).coerceIn(0f, 1f)
         drawDrawable(
@@ -393,11 +406,12 @@ class BubbleView @JvmOverloads constructor(
         canvas: Canvas,
         geometry: ContextualGeometry = contextualGeometry(),
     ) {
+        palette.railPaint.color = palette.railFill(recordingShare())
         canvas.drawRoundRect(
             geometry.rail,
             geometry.rail.height() / 2f,
             geometry.rail.height() / 2f,
-            palette.basePaint,
+            palette.railPaint,
         )
     }
 
@@ -407,23 +421,11 @@ class BubbleView @JvmOverloads constructor(
         centerY: Float,
         reveal: Float,
         chasing: Boolean,
-    ) {
-        val alphaProgress = ((reveal - 0.28f) / 0.52f).coerceIn(0f, 1f)
-        val spacing = scaledDp(7f)
-        val start = centerX - spacing
-        repeat(3) { index ->
-            val wave = (
-                sin(animations.activityPhase * 2f * PI.toFloat() - index * 0.9f) + 1f
-            ) / 2f
-            val radius = max(1.45f * dp, scaledDp(1.8f)) * (0.82f + wave * 0.32f)
-            palette.dotPaint.color = palette.idleBirdColor()
-            palette.dotPaint.alpha = (
-                alphaProgress * if (chasing) 90 + wave * 165 else 145 + wave * 90
-            ).toInt().coerceIn(0, 255)
-            canvas.drawCircle(start + spacing * index, centerY, radius, palette.dotPaint)
-        }
-        palette.dotPaint.alpha = 255
-    }
+        tint: Int = palette.idleBirdColor(),
+    ) = drawActivityDots(
+        canvas, palette.dotPaint, centerX, centerY, reveal, chasing, tint,
+        animations.activityPhase, scaledDp(7f), max(1.45f * dp, scaledDp(1.8f)),
+    )
 
     private fun contextualGeometry(reveal: Float = contextualReveal()): ContextualGeometry {
         return buildAnchoredContextualGeometry(
@@ -433,10 +435,19 @@ class BubbleView @JvmOverloads constructor(
             idleExtent = idleExtent,
             bubbleSize = bubbleSize,
             anchoredLeft = anchoredLeft,
-            finalHeight = scaledDp(48f),
+            // The circle only stretches sideways into the rail, never changes height.
+            finalHeight = bubbleSize.toFloat(),
             reveal = reveal,
             innerPadding = scaledDp(4f),
         )
+    }
+
+    /** 1 while the rail records (tap or hold), 0 otherwise; eased by the same transition. */
+    private fun recordingShare(): Float {
+        fun share(value: Presentation) =
+            if (value == Presentation.CONFIRM_RECORDING || value == Presentation.HOLD_RECORDING) 1f else 0f
+        val from = share(previousPresentation)
+        return from + (share(presentation) - from) * transitionProgress
     }
 
     private fun contextualReveal(): Float =
@@ -471,11 +482,10 @@ class BubbleView @JvmOverloads constructor(
     private fun scaledPx(value: Float) = scaledDp(value).toInt()
 
     private companion object {
-        const val BASE_BUBBLE_DP = 56f
+        const val BASE_BUBBLE_DP = BUBBLE_BASE_DP
         const val BASE_ICON_DP = 32f
         const val MAX_CONTROL_WIDTH_DP = 152f
         const val ONBOARDING_EXTENT_DP = 96f
-        const val IDLE_PADDING_FRACTION = 0.4f
         const val TRANSITION_DURATION_MS = 280L
     }
 }

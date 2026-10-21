@@ -17,6 +17,13 @@ const failures = [
   'initialization_failed',
   'recognition_failed',
 ];
+const failureDetails = [
+  'recognition_engine_out_of_memory',
+  'recognition_engine_backend_failed',
+  'recognition_engine_model_failed',
+  'recognition_device_fallback',
+  'recognition_devices_unavailable',
+];
 function object(value: unknown, keys: string[]): Record<string, unknown> {
   if (
     !value ||
@@ -100,6 +107,7 @@ export function benchmarkSnapshot(value: unknown): BenchmarkSnapshot {
       'stage',
       'result',
       'failureCode',
+      'failureDetail',
     ]);
     if (
       typeof device.id !== 'string' ||
@@ -113,7 +121,11 @@ export function benchmarkSnapshot(value: unknown): BenchmarkSnapshot {
       (device.id === 'cpu') !== (device.backend === 'cpu') ||
       !stringEnum(device.state, ['pending', 'running', 'done', 'failed', 'cancelled']) ||
       !stringEnum(device.stage, stages) ||
-      !validFailure(device.failureCode, device.state)
+      !validFailure(device.failureCode, device.state) ||
+      !(
+        device.failureDetail === null ||
+        (device.failureCode !== null && stringEnum(device.failureDetail, failureDetails))
+      )
     )
       throw new Error('invalid_benchmark');
     ids.add(device.id);

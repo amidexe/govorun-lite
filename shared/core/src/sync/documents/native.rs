@@ -67,7 +67,14 @@ impl NativeDocuments {
     }
     pub fn diagnostics(self: &Arc<Self>) -> Diagnostics {
         let owner = self.clone();
-        Arc::new(move |event, failure| owner.queue_diagnostic(json!({"event":event,"status":failure.status})))
+        Arc::new(move |event, failure| {
+            let reason = crate::journal_report::input::sync_reason(failure.code)
+                .filter(|_| failure.status.is_none());
+            owner.queue_diagnostic(match reason {
+                Some(reason) => json!({"event":event,"status":null,"reason":reason}),
+                None => json!({"event":event,"status":failure.status}),
+            })
+        })
     }
     pub async fn recording_capture_ready(&self, detail: String) {
         let _ = self.call("data.diagnostic", json!({"event":"audio_capture_ready","detail":detail})).await;

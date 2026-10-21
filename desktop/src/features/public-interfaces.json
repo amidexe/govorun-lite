@@ -38,7 +38,7 @@
   },
   "clipboard": {
     "dependencies": [],
-    "exports": ["ClipboardPreference.svelte", "model.ts"]
+    "exports": ["ClipboardPreference.svelte", "LastDictationCard.svelte", "model.ts"]
   },
   "diagnostics": {
     "dependencies": ["benchmark"],
@@ -63,8 +63,8 @@
     "exports": ["DictionaryPage.svelte", "model.ts"]
   },
   "hotkeys": {
-    "dependencies": [],
-    "exports": ["HotkeysPanel.svelte", "model.ts"]
+    "dependencies": ["statistics"],
+    "exports": ["HotkeyHint.svelte", "HotkeysPanel.svelte", "model.ts"]
   },
   "recording-diagnostics": {
     "dependencies": [],
@@ -75,7 +75,7 @@
     "exports": ["SelfHostPage.svelte", "model.ts"]
   },
   "setup": {
-    "dependencies": ["appearance", "dictation", "hotkeys"],
+    "dependencies": ["appearance", "dictation", "hotkeys", "statistics"],
     "exports": ["OnboardingGate.svelte", "SetupDictation.svelte", "model.ts"]
   },
   "statistics": {

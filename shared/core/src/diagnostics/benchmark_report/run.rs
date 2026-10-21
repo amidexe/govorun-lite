@@ -1,6 +1,6 @@
 //! Sequential benchmark transitions. Physical discovery, decoding, cancellation
 //! and the exclusive recording lease belong to the host/OS adapter.
-use super::{Device, Facts, Measurement, SystemFacts, FAILURES, STAGES};
+use super::{Device, Facts, Measurement, SystemFacts, FAILURES, FAILURE_DETAILS, STAGES};
 pub struct Run {
     facts: Facts,
     generation: u64,
@@ -66,6 +66,7 @@ impl Run {
                     || d.stage != "fixtures"
                     || d.result.is_some()
                     || d.failure_code.is_some()
+                    || d.failure_detail.is_some()
             })
         {
             return Err("benchmark_invalid_devices");
@@ -152,12 +153,18 @@ impl Run {
         self.facts.active_device_id = None;
         Ok(true)
     }
-    /// Failure accepts only a public code; private exception bodies cannot enter facts.
-    pub fn failed(&mut self, generation: u64, code: &str) -> Result<bool, &'static str> {
+    /// Failure accepts only a public code and a closed engine reason; private
+    /// exception bodies cannot enter facts.
+    pub fn failed(
+        &mut self,
+        generation: u64,
+        code: &str,
+        detail: Option<&str>,
+    ) -> Result<bool, &'static str> {
         if !self.current(generation) {
             return Ok(false);
         }
-        if !FAILURES.contains(&code) {
+        if !FAILURES.contains(&code) || detail.is_some_and(|d| !FAILURE_DETAILS.contains(&d)) {
             return Err("benchmark_invalid_failure");
         }
         if let Some(id) = self.facts.active_device_id.take() {
@@ -169,6 +176,7 @@ impl Run {
                 .ok_or("benchmark_invalid_transition")?;
             device.state = "failed".into();
             device.failure_code = Some(code.into());
+            device.failure_detail = detail.map(Into::into);
         } else {
             self.facts.state = "failed".into();
             self.facts.failure_code = Some(code.into());

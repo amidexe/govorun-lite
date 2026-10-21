@@ -13,7 +13,11 @@ fn table() -> &'static Value {
 pub fn handles(key: &str) -> bool {
     matches!(
         key,
-        "styles.document" | "selfHost.document" | "hotkeys.document" | "recording.document"
+        "styles.document"
+            | "selfHost.document"
+            | "hotkeys.document"
+            | "recording.document"
+            | "clipboard.document"
     )
 }
 pub fn validate(key: &str, previous: Option<&str>, raw: &str) -> Result<(), Error> {
@@ -135,7 +139,8 @@ fn field_type(name: &str, value: &Value) -> bool {
         | "hotkeysetupcompleted"
         | "customserverenabled"
         | "customserverstylingenabled"
-        | "customserverproxyenabled" => value.is_boolean(),
+        | "customserverproxyenabled"
+        | "rememberlastdictation" => value.is_boolean(),
         "acceptedonlinetermsversion"
         | "punctuation"
         | "emojimode"
@@ -161,7 +166,8 @@ fn field_type(name: &str, value: &Value) -> bool {
         | "customserverprompt"
         | "customserveracceptedrecipient"
         | "customserververifiedconfiguration"
-        | "customserverproxyurl" => nullable(value, string),
+        | "customserverproxyurl"
+        | "pasteclipboard" => nullable(value, string),
         "builtinstyleoptions" => dictionary(value, options),
         "customstyles" | "customserverstyles" => list(value, preset),
         "applicationstylerules" => list(value, rule),

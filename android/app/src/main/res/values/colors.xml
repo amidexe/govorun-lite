@@ -9,4 +9,12 @@
          instructions are equally scannable. We don't rely on colorPrimary
          because Dynamic Colors can make it any hue (pink, blue, yellow…). -->
     <color name="success_green">#2E7D32</color>
+    <!-- DayPlan palette for views drawn outside Compose (the floating bird).
+         Mirrors ProductTheme; Dynamic Colors replaces it when enabled. -->
+    <color name="govorun_primary">#216E72</color>
+    <color name="govorun_on_primary">#FFFFFF</color>
+    <color name="govorun_primary_container">#C9E5E6</color>
+    <color name="govorun_on_primary_container">#123638</color>
+    <color name="govorun_on_surface">#16100C</color>
+    <color name="govorun_surface_container_high">#EBE7E2</color>
 </resources>

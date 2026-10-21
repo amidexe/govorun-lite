@@ -5,5 +5,11 @@
         <item name="android:fontFamily">@font/geist_variable</item>
         <item name="switchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
         <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="colorPrimary">@color/govorun_primary</item>
+        <item name="colorOnPrimary">@color/govorun_on_primary</item>
+        <item name="colorPrimaryContainer">@color/govorun_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/govorun_on_primary_container</item>
+        <item name="colorOnSurface">@color/govorun_on_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/govorun_surface_container_high</item>
     </style>
 </resources>

@@ -247,6 +247,8 @@ class VadRecorder(private val context: Context) {
                         if (pcmWindow.size < windowBytes) break
                     }
                 } finally {
+                    // The microphone is done; riding streams hear it now, not after recognition.
+                    RecognitionSessionCoordinator.process.endPrimaryCapture(lease)
                     onRecordingDuration(capturedBytes * 1000L / (SAMPLE_RATE * 2))
                     val stoppedByButton = stopAtMs != Long.MAX_VALUE
                     val beforeFlush = segmentsEmitted

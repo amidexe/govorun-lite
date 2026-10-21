@@ -164,7 +164,14 @@ impl Session {
         };
         let path = CString::new(model.to_str().ok_or("recognition_model_path_invalid")?)
             .map_err(|_| "recognition_model_path_invalid")?;
-        let mut session = Self::open_on(api, path, backend, selected)?;
+        let mut session = Self::open_status(api, path, backend, selected).map_err(|(code, status)| {
+            match status {
+                Some(sys::transcribe_status::TRANSCRIBE_ERR_OOM) => "recognition_engine_out_of_memory",
+                Some(sys::transcribe_status::TRANSCRIBE_ERR_BACKEND) => "recognition_engine_backend_failed",
+                Some(_) => "recognition_engine_model_failed",
+                None => code,
+            }
+        })?;
         // The deployed adapters classify runtime labels such as MTL0/Metal
         // device names into the same closed CPU/Metal/Vulkan contract.
         let lower = session.backend.to_ascii_lowercase();
@@ -184,7 +191,8 @@ impl Session {
             || unsafe { (ports.selected)(model) } != selected
             || session.backend.to_ascii_lowercase() != device.backend
         {
-            return Err("recognition_compute_backend_unavailable");
+            // The engine loaded, but on another device than the one requested.
+            return Err("recognition_device_fallback");
         }
         Ok(session)
     }

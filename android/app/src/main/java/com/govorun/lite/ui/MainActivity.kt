@@ -131,6 +131,9 @@ class MainActivity : ComponentActivity() {
                 launch {
                     com.govorun.lite.stylization.StyleProcessingFeedback.state.collect { refresh() }
                 }
+                launch {
+                    com.govorun.lite.diagnostics.AppLifecycleDiagnostics.serviceConnected.collect { refresh() }
+                }
                 GovorunAccountRepository.state.collect {
                     refresh()
                     resumeStylizationAfterLogin()
@@ -259,6 +262,7 @@ class MainActivity : ComponentActivity() {
                 startActivity(Intent(this, OurProductsActivity::class.java))
             HomeEvent.OpenAccessibility ->
                 AccessibilityHelper.openAccessibilitySettings(this)
+            HomeEvent.OpenAutostart -> com.govorun.lite.util.XiaomiShell.openAutostart(this)
             HomeEvent.OpenAppDetails -> openAppDetails()
             HomeEvent.RequestBattery -> requestBatteryExemption()
             HomeEvent.DismissStarterGuidance -> {

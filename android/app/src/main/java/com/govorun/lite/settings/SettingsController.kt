@@ -8,6 +8,7 @@ internal interface SettingsPreferences {
     fun disableStylization()
     fun persist(change: SettingsChange)
     fun reset(defaults: JSONObject)
+    fun resetAppearance()
 }
 
 internal enum class SettingsEffect { THEME, SIZE, ALPHA, SIDE, EDGE_MARGIN }
@@ -47,13 +48,22 @@ internal class SettingsController(
         val effect = when (change) {
             is SettingsChange.SetThemeMode, is SettingsChange.SetDynamicColor -> SettingsEffect.THEME
             is SettingsChange.SetBubbleSize -> SettingsEffect.SIZE
-            is SettingsChange.SetBubbleAlpha -> SettingsEffect.ALPHA
+            is SettingsChange.SetBubbleAlpha,
+            is SettingsChange.SetBubbleRecordingAlpha,
+            is SettingsChange.SetBirdColor,
+            -> SettingsEffect.ALPHA
             is SettingsChange.SetBubbleSide -> SettingsEffect.SIDE
             is SettingsChange.SetEdgeMargin -> SettingsEffect.EDGE_MARGIN
             else -> null
         }
         if (effect != null) runtime.apply(setOf(effect))
         return SettingsChangeResult(stylizationDisabled = disabled)
+    }
+
+    /** Only the floating bird's look, as listed under «Внешний вид». */
+    fun resetAppearance() {
+        preferences.resetAppearance()
+        runtime.apply(setOf(SettingsEffect.SIZE, SettingsEffect.ALPHA, SettingsEffect.SIDE, SettingsEffect.EDGE_MARGIN))
     }
 
     fun reset() {

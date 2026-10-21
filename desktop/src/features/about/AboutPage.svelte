@@ -4,10 +4,12 @@
   import Icon from '../../shared/ui/Icon.svelte';
   import Modal from '../../shared/ui/Modal.svelte';
   import StatisticsReset from '../statistics/StatisticsReset.svelte';
+  import EraseLocalData from './EraseLocalData.svelte';
   import UpdateCard from '../updates/UpdateCard.svelte';
   import { aboutSnapshot } from './model';
   import { desktopBuild } from '../../build';
   import { useNativeSnapshot } from '../../shared/state/native-snapshot.svelte';
+  let { platform = 'windows' }: { platform?: 'macos' | 'windows' } = $props();
   const api = useDesktopApi();
   const info = useNativeSnapshot('about.snapshot', aboutSnapshot, 'about.changed');
   let licenses = $state(false),
@@ -111,6 +113,7 @@
     </details>{/if}
 </section>
 <StatisticsReset />
+{#if platform === 'macos'}<EraseLocalData />{/if}
 {#if licenses && info.value}
   <Modal
     title="Лицензии"

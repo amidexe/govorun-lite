@@ -124,7 +124,7 @@ pub async fn command(app: &AppHandle, services: &crate::service::Services, metho
 }
 
 fn save_report(directory: &std::path::Path, text: &str) -> Result<(), &'static str> {
-    if text.len() > 131_072 { return Err("diagnostics_save_failed"); }
+    if text.len() > govorun_core::journal_report::EXPORT_LIMIT { return Err("diagnostics_save_failed"); }
     fs::create_dir_all(directory).map_err(|_| "diagnostics_save_failed")?;
     let time = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|_| "diagnostics_save_failed")?.as_millis();
     // A new file on each request; never overwrite an existing user file.

@@ -34,7 +34,7 @@ impl Sink for InputSink {
         let Ok(mut pending) = self.queue.samples.lock() else {
             self.queue.failed("microphone_callback_failed"); return;
         };
-        if pending.len().saturating_add(chunk.valid_frames) > 80_000 {
+        if pending.len().saturating_add(chunk.valid_frames) > 480_000 {
             self.queue.failed("microphone_buffer_overflow"); return;
         }
         pending.extend(chunk.samples[..chunk.valid_frames].iter().map(|s| s.clamp(-1.0, 1.0)));

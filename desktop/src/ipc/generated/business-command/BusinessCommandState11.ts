@@ -5,6 +5,7 @@ export interface BusinessCommandState11 {
   clock: number;
   epoch: number;
   explicitDemand: boolean;
+  failures: number;
   freshFollowup: boolean;
   localNotBefore: number;
   pendingDemand: boolean;

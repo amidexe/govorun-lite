@@ -294,17 +294,23 @@
     },
     "clipboard.document": {
       "fixedKey": "clipboard.document",
-      "maximumValueBytes": 65536,
+      "maximumValueBytes": 8388608,
       "macos": {
         "store": "current application UserDefaults domain",
         "rawKeys": [],
         "scalarKeys": [
           "paste.clipboard",
+          "lastDictation.remember",
           "experimentalWindowsAppPaste"
         ]
       },
       "windows": {
-        "store": "unavailable"
+        "store": "AppPaths.SettingsFile",
+        "file": "settings.json",
+        "mutableFields": [
+          "pasteClipboard",
+          "rememberLastDictation"
+        ]
       }
     },
     "hotkeys.document": {

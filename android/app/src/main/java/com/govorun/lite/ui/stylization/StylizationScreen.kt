@@ -19,7 +19,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.govorun.lite.R
-import com.govorun.lite.shared.SharedDictationRules
 import com.govorun.lite.model.stylization.CustomStylePreset
 import com.govorun.lite.model.stylization.EmojiMode
 import com.govorun.lite.model.stylization.PunctuationMode
@@ -27,7 +26,6 @@ import com.govorun.lite.model.stylization.StyleOptions
 import com.govorun.lite.model.stylization.TextStyle
 import com.govorun.lite.stylization.CustomStylePresets
 import com.govorun.lite.stylization.InlineStylizationConsentCard
-import com.govorun.lite.stylization.StyleBetaNotice
 import com.govorun.lite.stylization.descriptionRes
 import com.govorun.lite.stylization.hasInlineStylizationConsent
 import com.govorun.lite.stylization.titleRes
@@ -98,7 +96,6 @@ internal fun StylizationScreen(
         state.customStyles.firstOrNull { it.id == state.activeCustomStyleId }?.name ?: "Свой стиль"
     } else stringResource(state.selectedStyle.titleRes)
     val consentVisible = hasInlineStylizationConsent()
-    val processingLimits = remember { SharedDictationRules.processingLimits }
     ProductScaffold(
         title = stringResource(R.string.stylization_title),
         onBack = onBack,
@@ -112,9 +109,6 @@ internal fun StylizationScreen(
             contentPadding = productScreenPadding(),
             verticalArrangement = Arrangement.spacedBy(ProductTokens.Spacing.Md),
         ) {
-            if (!state.selfHosted) {
-                item { StyleBetaNotice() }
-            }
             if (!state.hasAccess || !state.termsAccepted) {
                 item {
                     OnlineAccessCard(
@@ -164,21 +158,6 @@ internal fun StylizationScreen(
                                 else -> onAcceptTerms()
                             }
                         },
-                    )
-                }
-            }
-            if (!state.selfHosted) {
-                item {
-                    Text(
-                        stringResource(
-                            R.string.stylization_processing_limits,
-                            processingLimits.getInt("minimumCharacters"),
-                            java.text.NumberFormat.getIntegerInstance(java.util.Locale.forLanguageTag("ru-RU"))
-                                .format(processingLimits.getInt("maximumCharacters")).replace('\u00a0', ' '),
-                            processingLimits.getInt("maximumProcessingSeconds"),
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

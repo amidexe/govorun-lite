@@ -2,6 +2,8 @@
   "runtime.snapshot": {},
   "clipboard.snapshot": {},
   "clipboard.action": {},
+  "lastDictation.snapshot": {},
+  "lastDictation.copy": {},
   "diagnostics.snapshot": {},
   "diagnostics.action": {},
   "about.snapshot": {},

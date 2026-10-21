@@ -148,7 +148,12 @@ impl OsEffects for Effects {
     async fn recognize(&mut self) -> Result<Recognition, Failure> {
         self.work.recognize().await
     }
+    fn keep_original(&mut self, original: &str) {
+        crate::last_dictation::keep_original(original);
+    }
     async fn paste(&mut self, text: String) -> bool {
+        // Before the attempt: a dictation that lands outside a text field can be copied again.
+        crate::last_dictation::remember(&text);
         let insertion = self.insertion.clone();
         let cancellation = self.cancellation.clone();
         let token = self.work.token.clone();

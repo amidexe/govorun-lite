@@ -62,6 +62,8 @@ pub trait Ports {
     ) -> impl Future<Output = Result<Styled, Failure>> + Send;
     fn self_hosted(&mut self, text: &str) -> impl Future<Output = Result<String, Failure>> + Send;
     fn paste(&mut self, text: String) -> impl Future<Output = bool> + Send;
+    /// The local transcript of a text the improvement changed, kept beside the pasted one.
+    fn keep_original(&mut self, _original: &str) {}
     fn did_style(&mut self);
     fn progress(&mut self, stage: Stage);
     fn hide_progress(&mut self);

@@ -163,7 +163,6 @@ private fun TryStep(
                         error = bubbleColors.error.toArgb(),
                     ),
                 )
-                bubble.setIdlePulseColor(bubbleColors.primary.toArgb())
                 bubble.setRecording(state.recording)
                 bubble.setIdlePulse(state.showMicrophoneTapCue)
                 bubble.isEnabled = state.modelReady

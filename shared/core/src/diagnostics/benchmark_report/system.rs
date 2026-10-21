@@ -81,7 +81,7 @@ impl SystemFacts {
             Self::Windows {version,build_id,os_version,architecture,cpu,cpu_threads,memory_mi_b,adapters}=> {
                 let ram=memory_mi_b.map(|ram|format!("{ram} MiB")).unwrap_or_else(||"не определена".into());
                 let adapters=if adapters.is_empty() {"сведения недоступны".into()} else {adapters.iter().map(|a|format!("{} · драйвер {}",a.name,a.driver)).collect::<Vec<_>>().join("; ")};
-                format!("Служба Говоруна {version} · {build_id}\nWindows: {os_version} · {architecture}\nCPU: {cpu} · потоков: {cpu_threads}\nПамять: {ram}\nВидеоадаптеры по сведениям Windows: {adapters}\nДоступно в приложении: CPU, Vulkan при поддержке устройства, автоматический переход на CPU\nАктивный ускоритель определяется результатом теста; список Windows не подтверждает работу Vulkan.\n{engine}")
+                format!("Служба Говоруна {version} · {build_id}\nWindows: {os_version} · {architecture}\nCPU: {cpu} · потоков: {cpu_threads}\nПамять: {ram}\nВидеоадаптеры по сведениям Windows: {adapters}\nДоступно в приложении: CPU, Vulkan при поддержке устройства, автоматический переход на CPU\nАвтоматический режим диктовки берёт первую рабочую видеокарту: сначала отдельную, затем встроенную, иначе CPU.\nАктивный ускоритель определяется результатом теста; список Windows не подтверждает работу Vulkan.\n{engine}")
             }
         }
     }

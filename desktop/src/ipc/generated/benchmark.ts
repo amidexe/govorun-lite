@@ -2,6 +2,7 @@
 export interface BenchmarkDevice {
   backend: string;
   failureCode: string | null;
+  failureDetail: string | null;
   id: string;
   name: string;
   result: BenchmarkResult | null;

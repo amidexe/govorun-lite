@@ -30,7 +30,7 @@ enum Command {
 async fn call(agent: &AgentClient, method: &str, params: Value) -> Result<Value, &'static str> {
     agent.call_named(method, params, Duration::from_secs(20)).await
 }
-pub async fn read(agent: &AgentClient) -> Result<Journal, &'static str> {
+async fn read(agent: &AgentClient) -> Result<Journal, &'static str> {
     let value = call(agent, "diagnostics.localFacts", json!({})).await?;
     let journal =
         serde_json::from_value::<Journal>(value).map_err(|_| "diagnostics_invalid_facts")?;
@@ -51,7 +51,7 @@ async fn effect(agent: &AgentClient, params: Value) -> Result<(), &'static str> 
     }
 }
 pub async fn copy(agent: &AgentClient, text: String) -> Result<Value, &'static str> {
-    if text.len() > 131_072 {
+    if text.len() > crate::journal_report::EXPORT_LIMIT {
         return Err("diagnostics_report_too_large");
     }
     effect(agent, json!({"action":"copy","text":text})).await?;

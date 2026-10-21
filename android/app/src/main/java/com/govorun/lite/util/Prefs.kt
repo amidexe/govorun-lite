@@ -13,6 +13,8 @@ object Prefs {
     private const val KEY_HAPTICS_ENABLED = StorageKeys.Key.HAPTICS_ENABLED
     private const val KEY_HIDE_IN_SEARCH = StorageKeys.Key.HIDE_IN_SEARCH
     private const val KEY_BUBBLE_ALPHA = StorageKeys.Key.BUBBLE_ALPHA
+    private const val KEY_BUBBLE_RECORDING_ALPHA = StorageKeys.Key.BUBBLE_RECORDING_ALPHA
+    private const val KEY_BUBBLE_COLOR = StorageKeys.Key.BUBBLE_COLOR
     private const val KEY_BUBBLE_SIZE = StorageKeys.Key.BUBBLE_SIZE
     private const val KEY_BUBBLE_Y_PORTRAIT = StorageKeys.Key.BUBBLE_Y_PORTRAIT
     private const val KEY_BUBBLE_Y_LANDSCAPE = StorageKeys.Key.BUBBLE_Y_LANDSCAPE
@@ -102,11 +104,15 @@ object Prefs {
     // snapBubbleAlpha() on read, so users see at most a one-position
     // shift after upgrade.
     const val BUBBLE_ALPHA_STEP = 1f / 14f
-    // Slight translucency by default — enough to blend with a patterned
-    // wallpaper, not so much that the bird gets lost. Lands on the
-    // grid: 12 × (1/14) = 0.857, closest grid stop to the original 0.85
-    // so existing users get the same visual.
-    const val BUBBLE_ALPHA_DEFAULT = 12f / 14f
+    // The bird has one colour (red by default); idle and recording differ only
+    // in transparency. The idle bird (9 × 1/14 ≈ 64 %) lets text show through and
+    // turns solid red while recording, as in the first version.
+    const val BUBBLE_ALPHA_DEFAULT = 9f / 14f
+
+    // Opacity of the rail fill while a recording is open. Independent of the
+    // idle bird so it can stay visible while the bird itself is subtle; 0 leaves
+    // only the bird, dots and cross. Glyphs stay opaque at every value.
+    const val BUBBLE_RECORDING_ALPHA_DEFAULT = 1f
 
     // Default ON since 1.0.4 — vibration is a "feature" we want users to
     // experience out of the box. The MainActivity shows a one-time FYI card
@@ -139,9 +145,40 @@ object Prefs {
     }
 
     fun getBubbleAlpha(context: Context): Float {
+        val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        val raw = prefs.getFloat(KEY_BUBBLE_ALPHA, BUBBLE_ALPHA_DEFAULT)
+        // A value saved before the bird had one strong colour applied to a pale
+        // theme tone; above the new default it would hide the text underneath, so
+        // read it capped (without writing) until the user moves the slider again.
+        val chosenForStrongColour = prefs.getBoolean(StorageKeys.Key.BUBBLE_ALPHA_CHOSEN_FOR_COLOR, false)
+        return snapBubbleAlpha(if (chosenForStrongColour) raw else minOf(raw, BUBBLE_ALPHA_DEFAULT))
+    }
+
+    fun getBubbleRecordingAlpha(context: Context): Float {
         val raw = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
-            .getFloat(KEY_BUBBLE_ALPHA, BUBBLE_ALPHA_DEFAULT)
+            .getFloat(KEY_BUBBLE_RECORDING_ALPHA, BUBBLE_RECORDING_ALPHA_DEFAULT)
         return snapBubbleAlpha(raw)
+    }
+
+    fun setBubbleRecordingAlpha(context: Context, alpha: Float) {
+        val snapped = snapBubbleAlpha(alpha)
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putFloat(KEY_BUBBLE_RECORDING_ALPHA, snapped)
+            .apply()
+    }
+
+    /** One of [com.govorun.lite.overlay.BirdColors]; the app theme by default. */
+    fun getBirdColor(context: Context): String =
+        com.govorun.lite.overlay.BirdColors.normalize(
+            context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE).getString(KEY_BUBBLE_COLOR, null),
+        )
+
+    fun setBirdColor(context: Context, value: String) {
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_BUBBLE_COLOR, com.govorun.lite.overlay.BirdColors.normalize(value))
+            .apply()
     }
 
     fun setBubbleAlpha(context: Context, alpha: Float) {
@@ -149,6 +186,7 @@ object Prefs {
         context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
             .edit()
             .putFloat(KEY_BUBBLE_ALPHA, snapped)
+            .putBoolean(StorageKeys.Key.BUBBLE_ALPHA_CHOSEN_FOR_COLOR, true)
             .apply()
     }
 
@@ -353,14 +391,35 @@ object Prefs {
     // -16 dp ≈ disc right at the screen edge; 0 dp ≈ 17dp gap (just halo space);
     // +24 dp ≈ disc clearly inset. Step 4dp gives 11 positions total.
     const val BUBBLE_EDGE_MARGIN_MIN = -12
+    // Default-width cap; the real slider cap follows the screen (bubbleEdgeMarginMax).
     const val BUBBLE_EDGE_MARGIN_MAX = 24
+    private const val BUBBLE_EDGE_MARGIN_HARD_MAX = 1200
     const val BUBBLE_EDGE_MARGIN_STEP = 4
     const val BUBBLE_EDGE_MARGIN_DEFAULT = 0
+
+    /** Largest offset that still leaves the bird centred on the screen. */
+    fun bubbleEdgeMarginMax(context: Context): Int {
+        val dm = context.resources.displayMetrics
+        val widthDp = dm.widthPixels / dm.density
+        val windowDp = com.govorun.lite.overlay.BUBBLE_TOUCH_BASE_DP * getBubbleSize(context) * 1.4f
+        val centred = (widthDp / 2f - windowDp / 2f).toInt()
+        val steps = (centred - BUBBLE_EDGE_MARGIN_MIN) / BUBBLE_EDGE_MARGIN_STEP
+        return (BUBBLE_EDGE_MARGIN_MIN + steps * BUBBLE_EDGE_MARGIN_STEP)
+            .coerceAtLeast(BUBBLE_EDGE_MARGIN_MAX)
+    }
 
     fun getBubbleEdgeMargin(context: Context): Int {
         val raw = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
             .getInt(KEY_BUBBLE_EDGE_MARGIN, BUBBLE_EDGE_MARGIN_DEFAULT)
         return snapBubbleEdgeMargin(raw)
+    }
+
+    /** Back to «Стандартный»: the first version's offset, not an explicit 0 dp. */
+    fun clearBubbleEdgeMargin(context: Context) {
+        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .remove(KEY_BUBBLE_EDGE_MARGIN)
+            .apply()
     }
 
     fun setBubbleEdgeMargin(context: Context, dp: Int) {
@@ -371,10 +430,10 @@ object Prefs {
     }
 
     private fun snapBubbleEdgeMargin(value: Int): Int {
-        val clamped = value.coerceIn(BUBBLE_EDGE_MARGIN_MIN, BUBBLE_EDGE_MARGIN_MAX)
+        val clamped = value.coerceIn(BUBBLE_EDGE_MARGIN_MIN, BUBBLE_EDGE_MARGIN_HARD_MAX)
         val steps = Math.round((clamped - BUBBLE_EDGE_MARGIN_MIN).toFloat() / BUBBLE_EDGE_MARGIN_STEP)
         return (BUBBLE_EDGE_MARGIN_MIN + steps * BUBBLE_EDGE_MARGIN_STEP)
-            .coerceIn(BUBBLE_EDGE_MARGIN_MIN, BUBBLE_EDGE_MARGIN_MAX)
+            .coerceIn(BUBBLE_EDGE_MARGIN_MIN, BUBBLE_EDGE_MARGIN_HARD_MAX)
     }
 
     // Lock bubble position — when ON, drag gestures on the bubble are ignored.

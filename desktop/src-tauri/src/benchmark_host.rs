@@ -58,6 +58,7 @@ impl Ports for Physical {
                 stage: "fixtures".into(),
                 result: None,
                 failure_code: None,
+                failure_detail: None,
             })
             .collect();
         *self.devices.lock().map_err(|_| "initialization_failed")? = devices;

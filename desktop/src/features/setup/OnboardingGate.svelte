@@ -4,6 +4,8 @@
   import { useSetup } from './state.svelte';
   import { initialSetup } from './model';
   import SetupWizard from './SetupWizard.svelte';
+  import { statisticsSnapshot } from '../statistics/model';
+  import { useNativeSnapshot } from '../../shared/state/native-snapshot.svelte';
   import Modal from '../../shared/ui/Modal.svelte';
   let {
     runtime,
@@ -19,6 +21,7 @@
     children: Snippet;
   } = $props();
   const setup = useSetup();
+  const stats = useNativeSnapshot('statistics.snapshot', statisticsSnapshot, 'statistics.changed');
   let migrating = $state(false),
     migrationAttempted = $state(false),
     resetVisible = $state(false);
@@ -28,20 +31,27 @@
     await setup.save({ ...initialSetup, step: 'done' });
     migrating = false;
   }
+  // An earlier dictation marks an existing installation; the host does not report it.
+  let history = $derived(
+    runtime?.hasLocalDictation ?? (stats.value ? stats.value.total.sessions > 0 : null),
+  );
   $effect(() => {
     if (
       !failure &&
       !setup.saved.failed &&
       setup.saved.value?.progress === null &&
-      runtime?.hasLocalDictation === true &&
+      history === true &&
       !migrationAttempted
     )
       void preserveExisting();
   });
   let finished = $derived(setup.saved.value?.progress?.step === 'done');
-  // Inspect-only workers deliberately cannot reveal an owner's first-run state.
+  // Inspect-only workers have no readiness and deliberately cannot reveal first-run state.
+  // An unreadable history keeps the app usable instead of blocking it behind setup.
   let inspector = $derived(
-    runtime?.hasLocalDictation == null && !!runtime && setup.saved.value?.progress === null,
+    !!runtime &&
+      setup.saved.value?.progress === null &&
+      (runtime.readiness == null || (history === null && stats.failed)),
   );
 </script>
 
@@ -70,9 +80,9 @@
       >{/if}
     {#if setup.error}<p class="error" role="alert">{setup.error}</p>{/if}
   </main>
-{:else if setup.saved.loading || !runtime || migrating}
+{:else if setup.saved.loading || !runtime || migrating || history === null}
   <main class="setup-recovery surface"><p role="status">Подготавливаем Говорун…</p></main>
-{:else if runtime.hasLocalDictation === true && !setup.saved.value?.progress}
+{:else if history === true && !setup.saved.value?.progress}
   <main class="setup-recovery surface">
     <p role="alert">{setup.error || 'Не удалось сохранить состояние настройки.'}</p>
     <button onclick={preserveExisting}>Попробовать ещё раз</button>

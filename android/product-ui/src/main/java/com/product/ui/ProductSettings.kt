@@ -28,6 +28,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -68,6 +70,14 @@ fun <T> ProductSettingsShell(
     }
 }
 
+// Sections spread across the row when they fit. LazyRow arranges only with spare space, so a
+// narrow screen or a large font keeps them scrolling with the small gap.
+private object SectionPickerArrangement : Arrangement.Horizontal {
+    override val spacing = ProductTokens.Spacing.Sm
+    override fun Density.arrange(totalSize: Int, sizes: IntArray, layoutDirection: LayoutDirection, outPositions: IntArray) =
+        with(Arrangement.SpaceEvenly) { arrange(totalSize, sizes, layoutDirection, outPositions) }
+}
+
 @Composable
 fun <T> ProductSectionPicker(
     items: List<ProductSectionItem<T>>,
@@ -75,7 +85,7 @@ fun <T> ProductSectionPicker(
     onSelected: (T) -> Unit,
 ) {
     LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(ProductTokens.Spacing.Sm),
+        horizontalArrangement = SectionPickerArrangement,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             horizontal = ProductTokens.Spacing.Sm,
             vertical = ProductTokens.Spacing.Xs,

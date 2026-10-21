@@ -38,7 +38,6 @@ import com.govorun.lite.transcriber.RecognitionSessionCoordinator
 import com.govorun.lite.diagnostics.LifecycleDiagnosticReason
 import com.govorun.lite.stylization.LocalDiagnosticJournal
 import com.govorun.lite.ui.benchmark.RecognitionDiagnosticReport
-import com.govorun.lite.ui.settings.journalText
 
 class BenchmarkActivity : ComponentActivity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -146,8 +145,7 @@ class BenchmarkActivity : ComponentActivity() {
     }
 
     private fun refreshReport() {
-        state = state.copy(report = RecognitionDiagnosticReport.render(systemReport, reportState,
-            reportStage, shareText, journalText(LocalDiagnosticJournal.read(this).takeLast(10))))
+        state = state.copy(report = RecognitionDiagnosticReport.render(systemReport, reportState, reportStage, shareText))
     }
 
     private fun copyReport() {

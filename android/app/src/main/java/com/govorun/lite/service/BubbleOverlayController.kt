@@ -3,7 +3,6 @@ package com.govorun.lite.service
 import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.os.SystemClock
 import android.util.Log
@@ -17,7 +16,6 @@ import com.govorun.lite.overlay.BubbleView
 import com.govorun.lite.overlay.BubblePlacement
 import com.govorun.lite.util.Prefs
 import com.govorun.lite.util.UiAppearancePrefs
-import com.govorun.lite.model.settings.UiThemeMode
 
 /**
  * Owns the floating bubble: WindowManager params, view lifecycle, touch
@@ -279,9 +277,11 @@ class BubbleOverlayController(
 
     fun getView(): View? = bubbleView
 
-    /** Re-read alpha pref into the existing view; no rebuild needed. */
+    /** Re-read alpha and recording colour prefs into the existing view; no rebuild needed. */
     fun applyAlpha() {
         bubbleView?.setIdleAlpha(Prefs.getBubbleAlpha(service))
+        bubbleView?.setRecordingAlpha(Prefs.getBubbleRecordingAlpha(service))
+        bubbleView?.setBirdColor(Prefs.getBirdColor(service))
     }
 
     /** Size affects onMeasure, so rebuild the bubble (cheaper than
@@ -327,17 +327,9 @@ class BubbleOverlayController(
      */
     private fun bubbleContext(): Context {
         val appearance = UiAppearancePrefs.read(service)
+        // Light/dark follows the system, not the app's theme choice: the bird floats
+        // over other apps and their keyboard, so a faint bird must read on those.
         val themed = ContextThemeWrapper(service, R.style.Theme_GovorunLite)
-        val nightMode = when (appearance.themeMode) {
-            UiThemeMode.LIGHT -> Configuration.UI_MODE_NIGHT_NO
-            UiThemeMode.DARK -> Configuration.UI_MODE_NIGHT_YES
-            UiThemeMode.SYSTEM -> null
-        }
-        nightMode?.let { mode ->
-            val override = Configuration(service.resources.configuration)
-            override.uiMode = (override.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or mode
-            themed.applyOverrideConfiguration(override)
-        }
         return if (appearance.dynamicColor) {
             DynamicColors.wrapContextIfAvailable(themed)
         } else {
@@ -358,6 +350,8 @@ class BubbleOverlayController(
         }
         val fresh = BubbleView(bubbleContext()).apply {
             setIdleAlpha(Prefs.getBubbleAlpha(service))
+            setRecordingAlpha(Prefs.getBubbleRecordingAlpha(service))
+            setBirdColor(Prefs.getBirdColor(service))
             visibility = if (initiallyVisible) View.VISIBLE else View.GONE
             setPresentation(
                 when {

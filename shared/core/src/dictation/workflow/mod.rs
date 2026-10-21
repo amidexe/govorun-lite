@@ -124,6 +124,9 @@ async fn execute<P: Ports>(ports: &mut P) -> Result<(), Failure> {
     } else {
         false
     };
+    if insert && !delivery.fallback && delivery.text.trim() != original.trim() {
+        ports.keep_original(&original);
+    }
     let completed=boundary();
     current(ports)?;
     let measured=if let Some(origin)=origin {

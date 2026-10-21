@@ -2,5 +2,6 @@
 package com.govorun.core.generated
 
 data class ClipboardSnapshot(
-    val `clipboard`: ClipboardPreference
+    val `clipboard`: ClipboardPreference,
+    val `rememberLast`: Boolean
 )

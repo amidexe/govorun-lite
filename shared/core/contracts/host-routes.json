@@ -5,6 +5,8 @@
   "runtime.snapshot": "runtime",
   "clipboard.snapshot": "clipboard",
   "clipboard.action": "clipboard",
+  "lastDictation.snapshot": "clipboard",
+  "lastDictation.copy": "clipboard",
   "diagnostics.snapshot": "diagnostics",
   "diagnostics.action": "diagnostics",
   "about.snapshot": "about",

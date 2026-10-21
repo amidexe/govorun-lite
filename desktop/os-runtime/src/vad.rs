@@ -114,6 +114,50 @@ impl Api {
     }
 }
 
+/// sherpa-onnx 1.13.1 checks the model file through a narrow string and rejects a
+/// UTF-8 path with non-ASCII letters, e.g. a Cyrillic Windows user name. Pass the
+/// ASCII short (8.3) name, or the system code page when short names are disabled.
+#[cfg(windows)]
+fn model_path(model: &Path) -> Result<CString, Box<dyn Error>> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows_sys::Win32::{
+        Globalization::{WideCharToMultiByte, CP_ACP, WC_NO_BEST_FIT_CHARS},
+        Storage::FileSystem::GetShortPathNameW,
+    };
+    let text = model.to_str().ok_or("non-UTF8 model path")?;
+    if text.is_ascii() {
+        return Ok(CString::new(text)?);
+    }
+    let wide: Vec<u16> = model.as_os_str().encode_wide().chain([0]).collect();
+    let mut short = vec![0u16; 32_768];
+    let count = unsafe { GetShortPathNameW(wide.as_ptr(), short.as_mut_ptr(), short.len() as u32) } as usize;
+    if count > 0 && count < short.len() {
+        let short = String::from_utf16(&short[..count])?;
+        if short.is_ascii() {
+            return Ok(CString::new(short)?);
+        }
+    }
+    let mut lossy = 0;
+    let size = unsafe {
+        WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, wide.as_ptr(), -1, std::ptr::null_mut(), 0,
+            std::ptr::null(), &mut lossy)
+    };
+    if size > 1 && lossy == 0 {
+        let mut narrow = vec![0u8; size as usize];
+        unsafe {
+            WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, wide.as_ptr(), -1, narrow.as_mut_ptr(), size,
+                std::ptr::null(), std::ptr::null_mut());
+        }
+        narrow.pop();
+        return Ok(CString::new(narrow)?);
+    }
+    Err("model path cannot be passed to the VAD runtime".into())
+}
+#[cfg(not(windows))]
+fn model_path(model: &Path) -> Result<CString, Box<dyn Error>> {
+    Ok(CString::new(model.to_str().ok_or("non-UTF8 model path")?)?)
+}
+
 pub struct Vad {
     api: Api,
     detector: *const c_void,
@@ -124,7 +168,7 @@ pub struct Vad {
 }
 impl Vad {
     pub fn new(model: &Path, runtime: &Path) -> Result<Self, Box<dyn Error>> {
-        let path = CString::new(model.to_str().ok_or("non-UTF8 model path")?)?;
+        let path = model_path(model)?;
         let provider = CString::new("cpu")?;
         let config = Config {
             silero: Silero {

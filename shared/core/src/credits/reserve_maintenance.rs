@@ -2,7 +2,9 @@ use crate::{Error, Result};
 use serde::{Deserialize, Serialize};
 
 const RETRY_DELAYS: [u64; 4] = [1_000, 3_000, 10_000, 30_000];
-const FAILURE_COOLDOWN: u64 = 30_000;
+// Consecutive exhausted bursts wait longer, from 30 s up to 4 h. Only Ready
+// resets the step; demand and reconnect still wake a local wait at once.
+const FAILURE_COOLDOWNS: [u64; 6] = [30_000, 120_000, 600_000, 1_800_000, 3_600_000, 14_400_000];
 
 /// An opaque, in-memory continuation. Native executors retain it unchanged;
 /// only this reducer owns budgets, coalescing, wakeups and completion ordering.
@@ -15,6 +17,8 @@ pub(crate) struct State {
     ticket: u64,
     phase: Phase,
     attempts: usize,
+    #[serde(default)]
+    failures: usize,
     requested: bool,
     fresh_followup: bool,
     pending_demand: bool,
@@ -71,6 +75,7 @@ pub(crate) fn transition(state: Option<State>, event: Event, epoch: u64,
     let ticket = state.as_ref().map_or(0, |s| s.ticket);
     let mut state = state.filter(|s| s.epoch == epoch).unwrap_or(State { epoch, ticket, ..State::default() });
     if epoch == 0 && allowed || now_millis < state.clock || state.attempts > RETRY_DELAYS.len() + 1
+        || state.failures > FAILURE_COOLDOWNS.len()
         || state.phase != Phase::Idle && state.ticket == 0
         || state.phase == Phase::Running && state.attempts == 0 {
         return Err(Error::InvalidRequest);
@@ -123,6 +128,7 @@ impl State {
                 }
                 match outcome {
                     Outcome::Ready => {
+                        self.failures = 0;
                         self.local_not_before = self.clock;
                         if self.requested { self.begin_cycle(true) } else { Ok(self.stop()) }
                     }
@@ -186,7 +192,9 @@ impl State {
         self.attempts = 0;
         self.requested = false;
         self.fresh_followup = false;
-        self.local_not_before = self.clock.saturating_add(FAILURE_COOLDOWN);
+        let step = self.failures.min(FAILURE_COOLDOWNS.len() - 1);
+        self.failures = (step + 1).min(FAILURE_COOLDOWNS.len());
+        self.local_not_before = self.clock.saturating_add(FAILURE_COOLDOWNS[step]);
         let mut action = self.advance()?;
         if let Action::Wait { failure_reason, .. } = &mut action { *failure_reason = reason; }
         Ok(action)

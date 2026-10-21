@@ -21,9 +21,11 @@ import com.govorun.lite.stylization.StylizationStylePreferences
 import com.govorun.lite.stylization.StylizationTerms
 import com.govorun.lite.stylization.StyleProcessingFeedback
 import com.govorun.lite.stylization.styleProcessingPresentation
+import com.govorun.lite.diagnostics.AppLifecycleDiagnostics
 import com.govorun.lite.util.AccessibilityHelper
 import com.govorun.lite.util.HomePreferences
 import com.govorun.lite.util.Prefs
+import com.govorun.lite.util.XiaomiShell
 import java.time.LocalDate
 
 /**
@@ -41,7 +43,10 @@ class HomeSnapshotReader(context: Context) {
             Manifest.permission.RECORD_AUDIO,
         ) == PackageManager.PERMISSION_GRANTED
         val accessibilityEnabled = AccessibilityHelper.isLiteServiceEnabled(appContext)
-        val accessibilityReady = AccessibilityHelper.isLiteServiceOperational(appContext)
+        // The in-process connection flag is the only reliable sign of a live bird:
+        // MIUI/HyperOS keep the service switched on after unloading its process.
+        val accessibilityReady = AccessibilityHelper.isLiteServiceOperational(appContext) &&
+            AppLifecycleDiagnostics.serviceConnected.value
         val shortcutEnabled = AccessibilityHelper.isLiteShortcutEnabled(appContext)
         val batteryReady = (appContext.getSystemService(Context.POWER_SERVICE) as? PowerManager)
             ?.isIgnoringBatteryOptimizations(appContext.packageName) == true
@@ -53,6 +58,7 @@ class HomeSnapshotReader(context: Context) {
                 add(SetupIssue.ACCESSIBILITY)
             } else if (!accessibilityReady) {
                 add(SetupIssue.ACCESSIBILITY_RESTART)
+                if (XiaomiShell.detected) add(SetupIssue.AUTOSTART)
             }
             if (accessibilityReady && shortcutEnabled) {
                 add(SetupIssue.ACCESSIBILITY_SHORTCUT)
@@ -126,6 +132,8 @@ class HomeSnapshotReader(context: Context) {
             supportingText = supporting,
             issues = issues,
             statistics = statisticsState(accountState.signedIn),
+            lastDictation = com.govorun.lite.service.LastDictation.peek(appContext),
+            lastDictationOriginal = com.govorun.lite.service.LastDictation.peekOriginal(appContext),
             dictionary = DictionarySummaryState(
                 enabled = Prefs.isDictionaryEnabled(appContext),
                 visible = HomePreferences.showDictionaryOnHome(appContext),

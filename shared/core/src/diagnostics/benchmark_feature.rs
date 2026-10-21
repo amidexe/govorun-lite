@@ -25,13 +25,8 @@ async fn call(agent: &AgentClient, method: &str, params: Value) -> Result<Value,
         )
         .await
 }
-async fn project(agent: &AgentClient, facts: Value) -> Result<Snapshot, &'static str> {
-    let facts = serde_json::from_value::<Facts>(facts).map_err(|_| "benchmark_invalid_facts")?;
-    let journal = super::diagnostics::read(agent)
-        .await
-        .map(|journal| journal.export_recent(10))
-        .unwrap_or_default();
-    facts.snapshot(&journal)
+fn project(facts: Value) -> Result<Snapshot, &'static str> {
+    serde_json::from_value::<Facts>(facts).map_err(|_| "benchmark_invalid_facts")?.snapshot()
 }
 pub async fn invoke(
     agent: &AgentClient,
@@ -47,8 +42,7 @@ pub async fn invoke(
         let command = serde_json::from_value::<Command>(params).map_err(|_| "invalid_command")?;
         match command {
             Command::Copy {} => {
-                let snapshot =
-                    project(agent, call(agent, "benchmark.localFacts", json!({})).await?).await?;
+                let snapshot = project(call(agent, "benchmark.localFacts", json!({})).await?)?;
                 if snapshot.state == "running" {
                     return Err("benchmark_running");
                 }
@@ -65,5 +59,5 @@ pub async fn invoke(
     } else {
         return Err("unsupported_command");
     };
-    serde_json::to_value(project(agent, raw).await?).map_err(|_| "benchmark_invalid_facts")
+    serde_json::to_value(project(raw)?).map_err(|_| "benchmark_invalid_facts")
 }

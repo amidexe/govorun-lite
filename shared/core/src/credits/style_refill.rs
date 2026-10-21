@@ -80,7 +80,6 @@ pub(crate) fn plan_for_reserve(facts: StyleWindowFacts, context: Context, protec
     let eligible = facts.signed_in && facts.entitlement_active && facts.processing_ready;
     let empty = facts.local_known && facts.local_bound && ready == 0 && facts.pending_credits == 0
         && !facts.issuance_in_flight && !facts.recovery_in_flight;
-    let can_deposit=facts.reserve_return;
     let window = project(facts)?;
     let fresh = if context.explicit_demand { window.prepare_on_demand }
         else { context.background_allowed && window.prepare_in_background };
@@ -96,21 +95,19 @@ pub(crate) fn plan_for_reserve(facts: StyleWindowFacts, context: Context, protec
         let capacity = replacements.saturating_add(if fresh { remaining } else { 0 });
         if (replacements > 0 || fresh && protected_ready < target) && capacity >= BATCH { BATCH } else { 0 }
     };
-    // Partial receipts without a deposit endpoint cannot form a fixed batch.
-    // Keep them durably for a later allowance instead of cycling without I/O.
-    // A fresh observation with no issuable batch is a completed decision, not
-    // work to refresh again. Native profile publication may enqueue maintenance;
-    // requiring another refresh here would feed the same observation back into
-    // itself indefinitely. Durable replay, retirement and replacements still win.
-    let maintenance = eligible && (context.pending_issuance_credits > 0 || context.retiring_credits > 0
-        || can_deposit && replacements > 0 || batch > 0);
+    // Maintenance is only work an issuance request can perform: an exact
+    // journal replay or a fixed batch. No runtime retires or deposits passes
+    // since 11 October; counting retiring passes or partial receipts made
+    // background maintenance repeat without I/O for the 35-day retirement
+    // grace. Partial receipts wait for a later full batch. A fresh observation
+    // with no issuable batch is a completed decision, not work to refresh again.
+    let maintenance = eligible && (context.pending_issuance_credits > 0 || batch > 0);
     // A positive successful-use balance is not proof that the anonymous issuer
     // can mint another pass. Preserve that distinction without bypassing the
     // server ceiling or blocking durable replay/replacement/recovery work.
     let blocked_reason = (eligible && context.explicit_demand && context.issuance_counters_observed
         && window.fresh_usage_available
-        && empty && remaining == 0 && batch == 0 && context.retiring_credits == 0
-        && context.replacement_receipts == 0)
+        && empty && remaining == 0 && batch == 0 && context.replacement_receipts == 0)
         .then_some("issuanceCapacityUnavailable");
     Ok(Plan {
         batch_credits: batch,

@@ -14,7 +14,7 @@ network = ["dep:windows-sys", "dep:block2", "dep:objc2", "dep:objc2-app-kit", "d
 capture = ["dep:handy-recorder", "dep:windows", "dep:block2"]
 insertion = ["dep:windows-sys", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation", "dep:objc2-core-foundation", "dep:objc2-core-graphics"]
 keyboard = ["dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation", "dep:handy-keys", "dep:log", "dep:objc2-core-foundation", "dep:objc2-core-graphics", "dep:windows-sys"]
-inference = ["dep:transcribe-cpp", "dep:transcribe-cpp-sys", "dep:libloading"]
+inference = ["dep:transcribe-cpp", "dep:transcribe-cpp-sys", "dep:libloading", "dep:windows-sys"]
 metal = ["inference", "transcribe-cpp/metal"]
 vulkan = ["inference", "transcribe-cpp/vulkan"]
 

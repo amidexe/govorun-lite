@@ -98,7 +98,9 @@ fn settings(disk: &impl Disk) -> Result<Value, Error> {
     if value["inputModeContractVersion"] != 1
         || value["emojiMode"]
             .as_i64()
-            .is_none_or(|n| !(0..=2).contains(&n))
+            // The style codec writes four emoji modes (off, restrained, lively, bright = 0..=3);
+            // «Ярко» made every session read unavailable here since 6 Oct 2026.
+            .is_none_or(|n| !(0..=3).contains(&n))
     {
         return Err(Error::Unavailable);
     }
