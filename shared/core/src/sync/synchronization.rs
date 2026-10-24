@@ -124,8 +124,8 @@ pub(crate) fn evaluate(command: Command) -> Result<Value> {
             requested,
             remote_data,
         } => {
-            let content = content.meaningful()?;
-            let meaningful = statistics.meaningful()? || content;
+            // Unreadable counters ask the person instead of holding the sign-in.
+            let meaningful = content.meaningful() || statistics.meaningful().unwrap_or(true);
             let mode = match stored {
                 Some(mode @ (Mode::Enabled | Mode::LocalOnly)) => mode,
                 _ if requested => Mode::Pending,

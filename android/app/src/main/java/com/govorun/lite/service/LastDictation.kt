@@ -1,6 +1,7 @@
 package com.govorun.lite.service
 
 import android.content.Context
+import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.util.StorageKeys
 
 /**
@@ -16,11 +17,11 @@ internal object LastDictation {
 
     // Only the choice is stored; the text never is.
     fun isEnabled(context: Context): Boolean =
-        context.getSharedPreferences(StorageKeys.PREFS_FILE, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, StorageKeys.PREFS_FILE)
             .getBoolean(StorageKeys.Key.REMEMBER_LAST_DICTATION, false)
 
     fun setEnabled(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(StorageKeys.PREFS_FILE, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, StorageKeys.PREFS_FILE)
             .edit()
             .putBoolean(StorageKeys.Key.REMEMBER_LAST_DICTATION, enabled)
             .apply()

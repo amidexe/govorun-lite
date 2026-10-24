@@ -26,6 +26,8 @@ pub(super) struct Logical {
     pub context: Value,
     pub rules: Value,
     pub options_present: bool,
+    /// An entry or value this version could not use was left in the file.
+    pub skipped: bool,
 }
 impl Physical {
     pub fn metadata(&self) -> Result<Value, Error> {
@@ -67,4 +69,25 @@ fn parse(raw: &Value) -> Result<Option<Value>, Error> {
     serde_json::from_str(raw.strip_prefix('\u{feff}').unwrap_or(raw))
         .map(Some)
         .map_err(|_| Error::InvalidStorage)
+}
+/// One preset or rule this version cannot use (another version, an old editor, a
+/// damaged edit) is skipped on read and kept in the file on write; it never makes
+/// every style unreadable. Returns the usable views and the skipped originals.
+pub(super) fn usable(
+    values: &[Value],
+    view: fn(&Value) -> Value,
+    admitted: fn(&Value) -> bool,
+    key: &str,
+    limit: usize,
+) -> (Vec<Value>, Vec<Value>) {
+    let (mut kept, mut skipped, mut keys) = (vec![], vec![], std::collections::HashSet::new());
+    for value in values {
+        let item = view(value);
+        if kept.len() < limit && admitted(&item) && keys.insert(item[key].clone()) {
+            kept.push(item);
+        } else {
+            skipped.push(value.clone());
+        }
+    }
+    (kept, skipped)
 }

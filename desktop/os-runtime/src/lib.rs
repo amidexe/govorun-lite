@@ -20,7 +20,6 @@ pub mod backend_retry;
 pub mod setup;
 #[cfg(all(feature = "capture", feature = "keyboard"))]
 pub mod media;
-pub mod segmentation;
 #[cfg(feature = "inference")]
 pub mod vad;
 

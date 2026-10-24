@@ -34,3 +34,8 @@
     public void cancelEffect(long);
     public void complete(long, java.lang.String);
 }
+-keep class com.govorun.lite.shared.SharedDocumentsNative { *; }
+-keepclassmembers class com.govorun.lite.storage.GovorunPreferences$Legacy {
+    public java.lang.String legacy(java.lang.String);
+    public void notice(java.lang.String);
+}

@@ -1,6 +1,7 @@
 package com.govorun.lite.api
 
 import android.content.Context
+import com.govorun.lite.storage.GovorunPreferences
 import org.json.JSONArray
 import org.json.JSONObject
 import java.security.SecureRandom
@@ -24,7 +25,7 @@ internal data class PendingApproval(
 )
 
 internal class RecognitionAuthorizationStore(context: Context) {
-    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs = GovorunPreferences.of(context, PREFS_NAME)
 
     fun isAuthorized(
         identity: CallerIdentity,

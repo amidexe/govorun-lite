@@ -1,4 +1,5 @@
 import type { BillingSnapshot } from './model';
+import { shownPromoProgram } from './promo-program.ts';
 import { cancellationCopy } from './subscription-cancellation.ts';
 
 export type ConfirmationAction =
@@ -18,7 +19,7 @@ export function subscriptionConfirmation(value: BillingSnapshot, action: Confirm
   return {
     scope: value.scope,
     termsVersion: value.termsVersion,
-    programVersion: value.promoProgram?.programVersion ?? '',
+    ...shownPromoProgram(value),
     action,
     title: copy[0],
     body: copy[1],

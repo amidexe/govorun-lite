@@ -31,6 +31,7 @@ internal class AccountHttpTransport(
     private val baseUrl: String,
     private val allowInsecureLoopbackForTests: Boolean = false,
     private val onNetworkResult: (Boolean) -> Unit = {},
+    private val networkAllowed: () -> Boolean = { true },
 ) : AccountHttpPort {
     override val configured: Boolean = runCatching { validatedBaseUrl() }.isSuccess
 
@@ -47,6 +48,8 @@ internal class AccountHttpTransport(
         networkLease: OfficialSessionNetworkGate.Lease?,
     ): AccountHttpResponse {
         require(path.startsWith("/") && !path.startsWith("//"))
+        // Offline or roaming choice: fail like a missing network, before any socket.
+        if (!networkAllowed()) throw IOException("Network refused by the user's choice")
         return suspendCancellableCoroutine { continuation ->
             val callRef = AtomicReference<Call?>()
             val worker = REQUEST_SCOPE.launch {

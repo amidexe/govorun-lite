@@ -34,12 +34,15 @@ import com.adamglin.phosphoricons.regular.Star
 import com.adamglin.phosphoricons.regular.UserCircle
 import com.govorun.lite.BuildConfig
 import com.govorun.lite.R
+import com.govorun.lite.network.NetworkPolicy
+import com.product.ui.SettingsSwitchRow
 import com.product.ui.ProductTokens
 import kotlinx.coroutines.launch
 
 @Composable
 internal fun HomeDrawerLayout(
     account: AccountSummaryState,
+    network: NetworkPolicy.Choice,
     onEvent: (HomeEvent) -> Unit,
     content: @Composable (openDrawer: () -> Unit) -> Unit,
 ) {
@@ -85,6 +88,16 @@ internal fun HomeDrawerLayout(
                         "О программе",
                     ) { navigate(HomeEvent.OpenAbout) }
                 }
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = ProductTokens.Spacing.Section),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+                SettingsSwitchRow(
+                    title = "Офлайн",
+                    summary = "Говорун не выходит в интернет",
+                    checked = network.offline,
+                    onCheckedChange = { onEvent(HomeEvent.SetOffline(it)) },
+                )
                 Spacer(Modifier.weight(1f))
                 Text(
                     "Говорун · ${BuildConfig.VERSION_NAME}",

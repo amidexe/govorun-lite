@@ -22,16 +22,19 @@
   function accept(value: unknown) {
     frame = acceptIndicator(frame, value);
   }
+  // The hidden capsule lives for the whole session; animate only while its dots are shown.
+  $effect(() => {
+    if (!presentation.dots) return;
+    const origin = performance.now();
+    let animation = requestAnimationFrame(function animate(now: number) {
+      seconds = (now - origin) / 1000;
+      animation = requestAnimationFrame(animate);
+    });
+    return () => cancelAnimationFrame(animation);
+  });
   onMount(() => {
     let disposed = false;
     let unlisten: (() => void) | undefined;
-    const origin = performance.now();
-    let animation: number;
-    function animate(now: number) {
-      seconds = (now - origin) / 1000;
-      animation = requestAnimationFrame(animate);
-    }
-    animation = requestAnimationFrame(animate);
     void (async () => {
       const stop = await api.subscribe((payload) => {
         if (!disposed) accept(payload);
@@ -48,7 +51,6 @@
     });
     return () => {
       disposed = true;
-      cancelAnimationFrame(animation);
       unlisten?.();
     };
   });

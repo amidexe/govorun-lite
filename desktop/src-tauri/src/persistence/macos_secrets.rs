@@ -375,7 +375,11 @@ impl<D: Domain, K: Keychain> Owner<D, K> {
             };
         }
         // The pool is separate, but never usable without readable current credentials.
-        if self.load(&mut state, &service, allow)?.credentials.is_none() {
+        let envelope = self.load(&mut state, &service, allow)?;
+        if !envelope.vault_supported() {
+            return Err(Error::Invalid);
+        }
+        if envelope.credentials.is_none() {
             return if method == "secret.read" { Ok(json!({"status":"missing"})) } else { Err(Error::Unavailable) };
         }
         let slot = "govorunReadyPassPool.v1";

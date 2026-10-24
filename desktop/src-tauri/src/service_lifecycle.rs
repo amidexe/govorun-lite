@@ -38,7 +38,8 @@ impl Services {
 }
 
 
-pub(crate) fn deliver(app: &AppHandle, event: NativeEvent) {
+pub(crate) fn deliver(app: &AppHandle, mut event: NativeEvent) {
+    if event.event == "runtime.snapshot" { crate::persistence::mark_storage(&mut event.data); }
     // Synthetic account/billing UI has its own fake transport observations;
     // the empty isolated credential profile must not overwrite those fixtures.
     #[cfg(feature = "private-fixtures")]

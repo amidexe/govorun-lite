@@ -7,6 +7,17 @@ fn theme(mode: Mode) -> Option<Theme> {
     match mode { Mode::System => None, Mode::Light => Some(Theme::Light), Mode::Dark => Some(Theme::Dark) }
 }
 
+/// Windows 11 tints the system title bar with the user's accent colour, so it does not match
+/// the window. Paint it like the sidebar. Windows 10 and contrast themes ignore this attribute
+/// and keep the system colour.
+#[cfg(target_os = "windows")]
+pub fn paint_title_bar(hwnd: *mut core::ffi::c_void, theme: Theme) {
+    use windows_sys::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWA_CAPTION_COLOR};
+    // COLORREF is 0x00BBGGRR: --sidebar from theme.css.
+    let color: u32 = if theme == Theme::Light { 0x00eb_f0f3 } else { 0x001e_1e1e };
+    unsafe { DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR as u32, (&color as *const u32).cast(), 4) };
+}
+
 pub struct Appearance { path: PathBuf, value: Mutex<Snapshot> }
 
 impl Appearance {

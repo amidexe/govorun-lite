@@ -82,7 +82,9 @@ def main():
         env['CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER'] = str(linker)
         env['CC_aarch64_linux_android'] = str(linker)
         env['AR_aarch64_linux_android'] = str(tools / ('llvm-ar.exe' if os.name == 'nt' else 'llvm-ar'))
-        env['CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS'] = '-C link-arg=-Wl,-z,max-page-size=16384'
+        # Rust keeps source paths for panic messages; the build account's home stays out of the APK.
+        env['CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS'] = ('-C link-arg=-Wl,-z,max-page-size=16384 '
+                                                              f'--remap-path-prefix={Path.home()}=~')
         command.extend(['--target', 'aarch64-linux-android'])
         source = target_dir / 'aarch64-linux-android/release/libgovorun_jvm_bridge.so'
         destination = args.output / 'arm64-v8a/libgovorun_jvm_bridge.so'
@@ -98,6 +100,8 @@ def main():
             return result.returncode
         if not source.is_file() or source.is_symlink():
             raise RuntimeError('Shared JNI build produced no regular library')
+        if not args.host and str(Path.home()).encode() in source.read_bytes():
+            raise RuntimeError('Shared JNI library embeds the build account home path')
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
     print(f'PASS shared JNI {"JVM" if args.host else "Android arm64"}: {time.monotonic() - started:.2f}s; {destination}')

@@ -13,11 +13,7 @@ use std::{
 const MAXIMUM: usize = 8 * 1_048_576;
 const DICTIONARY_MAXIMUM: usize = 2 * 1_048_576;
 pub(super) static WRITER: Mutex<()> = Mutex::new(());
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    Invalid,
-    Unavailable,
-}
+pub use govorun_document_store::Error;
 pub trait Disk: Send + Sync {
     fn read(&self, name: &str, maximum: usize) -> Result<Option<String>, Error>;
     fn write(&self, name: &str, raw: &str) -> Result<(), Error>;

@@ -25,9 +25,10 @@ impl Default for Document {
 }
 
 impl Document {
-    pub(crate) fn meaningful(&self) -> Result<bool> {
-        validate(self)?;
-        Ok(!self.dictionary.text.trim().is_empty() || !self.custom_styles.is_empty())
+    /// Enrollment asks only whether local data exists. The upload limits belong to
+    /// the content stage, so an old over-limit style never holds the sign-in.
+    pub(crate) fn meaningful(&self) -> bool {
+        !self.dictionary.text.trim().is_empty() || !self.custom_styles.is_empty()
     }
 }
 
@@ -57,7 +58,12 @@ pub(crate) fn evaluate(command: Command) -> Result<Value> {
     }
     let document = match command {
         Command::ReadResponse { .. }=>unreachable!(),
-        Command::Validate { document } => { validate(&document)?; document }
+        Command::Validate { mut document } => {
+            // The upload copy follows the editor's spacing rule before the limits.
+            document.custom_styles.iter_mut().for_each(Style::normalize);
+            validate(&document)?;
+            document
+        }
         Command::Merge { base, local, remote } => {
             for document in [&base, &local, &remote] { validate(document)?; }
             let merged = merge(base, local, remote);

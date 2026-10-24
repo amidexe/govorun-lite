@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.govorun.lite.network.NetworkPolicy
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.govorun.lite.account.BillingRepository
@@ -106,9 +107,11 @@ class MainActivity : ComponentActivity() {
                 val notifications by NotificationRepository.ui.collectAsStateWithLifecycle()
                 val onlinePaused by com.govorun.lite.stylization.OfficialServiceAvailability
                     .get(this@MainActivity).paused.collectAsStateWithLifecycle()
+                val network by NetworkPolicy.choice(this@MainActivity).collectAsStateWithLifecycle()
                 HomeScreen(
                     state = uiState,
                     onlineServicePaused = onlinePaused,
+                    network = network ?: NetworkPolicy.Choice(),
                     styleJustEnabled = styleJustEnabled,
                     paymentAlert = subscriptionPaymentAlert(
                         billing.subscription,
@@ -149,7 +152,9 @@ class MainActivity : ComponentActivity() {
         // dashboard. Local dictation can continue while this activity is not
         // visible, and another signed-in device may have added new events.
         GovorunAccountRepository.refreshAccount()
-        lifecycleScope.launch { BillingRepository.load() }
+        // Signed out means no requests at all: the tariff catalog loads only when
+        // the person opens the tariffs.
+        if (GovorunAccountRepository.state.value.signedIn) lifecycleScope.launch { BillingRepository.load() }
         refresh()
         resumeStylizationAfterLogin()
         registerAccessibilityObservers()
@@ -228,11 +233,17 @@ class MainActivity : ComponentActivity() {
         when (event) {
             HomeEvent.OpenSettings -> startActivity(Intent(this, SettingsActivity::class.java))
             HomeEvent.OpenAbout -> startActivity(Intent(this, AboutActivity::class.java))
+            is HomeEvent.SetOffline -> NetworkPolicy.setOffline(this, event.enabled)
             HomeEvent.OpenSubscription ->
                 startActivity(Intent(this, SubscriptionActivity::class.java))
-            HomeEvent.RetryConnection -> {
-                GovorunAccountRepository.refreshAccount()
-                lifecycleScope.launch { BillingRepository.load() }
+            HomeEvent.RetryConnection -> when (NetworkPolicy.activeRefusal(this)) {
+                com.govorun.lite.network.NetworkRefusal.OFFLINE -> NetworkPolicy.setOffline(this, false)
+                com.govorun.lite.network.NetworkRefusal.ROAMING ->
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                null -> {
+                    GovorunAccountRepository.refreshAccount()
+                    if (GovorunAccountRepository.state.value.signedIn) lifecycleScope.launch { BillingRepository.load() }
+                }
             }
             HomeEvent.OpenStylization ->
                 startActivity(Intent(this, StylizationActivity::class.java))

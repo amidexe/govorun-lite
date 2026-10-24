@@ -1,7 +1,9 @@
 package com.govorun.lite.account
 
 import android.content.Context
+import com.govorun.lite.diagnostics.LifecycleDiagnosticReason
 import com.govorun.lite.network.OfficialSessionNetworkGate
+import com.govorun.lite.stylization.LocalDiagnosticJournal
 import com.govorun.lite.stylization.StylizationDiagnosticsStore
 import com.govorun.lite.util.Prefs
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +24,7 @@ internal class AccountSessionPublisher(
     private var coreProfileRevision = -1L
     private var coreGeneration = -1L
     private var signedOutApplied = false
+    private var serverEndRecorded = -1L
     private var previousProjection: JSONObject? = null
 
     fun project(value: JSONObject, session: GovorunSession?,
@@ -59,13 +62,17 @@ internal class AccountSessionPublisher(
             if (effects.isSuccess) previousProjection = JSONObject(value.toString())
             val pending = value.optJSONObject("pendingDeviceLimit")
             state.value = AccountState(available = configured, profileGeneration = generation,
-                networkAvailable = previous.networkAvailable, profileFresh = snapshot.getBoolean("profileFresh"),
+                networkAvailable = previous.networkAvailable, networkRefusal = previous.networkRefusal, profileFresh = snapshot.getBoolean("profileFresh"),
                 sessionGeneration = epoch, syncing = snapshot.getBoolean("signingIn"),
                 secureStorageProblem = problem ?: SecureStorageProblem.TEMPORARILY_UNAVAILABLE.takeIf { effects.isFailure },
                 deviceLimitReached = pending != null,
                 deviceLimit = pending?.optInt("deviceLimit", 5) ?: 5,
                 devices = pending?.optJSONArray("devices")?.let(::parseDevices).orEmpty(),
                 message = problem?.userMessage)
+            if (value.optBoolean("sessionEndedByServer") && serverEndRecorded != epoch) {
+                serverEndRecorded = epoch
+                LocalDiagnosticJournal.record(appContext, LifecycleDiagnosticReason.ACCOUNT_ENDED_BY_SERVER)
+            }
             return@locked
         }
         signedOutApplied = false
@@ -77,7 +84,7 @@ internal class AccountSessionPublisher(
             devices = deviceList?.getJSONArray("devices")?.let(::parseDevices).orEmpty()).copy(
             deviceLimit = deviceList?.getInt("deviceLimit") ?: current.deviceLimit,
             authority = commonAuthority,
-            networkAvailable = previous.networkAvailable, profileFresh = snapshot.getBoolean("profileFresh"),
+            networkAvailable = previous.networkAvailable, networkRefusal = previous.networkRefusal, profileFresh = snapshot.getBoolean("profileFresh"),
             profileGeneration = generation, sessionGeneration = epoch,
             secureStorageProblem = problem,
             dataSyncMode = if (changedIdentity || changedProfile) resolveSync(current) else previous.dataSyncMode,

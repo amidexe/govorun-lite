@@ -77,11 +77,9 @@
         });
     };
     refresh();
+    // No polling: a hidden or minimized window must stay idle. Readiness is
+    // refreshed on focus, and each dictation opens the current microphone itself.
     window.addEventListener('focus', refresh);
-    // Device presence can change without a permission change or window focus.
-    const readinessTimer = window.setInterval(() => {
-      if (document.visibilityState === 'visible' && snapshot?.phase === 'idle') refresh();
-    }, 2000);
     const unsubscribe = api.subscribe((event) => {
       if (event.event === 'runtime.snapshot') {
         snapshotGeneration++;
@@ -102,7 +100,6 @@
       unsubscribe();
       stopScrollActivity();
       window.removeEventListener('focus', refresh);
-      window.clearInterval(readinessTimer);
     };
   });
 </script>
@@ -110,6 +107,7 @@
 <OnboardingGate runtime={snapshot} {failure} {reconnecting} onreconnect={reconnect}>
   <DesktopShell
     platform={snapshot?.platform ?? 'macos'}
+    storageUnavailable={snapshot?.storageUnavailable === true}
     {failure}
     {reconnecting}
     displayName={snapshot?.displayName}

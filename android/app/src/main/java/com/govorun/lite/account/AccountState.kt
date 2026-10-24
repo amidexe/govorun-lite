@@ -73,6 +73,8 @@ data class AccountState(
     val authority: AccountAuthority = AccountAuthority(),
     val available: Boolean = false,
     val networkAvailable: Boolean = true,
+    /** The network is missing because of the user's offline or roaming choice. */
+    val networkRefusal: com.govorun.lite.network.NetworkRefusal? = null,
     val profileFresh: Boolean = true,
     val signedIn: Boolean = false,
     val accountId: String = "",

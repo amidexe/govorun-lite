@@ -6,7 +6,12 @@ internal object RecognitionDiagnosticReport {
     private val labels = listOf("Примеры и контрольные суммы", "Загрузка модели",
         "Первое распознавание", "Повторное распознавание", "Длинная запись")
 
-    fun render(system: String, state: String, stage: String, result: String = ""): String {
+    /** The lines people paste into chats; the details below stay as they are. */
+    fun summary(version: String, device: String, accelerator: String, speed: String) =
+        "Говорун $version — тест скорости распознавания на Android\n$device · $accelerator — $speed\n" +
+            "Во столько раз распознавание быстрее самой речи. Голосовой ввод на русском без интернета: govorun.club"
+
+    fun render(system: String, state: String, stage: String, result: String = "", summary: String = ""): String {
         val current = stages.indexOf(stage).coerceAtLeast(0)
         val checks = labels.mapIndexed { index, label ->
             val status = when {
@@ -19,6 +24,11 @@ internal object RecognitionDiagnosticReport {
             "$label: $status"
         }
         return buildString {
+            if (state == "done" && summary.isNotEmpty()) {
+                appendLine(summary)
+                appendLine()
+                appendLine("Подробности:")
+            }
             appendLine("Говорун — диагностический отчёт v1")
             appendLine(system)
             appendLine("Набор: gigaam-samples-v1 · 11290 / 71250 мс")

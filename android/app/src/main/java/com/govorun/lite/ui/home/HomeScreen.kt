@@ -50,6 +50,7 @@ import com.product.ui.ProductTokens
 import com.product.ui.ProductTopAction
 import com.product.ui.productFeedCard
 import com.product.ui.productScreenPadding
+import com.govorun.lite.network.NetworkPolicy
 import com.govorun.lite.ui.SubscriptionPaymentAlert
 
 @Composable
@@ -59,10 +60,11 @@ internal fun HomeScreen(
     notificationInvitation: (@Composable () -> Unit)? = null,
     styleJustEnabled: Boolean = false,
     onlineServicePaused: Boolean = false,
+    network: NetworkPolicy.Choice = NetworkPolicy.Choice(),
     onEvent: (HomeEvent) -> Unit,
 ) {
     val consentVisible = hasInlineStylizationConsent()
-    HomeDrawerLayout(state.account, onEvent) { openDrawer ->
+    HomeDrawerLayout(state.account, network, onEvent) { openDrawer ->
         ProductScaffold(
             title = "Говорун",
             navigationAction = ProductTopAction(

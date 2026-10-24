@@ -1,7 +1,10 @@
-//! Existing chronological tab-separated diagnostics.log; no user/account fields.
+//! The chronological tab-separated journal of the old app, no user/account fields. Since
+//! 2.1.112 it is a row of the documents base, moved once from `diagnostics.log`.
 use crate::persistence::file_documents::Disk;
 use chrono::{Datelike, SecondsFormat, Timelike};
 use govorun_core::journal_report::{admission, WindowsEvent};
+/// The journal's view of the base owns no settings row.
+pub const OWNER: &str = "journal";
 const FILE: &str = "diagnostics.log";
 const LIMIT: usize = 8 * 1_048_576;
 fn parse(line: &str) -> Option<WindowsEvent> {
@@ -62,4 +65,7 @@ pub fn append(store: &impl Disk, event: WindowsEvent) -> Result<(), &'static str
         .collect::<Vec<_>>()
         .join("\r\n");
     store.write(FILE, &text).map_err(|_| "storage_unavailable")
+}
+pub fn clear(store: &impl Disk) -> Result<(), &'static str> {
+    store.write(FILE, "").map_err(|_| "storage_unavailable")
 }

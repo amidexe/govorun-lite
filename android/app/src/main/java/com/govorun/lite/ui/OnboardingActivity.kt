@@ -19,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import com.govorun.lite.model.GigaAmModel
 import com.govorun.lite.stats.AndroidStatsRecorder
 import com.govorun.lite.stats.StatsStore
+import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.transcriber.OfflineTranscriber
 import com.govorun.lite.transcriber.VadRecorder
 import com.govorun.lite.ui.design.GovorunTheme
@@ -33,7 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class OnboardingActivity : AppCompatActivity() {
-    private val preferences by lazy { getSharedPreferences(PREFS_NAME, MODE_PRIVATE) }
+    private val preferences by lazy { GovorunPreferences.of(this, PREFS_NAME) }
     private var state = androidx.compose.runtime.mutableStateOf(OnboardingState())
     private var recorder: VadRecorder? = null
     private var recordStartMs = 0L

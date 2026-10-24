@@ -215,82 +215,75 @@ fn put(values: &mut Map<String, Value>, key: &str, value: Option<Value>) {
 }
 /// Overlay durable preferences on freshly observed OS-only facts. A selected
 /// endpoint that disappeared stays selected and is never overwritten.
-pub fn overlay(document: &Value, mut facts: Snapshot) -> Result<Snapshot, &'static str> {
-    let values = values(document)?;
+pub fn overlay(document: &Value, facts: Snapshot) -> Result<Snapshot, &'static str> {
+    overlay_noted(document, facts).map(|(snapshot, _)| snapshot)
+}
+/// The same overlay, also saying whether a stored value fell back to its default
+/// so the host can journal it once.
+pub fn overlay_noted(document: &Value, mut facts: Snapshot) -> Result<(Snapshot, bool), &'static str> {
+    // An unreadable preferences file records with the defaults; edits still refuse it.
+    let stored = values(document);
+    let defaulted = std::cell::Cell::new(stored.is_err());
+    let values = stored.unwrap_or_default();
     let mac = document["source"] == "macos";
-    let read = |key: &str| {
+    // Each preference is read on its own: a value this version does not know
+    // (another version, another device) falls back to its default and never
+    // stops recording. Edits stay strict in `assign`.
+    let read = |key: &str, usable: fn(&Value) -> bool| {
         values
             .iter()
-            .find(|(name, _)| name.eq_ignore_ascii_case(key))
+            .find(|(name, value)| name.eq_ignore_ascii_case(key) && !value.is_null())
             .map(|(_, value)| value)
+            .filter(|value| usable(value) || { defaulted.set(true); false })
     };
-    let bool_value = |key: &str, default| {
-        read(key)
-            .map(|value| value.as_bool().ok_or("dictation_storage_invalid"))
-            .unwrap_or(Ok(default))
-    };
-    facts.play_sounds = bool_value(
-        if mac {
-            "playRecordingSounds"
-        } else {
-            "playSounds"
-        },
-        true,
-    )?;
-    facts.mute_audio = bool_value("muteAudioDuringRecording", false)?;
-    facts.max_minutes = read("maxRecordingMinutes")
-        .map(|value| {
-            value
-                .as_u64()
-                .and_then(|value| u32::try_from(value).ok())
-                .ok_or("dictation_storage_invalid")
-        })
-        .unwrap_or(Ok(5))?;
-    let device = read(if mac {
-        "audioInputDeviceUID"
-    } else {
-        "audioInputDevice"
-    })
-    .map(|value| value.as_str().ok_or("dictation_storage_invalid"))
-    .transpose()?;
-    facts.microphone_id = device.filter(|value| !value.is_empty()).map(str::to_owned);
+    let flag = |key: &str, default| read(key, Value::is_boolean).and_then(Value::as_bool).unwrap_or(default);
+    facts.play_sounds = flag(if mac { "playRecordingSounds" } else { "playSounds" }, true);
+    facts.mute_audio = flag("muteAudioDuringRecording", false);
+    facts.max_minutes = read("maxRecordingMinutes", |v| v.as_u64().is_some_and(|minutes| minutes <= 180))
+        .and_then(Value::as_u64)
+        .map_or(5, |minutes| minutes as u32);
+    facts.microphone_id = read(if mac { "audioInputDeviceUID" } else { "audioInputDevice" },
+        |v| v.as_str().is_some_and(|id| id.encode_utf16().count() <= 1024))
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned);
     facts.acceleration = if mac {
-        match read("asrAccelerationMode").and_then(Value::as_str) {
-            None | Some("automatic") => Acceleration::Automatic,
+        match read("asrAccelerationMode", |v| matches!(v.as_str(), Some("automatic" | "cpu"))).and_then(Value::as_str) {
             Some("cpu") => Acceleration::Cpu,
-            _ => return invalid(),
+            _ => Acceleration::Automatic,
         }
     } else {
-        match read("asrAcceleration").and_then(Value::as_u64) {
-            None | Some(0) => Acceleration::Automatic,
+        match read("asrAcceleration", |v| matches!(v.as_u64(), Some(0..=2))).and_then(Value::as_u64) {
             Some(1) => Acceleration::Cpu,
             Some(2) => Acceleration::Gpu,
-            _ => return invalid(),
+            _ => Acceleration::Automatic,
         }
     };
     facts.voice_marker = if mac {
-        match read("voiceInputMarkerMode").and_then(Value::as_str) {
-            None | Some("off") => Marker::Off,
+        match read("voiceInputMarkerMode", |v| matches!(v.as_str(), Some("off" | "microphone" | "text"))).and_then(Value::as_str) {
             Some("microphone") => Marker::Microphone,
             Some("text") => Marker::Text,
-            _ => return invalid(),
+            _ => Marker::Off,
         }
     } else {
-        match read("voiceMarker").and_then(Value::as_u64) {
-            None | Some(0) => Marker::Off,
+        match read("voiceMarker", |v| matches!(v.as_u64(), Some(0..=2))).and_then(Value::as_u64) {
             Some(1) => Marker::Microphone,
             Some(2) => Marker::Text,
-            _ => return invalid(),
+            _ => Marker::Off,
         }
     };
     if !mac {
-        facts.push_to_talk = Some(bool_value("pushToTalk", false)?);
-        facts.keep_model_loaded = Some(bool_value("keepRecognitionModelLoaded", true)?);
-        facts.always_on_microphone = Some(bool_value("alwaysOnMicrophone", false)?);
-        facts.input_channel = Some(read("audioInputChannel").cloned().unwrap_or(Value::Null));
+        facts.push_to_talk = Some(flag("pushToTalk", false));
+        facts.keep_model_loaded = Some(flag("keepRecognitionModelLoaded", true));
+        facts.always_on_microphone = Some(flag("alwaysOnMicrophone", false));
+        facts.input_channel = Some(
+            read("audioInputChannel", |v| v.as_u64().is_some_and(|channel| channel < 32))
+                .cloned()
+                .unwrap_or(Value::Null),
+        );
     }
     if !facts.checked() {
         return Err("dictation_storage_invalid");
     }
-    Ok(facts)
+    Ok((facts, defaulted.get()))
 }

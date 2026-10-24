@@ -6,7 +6,7 @@ pub enum Input {
     Failure {
         name: &'static str,
         status: Option<u16>,
-        reason: Option<&'static str>,
+        reason: Option<String>,
     },
     CaptureFailure(String),
     InsertionFailure(&'static str),
@@ -19,7 +19,7 @@ pub fn parse(value: &Value) -> Result<Input> {
     let event = fields.get("event").and_then(Value::as_str);
     if fields.len() != 2 && !(fields.len() == 3
         && (event == Some("audio_capture_failed") && fields.contains_key("native")
-            || event.is_some_and(|name| SYNC_FAILURES.contains(&name)) && fields.contains_key("reason"))) {
+            || event.is_some_and(|name| FAILURES.contains(&name)) && fields.contains_key("reason"))) {
         return Err(Error::InvalidRequest);
     }
     let name = fields
@@ -68,6 +68,12 @@ pub fn parse(value: &Value) -> Result<Input> {
         "account_sync_driver_failed" => "account_sync_driver_failed",
         "recording_feedback_failed" => "recording_feedback_failed",
         "self_host_request_failed" => "self_host_request_failed",
+        "settings_load_failed" => "settings_load_failed",
+        "dictionary_load_failed" => "dictionary_load_failed",
+        "statistics_journal_unavailable" => "statistics_journal_unavailable",
+        "sync_state_load_failed" => "sync_state_load_failed",
+        "local_data_moved" => "local_data_moved",
+        "billing_action_failed" => "billing_action_failed",
         _ => return Err(Error::InvalidRequest),
     };
     let value = fields.get("status").ok_or(Error::InvalidRequest)?;
@@ -86,20 +92,49 @@ pub fn parse(value: &Value) -> Result<Input> {
         Some(value) => Some(
             value
                 .as_str()
-                .and_then(sync_reason)
-                .filter(|_| status.is_none() && SYNC_FAILURES.contains(&name))
-                .ok_or(Error::InvalidRequest)?,
+                .filter(|reason| code(reason) && status.is_none())
+                .ok_or(Error::InvalidRequest)?
+                .to_owned(),
         ),
     };
     Ok(Input::Failure { name, status, reason })
 }
 
-const SYNC_FAILURES: &[&str] = &[
+const FAILURES: &[&str] = &[
     "content_sync_failed",
     "preferences_sync_failed",
     "stats_sync_failed",
     "account_sync_driver_failed",
+    "recording_feedback_failed",
+    "self_host_request_failed",
+    "settings_load_failed",
+    "dictionary_load_failed",
+    "statistics_journal_unavailable",
+    "sync_state_load_failed",
+    "local_data_moved",
+    "billing_action_failed",
 ];
+/// A failure code is a fixed identifier from our own code (`statistics_storage_invalid`),
+/// never user content, so every one is kept: a reason the journal drops cannot be found.
+/// Titles below are only names for the known ones.
+pub fn code(value: &str) -> bool {
+    (3..=64).contains(&value.len())
+        && value.as_bytes()[0].is_ascii_lowercase()
+        && value.contains('_')
+        && value.bytes().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_')
+}
+/// One line for a failure row on every platform: its title and, when known, the HTTP
+/// status or the code.
+pub fn failure_message(title: &str, status: Option<u16>, reason: Option<&str>) -> String {
+    match (status, reason) {
+        (Some(status), _) => format!("{title}. HTTP {status}."),
+        (None, Some(reason)) => match sync_reason_title(reason) {
+            Some(known) => format!("{title}. {known} ({reason})."),
+            None => format!("{title}. Код: {reason}."),
+        },
+        (None, None) => format!("{title}."),
+    }
+}
 /// Closed sync failure codes kept when the server sent no HTTP status, so a
 /// row says whether the network, storage or a response failed. No content.
 pub const SYNC_REASONS: &[(&str, &str)] = &[
@@ -115,9 +150,6 @@ pub const SYNC_REASONS: &[(&str, &str)] = &[
     ("account_consent_unconfirmed", "Согласие не подтверждено"),
     ("documents_invalid_configuration", "Синхронизация не настроена"),
 ];
-pub fn sync_reason(code: &str) -> Option<&'static str> {
-    SYNC_REASONS.iter().map(|(known, _)| *known).find(|known| *known == code)
-}
 pub fn sync_reason_title(code: &str) -> Option<&'static str> {
     SYNC_REASONS.iter().find(|(known, _)| *known == code).map(|(_, title)| *title)
 }

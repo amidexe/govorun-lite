@@ -2,7 +2,12 @@ use crate::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-pub const PROFILE_REFRESH_INTERVAL: Duration = Duration::from_secs(45);
+/// After a successful read only. Recording start, a rejected issuance, reconnect,
+/// focus and statistics sync each refresh on demand, so a quiet session needs no
+/// tighter poll; the server marks device activity at most hourly anyway.
+pub const PROFILE_REFRESH_INTERVAL: Duration = Duration::from_secs(30 * 60);
+/// Failed reads and an unavailable account keep the earlier short cadence.
+pub const PROFILE_RETRY_INTERVAL: Duration = Duration::from_secs(45);
 pub const PROFILE_REFRESH_JITTER: Duration = Duration::from_secs(15);
 pub const PROFILE_REFRESH_MAX_BACKOFF: Duration = Duration::from_secs(300);
 pub const PROFILE_FOCUS_MAX_AGE: Duration = Duration::from_secs(15);
@@ -111,7 +116,7 @@ impl ProfileRefreshCadence {
         } else {
             None
         };
-        Duration::from_millis(delay.unwrap_or_else(|| interval_ms(0, jitter_ms)).max(1))
+        Duration::from_millis(delay.unwrap_or_else(|| retry_ms(0, jitter_ms)).max(1))
     }
 
     fn reschedule(&mut self, now_ms: u64, jitter_ms: u64) {
@@ -120,9 +125,21 @@ impl ProfileRefreshCadence {
 }
 
 fn interval_ms(failures: u8, jitter_ms: u64) -> u64 {
+    if failures == 0 {
+        PROFILE_REFRESH_INTERVAL.as_millis() as u64 + jitter(jitter_ms)
+    } else {
+        retry_ms(failures, jitter_ms)
+    }
+}
+
+fn retry_ms(failures: u8, jitter_ms: u64) -> u64 {
     let minimum =
-        (PROFILE_REFRESH_INTERVAL * (1 << failures.min(3))).min(PROFILE_REFRESH_MAX_BACKOFF);
-    minimum.as_millis() as u64 + jitter_ms.min(PROFILE_REFRESH_JITTER.as_millis() as u64)
+        (PROFILE_RETRY_INTERVAL * (1 << failures.min(3))).min(PROFILE_REFRESH_MAX_BACKOFF);
+    minimum.as_millis() as u64 + jitter(jitter_ms)
+}
+
+fn jitter(jitter_ms: u64) -> u64 {
+    jitter_ms.min(PROFILE_REFRESH_JITTER.as_millis() as u64)
 }
 
 pub(crate) fn profile_refresh_jitter(entropy: &std::sync::Arc<dyn Fn() -> u64 + Send + Sync>) -> u64 {

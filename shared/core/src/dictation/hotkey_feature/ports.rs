@@ -12,6 +12,32 @@ pub(super) fn storage_error(error: StoreError) -> &'static str {
     }
 }
 impl Hotkeys {
+    /// Windows hotkey facts show the push-to-talk mode, which belongs to recording:
+    /// since 2.1.110 each document has its own copy of settings.json, so the mode is
+    /// read from its owner. Unreadable recording settings keep the hotkeys' own copy.
+    pub(super) async fn facts_storage(&self, storage: &Value) -> Value {
+        if storage["source"] != "windows" {
+            return storage.clone();
+        }
+        let Ok(Some(recording)) = self.store.read_document("recording.document".into()).await else {
+            return storage.clone();
+        };
+        let mode = recording.value["values"].as_str()
+            .and_then(|raw| serde_json::from_str::<Value>(raw.trim_start_matches('\u{feff}')).ok())
+            .and_then(|values| values.as_object()?.iter()
+                .find(|(key, _)| key.eq_ignore_ascii_case("pushToTalk")).map(|(_, value)| value.clone()));
+        let Some(mut values) = storage["values"].as_str()
+            .and_then(|raw| serde_json::from_str::<Value>(raw.trim_start_matches('\u{feff}')).ok())
+            .filter(Value::is_object) else {
+            return storage.clone();
+        };
+        let fields = values.as_object_mut().expect("object");
+        fields.retain(|key, _| !key.eq_ignore_ascii_case("pushToTalk"));
+        if let Some(mode) = mode {
+            fields.insert("pushToTalk".into(), mode);
+        }
+        json!({"source":"windows","values":values.to_string()})
+    }
     pub(super) async fn call(&self, method: &str, params: Value) -> Result<Value, &'static str> {
         let physical = self.physical.read().map_err(|_| "hotkeys_unavailable")?.clone();
         if let Some(ports) = physical { return ports.invoke(method, params).await; }
@@ -35,7 +61,7 @@ impl Hotkeys {
                 self.store.write_document(settings::KEY.into(), Some(state.document.revision.clone()), next.clone()).await.map_err(storage_error)?
             };
             if written.value != next { return Err("hotkeys_storage_invalid"); }
-            let facts = serde_json::from_value::<govorun_core::hotkeys::Facts>(self.call("hotkeys.localFacts", json!({"storage":written.value})).await?)
+            let facts = serde_json::from_value::<govorun_core::hotkeys::Facts>(self.call("hotkeys.localFacts", json!({"storage":self.facts_storage(&written.value).await})).await?)
                 .map_err(|_| "hotkeys_invalid_facts")?.normalized();
             state.document = written; state.facts = facts;
             if !state.facts.checked() { return Err("hotkeys_invalid_facts"); }

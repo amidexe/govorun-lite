@@ -5,6 +5,7 @@ import com.govorun.lite.model.stylization.EmojiMode
 import com.govorun.lite.model.stylization.PunctuationMode
 import com.govorun.lite.model.stylization.StyleOptions
 import com.govorun.lite.model.stylization.TextStyle
+import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.util.StorageKeys
 import org.json.JSONObject
 import com.govorun.lite.shared.SharedBusiness
@@ -42,10 +43,10 @@ internal object StylizationStylePreferences {
             result.optJSONObject("preset")?.let(CustomStyleBinding::preset), styleOptions(payload))
     }
     private fun call(context: Context, command: JSONObject): JSONObject = profileDecision(command
-        .put("state", AndroidCustomStyleStorage(context).read()).put("options", optionObject(context)))
+        .put("state", AndroidCustomStyleStorage(context).readable()).put("options", optionObject(context)))
     private fun optionObject(context: Context) = runCatching { JSONObject(preferences(context).getString(KEY_OPTIONS, "{}")) }.getOrDefault(JSONObject())
     private fun profileObject(context: Context) = runCatching { JSONObject(preferences(context).getString(KEY_APP_PROFILES, "{}")) }.getOrDefault(JSONObject())
-    private fun preferences(context: Context) = context.getSharedPreferences(StorageKeys.PREFS_FILE, Context.MODE_PRIVATE)
+    private fun preferences(context: Context) = GovorunPreferences.of(context, StorageKeys.PREFS_FILE)
 }
 internal fun profileDecision(command: JSONObject): JSONObject = SharedBusiness.evaluate(JSONObject()
     .put("operation", "androidStylePreferences").put("command", command))

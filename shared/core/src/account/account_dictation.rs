@@ -164,9 +164,12 @@ impl<O: OsEffects> DictationAttempt<O> {
             .map_err(failed)
     }
     async fn record(&mut self, event: Value) {
-        let result = self.host.record_statistics(event).await;
-        if result.is_err() {
-            self.os.failure("dictation_statistics_unavailable");
+        // An unreadable statistics journal is named once per launch and shown on its
+        // page; the dictation itself did not fail (owner, 23 Oct 2026).
+        if let Err(code) = self.host.record_statistics(event).await {
+            if !matches!(code, "native_closing" | "documents_stopped") {
+                self.host.report_unread("statistics_journal_unavailable", code);
+            }
         }
     }
 }
@@ -200,8 +203,9 @@ impl<O: OsEffects> Ports for DictationAttempt<O> {
             }
             "readDraft" => json!({"kind":"draft","active":self.os.context().draft}),
             "readRoute" => {
+                // Unreadable own-server settings send the text nowhere: it stays local.
                 let (route, enabled) = if let Some(owner) = self.host.self_host() {
-                    owner.route_flags().await.map_err(Failure::Effect)?
+                    owner.route_flags().await.unwrap_or((true, false))
                 } else {
                     (false, false)
                 };
@@ -209,7 +213,9 @@ impl<O: OsEffects> Ports for DictationAttempt<O> {
             }
             "readOfficial" => {
                 self.epoch = epoch;
-                let settings = self
+                // Style settings that could not be read authorize nothing: the dictation
+                // stays local and offline recognition never reports a failure for them.
+                let (enabled, accepted) = self
                     .host
                     .document_ports
                     .get()
@@ -217,9 +223,9 @@ impl<O: OsEffects> Ports for DictationAttempt<O> {
                     .style_settings()
                     .await
                     .map_err(failed)?
-                    .ok_or(Failure::Effect("styles_unavailable"))?;
+                    .map_or((false, 0), |settings| (settings.official_enabled, settings.accepted_terms));
                 json!({"kind":"official","units":text.encode_utf16().collect::<Vec<_>>(),
-                    "enabled":settings.official_enabled,"acceptedTerms":settings.accepted_terms,
+                    "enabled":enabled,"acceptedTerms":accepted,
                     "currentTerms":self.host.core.get().ok_or(Failure::Effect("account_storage_unavailable"))?
                         .snapshot().access.client_terms_version,"access":self.access(epoch).await?})
             }
@@ -263,8 +269,11 @@ impl<O: OsEffects> Ports for DictationAttempt<O> {
         };
         match result {
             Ok(text) => text,
-            Err(_) => {
-                self.os.failure("dictation_dictionary_unavailable");
+            // The text goes in unchanged; the dictionary page shows its own state.
+            Err(code) => {
+                if !matches!(code, "documents_stopped" | "documents_unavailable") {
+                    self.host.report_unread("dictionary_load_failed", code);
+                }
                 text
             }
         }

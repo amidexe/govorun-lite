@@ -53,6 +53,9 @@ pub(crate) struct State {
     pub profile_revision: u64,
     pub pending_device_limit: Option<serde_json::Value>,
     pub devices: crate::devices::Devices,
+    /// Epoch opened when the server rejected the session; a later sign-in or
+    /// sign-out moves past it.
+    pub ended_by_server: Option<u64>,
 }
 
 impl State {
@@ -60,7 +63,7 @@ impl State {
         Self { activity: crate::activity::ActivityRefresh::new(entropy), revision: 1, epoch: 1, token_revision: 0, tokens: None, profile: None,
             profile_fresh: false, style_profile_verified: false, storage_available: false, signing_in: false,
             logout_pending: false, sign_in_publishing: None, storage_restart_pending: false, profile_request: 0, profile_applied: 0, profile_revision: 0,
-            pending_device_limit: None, devices: Default::default() }
+            pending_device_limit: None, devices: Default::default(), ended_by_server: None }
     }
 }
 
@@ -165,6 +168,7 @@ impl AccountSession {
         let actions = crate::billing_actions::BillingActions::project(&snapshot, &billing, &checkout);
         serde_json::json!({"snapshot": snapshot, "tokens": tokens, "profile": profile,
             "pendingDeviceLimit": state.pending_device_limit, "devices": state.devices.list,
+            "sessionEndedByServer": state.ended_by_server == Some(state.epoch),
             "billingCatalog": catalog,
             "billingStatus": billing, "billingActions": actions, "checkout": checkout,
             "promotionWindow": self.promotion_snapshot(state.epoch),

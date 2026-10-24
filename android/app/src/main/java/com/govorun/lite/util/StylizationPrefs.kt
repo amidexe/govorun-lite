@@ -2,6 +2,7 @@ package com.govorun.lite.util
 
 import android.content.Context
 import com.govorun.lite.model.stylization.EmojiMode
+import com.govorun.lite.storage.GovorunPreferences
 
 internal object StylizationPrefs {
     private const val FILE_NAME = StorageKeys.PREFS_FILE
@@ -67,5 +68,5 @@ internal object StylizationPrefs {
     fun consentAt(context: Context) = prefs(context).getLong(KEY_CONSENT_AT, 0L)
 
     private fun prefs(context: Context) =
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
 }

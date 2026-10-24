@@ -81,6 +81,18 @@ class SelfHostedServerActivity : ComponentActivity() {
         StylizationServerPreferences.setMode(this, StylizationServerMode.SELF_HOSTED)
         StylizationServerPreferences.setStylizationEnabled(this, false)
         connected = true
+        // Saved but not checked: the person's refusal keeps even the own server off the network.
+        when (com.govorun.lite.network.NetworkPolicy.activeRefusal(this)) {
+            com.govorun.lite.network.NetworkRefusal.OFFLINE -> {
+                status = "Включён «Офлайн»: Говорун не выходит в интернет. Выключите его в меню, чтобы проверить сервер"
+                return
+            }
+            com.govorun.lite.network.NetworkRefusal.ROAMING -> {
+                status = "Телефон в роуминге, включён «Офлайн в роуминге». Проверьте сервер позже или выключите эту настройку"
+                return
+            }
+            null -> Unit
+        }
         testing = true
         status = "Проверяем сервер…"
         connectionJob = lifecycleScope.launch {

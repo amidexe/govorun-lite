@@ -97,7 +97,7 @@ pub(super) fn windows(name: &str, input: &str) -> Option<String> {
     .contains(&name)
         && system::display(input).is_some()
         || win::DETAILS.contains(&input)
-        || super::input::sync_reason(input).is_some()
+        || super::input::code(input)
     {
         return Some(input.into());
     }

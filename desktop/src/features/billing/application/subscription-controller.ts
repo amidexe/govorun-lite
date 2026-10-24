@@ -1,4 +1,5 @@
 import type { BillingSnapshot } from '../model.ts';
+import { shownPromoProgram } from '../promo-program.ts';
 import { subscriptionConfirmation, type ConfirmationAction } from '../subscription-confirmation.ts';
 import { subscriptionOverview } from '../subscription-overview.ts';
 import type { TextStyleOptions } from '../../styles/model.ts';
@@ -9,7 +10,7 @@ export interface SubscriptionPorts {
   confirm(action: Exclude<ConfirmationAction, 'activateStarter'>): Promise<boolean>;
   activateStarter(request: {
     termsVersion: number;
-    programVersion: string;
+    programVersion?: string;
     selection: string;
     activationOptions?: TextStyleOptions;
   }): Promise<boolean>;
@@ -132,7 +133,7 @@ export function subscriptionController(
         confirmation.scope !== value.scope ||
         (confirmation.action === 'activateStarter' &&
           (confirmation.termsVersion !== value.termsVersion ||
-            confirmation.programVersion !== (value.promoProgram?.programVersion ?? '') ||
+            confirmation.programVersion !== shownPromoProgram(value).programVersion ||
             (starterSubmitted && !busy && value.hasAccess && !value.canActivateStarter))))
     )
       view.confirmation = null;
@@ -238,7 +239,7 @@ export function subscriptionController(
       const value = view.value!;
       return ports.activateStarter({
         termsVersion: value.termsVersion,
-        programVersion: value.promoProgram?.programVersion ?? '',
+        ...shownPromoProgram(value),
         selection,
       });
     },

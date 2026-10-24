@@ -80,13 +80,16 @@ fn stored(document: &Value, (mac, windows): (&str, &str)) -> Result<Option<Value
         _ => windows_values(document)?.into_iter().find(|(key, _)| key.eq_ignore_ascii_case(windows)).map(|(_, value)| value),
     })
 }
+/// Recording reads this on every start: an unreadable preferences file means the
+/// defaults, never a stopped recording. A change still refuses the file (`changed`).
 fn snapshot(document: &Value) -> Result<ClipboardSnapshot, &'static str> {
-    let clipboard = if stored(document, PASTE)?.as_ref().and_then(Value::as_str) == Some("copy") {
+    let value = |key| stored(document, key).ok().flatten();
+    let clipboard = if value(PASTE).as_ref().and_then(Value::as_str) == Some("copy") {
         Preference::Copy
     } else {
         Preference::Preserve
     };
-    Ok(ClipboardSnapshot { clipboard, remember_last: stored(document, REMEMBER)? == Some(json!(true)) })
+    Ok(ClipboardSnapshot { clipboard, remember_last: value(REMEMBER) == Some(json!(true)) })
 }
 fn changed(document: &Value, change: &Change) -> Result<Value, &'static str> {
     let mut updates = Vec::new();

@@ -1,6 +1,11 @@
 //! OS storage adapters at the existing account and settings locations.
 pub mod account_ports;
+#[cfg(target_os = "macos")]
+pub mod database_defaults;
+#[cfg(target_os = "windows")]
+pub mod database_files;
 pub mod defaults_documents;
+pub mod document_db;
 pub mod device_name;
 pub mod file_documents;
 pub mod installation_identity;
@@ -28,6 +33,58 @@ use crate::features::runtime::session::Session as HostSession;
 use serde_json::Value;
 use std::sync::Arc;
 
+/// The runtime snapshot names a base that cannot be opened; dictation never waits on it.
+pub fn mark_storage(snapshot: &mut Value) {
+    if document_db::base_unavailable() {
+        snapshot["storageUnavailable"] = serde_json::json!(true);
+    }
+}
+#[cfg(target_os = "macos")]
+type Base = database_defaults::Documents<Arc<macos_defaults::Defaults>>;
+#[cfg(target_os = "windows")]
+type Base = database_files::Documents;
+/// The journal that hears about moves: the one of the newest transport over the base.
+type Listener = Arc<std::sync::Mutex<std::sync::Weak<journal::Journal>>>;
+/// One base per file and process. A worker restart builds a new transport while the old one
+/// still lives, so the new one takes the open base instead of opening and checking it again
+/// (since the journal moved into the base, a restart waited on that). Held weakly: the base
+/// closes with the last transport.
+fn shared_base(path: std::path::PathBuf, open: impl FnOnce(document_db::Notice) -> Base) -> (Arc<Base>, Listener) {
+    static BASES: std::sync::Mutex<Vec<(std::path::PathBuf, std::sync::Weak<Base>, Listener)>> =
+        std::sync::Mutex::new(Vec::new());
+    let mut bases = BASES.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    bases.retain(|(_, base, _)| base.strong_count() > 0);
+    if let Some((_, base, listener)) = bases.iter().find(|(known, _, _)| *known == path) {
+        if let Some(base) = base.upgrade() {
+            return (base, listener.clone());
+        }
+    }
+    let listener: Listener = Arc::default();
+    let base = Arc::new(open(notice(listener.clone())));
+    bases.push((path, Arc::downgrade(&base), listener.clone()));
+    (base, listener)
+}
+/// One journal row per move code and launch. The journal lives in the same base, so it is
+/// bound once the base exists and held weakly: a strong link would keep the base and its
+/// connection alive after the transport ends. The journal's own call may be the one that
+/// opened the base, so the row is written on a thread of its own, never inside that call.
+fn notice(journal: Listener) -> document_db::Notice {
+    Box::new(move |code| {
+        let current = journal.lock().map(|journal| journal.upgrade());
+        let Ok(Some(journal)) = current else { return };
+        let write = move || {
+            let _ = journal.invoke(
+                "data.diagnostic",
+                &serde_json::json!({"event":"local_data_moved","status":null,"reason":code}),
+            );
+        };
+        #[cfg(target_os = "macos")]
+        std::thread::spawn(move || objc2::rc::autoreleasepool(|_| write()));
+        #[cfg(target_os = "windows")]
+        std::thread::spawn(write);
+    })
+}
+
 pub struct Transport {
     native: HostSession,
     account: account_ports::AccountPorts,
@@ -35,16 +92,19 @@ pub struct Transport {
     benchmark: std::sync::Mutex<Option<Arc<crate::features::benchmark::runner::Runner>>>,
     observations: Arc<os_facts::Observations>,
     #[cfg(target_os = "windows")]
-    files: Arc<file_documents::Files>,
+    documents: Arc<database_files::Documents>,
     #[cfg(target_os = "windows")]
     protected: Arc<secure_files::Store<windows_dpapi::Dpapi>>,
     #[cfg(target_os = "macos")]
     defaults: Arc<macos_defaults::Defaults>,
     #[cfg(target_os = "macos")]
+    documents: Arc<database_defaults::Documents<Arc<macos_defaults::Defaults>>>,
+    #[cfg(target_os = "macos")]
     identity: String,
     #[cfg(target_os = "macos")]
-    protected:
-        Arc<macos_secrets::Owner<Arc<macos_defaults::Defaults>, macos_secrets::Files>>,
+    protected: Arc<
+        macos_secrets::Owner<database_defaults::Account<Arc<macos_defaults::Defaults>>, macos_secrets::Files>,
+    >,
 }
 impl Transport {
     /// Complete direct OS capabilities used by the shared feature owners.
@@ -87,86 +147,56 @@ impl Transport {
                 cfg!(feature = "private-fixtures"))?
         };
         #[cfg(target_os = "windows")]
-        let files = {
+        let root = {
             let root = namespace.root;
             let _guard = file_documents::WRITER
                 .lock()
                 .map_err(|_| "storage_unavailable")?;
             stable_transaction::restore_before_open(&stable_transaction::Files(root.clone()))
                 .map_err(|_| "storage_unavailable")?;
-            Arc::new(file_documents::Files::new(root))
+            root
         };
         #[cfg(target_os = "windows")]
-        let protected = {
-            let root = files.root().join("secure");
-            Arc::new(secure_files::Store::new(
-                root,
-                windows_dpapi::Dpapi::new(namespace.entropy),
-            ))
-        };
+        let protected = Arc::new(secure_files::Store::new(
+            root.join("secure"),
+            windows_dpapi::Dpapi::new(namespace.entropy),
+        ));
+        #[cfg(target_os = "macos")]
+        let folder = dirs::data_dir().ok_or("storage_unavailable")?.join(identity);
+        #[cfg(target_os = "macos")]
+        let (documents, listener) = shared_base(folder.join(document_db::FILE), |notice| {
+            database_defaults::Documents::new(folder.clone(), defaults.clone(), Some(notice))
+        });
         #[cfg(target_os = "macos")]
         let protected = Arc::new(macos_secrets::Owner::new(
-            defaults.clone(),
-            macos_secrets::Files::with_user_keys(
-                dirs::data_dir().ok_or("storage_unavailable")?.join(identity).join("secrets"),
-                macos_secrets::SystemUserKeys,
-            ),
+            database_defaults::Account(documents.clone()),
+            macos_secrets::Files::with_user_keys(folder.join("secrets"), macos_secrets::SystemUserKeys),
             identity.into(),
         ));
+        #[cfg(target_os = "windows")]
+        let (documents, listener) = shared_base(root.join(document_db::FILE), |notice| {
+            database_files::Documents::new(root, Some(notice))
+        });
+        let journal = Arc::new(journal::Journal::new(documents.clone()));
+        if let Ok(mut current) = listener.lock() {
+            *current = Arc::downgrade(&journal);
+        }
         Ok(Self {
             benchmark: std::sync::Mutex::new(None),
             native: native.into(),
-            #[cfg(target_os = "macos")]
-            journal: Arc::new(journal::Journal::new(defaults.clone())),
-            #[cfg(target_os = "windows")]
-            journal: Arc::new(journal::Journal::new(files.clone())),
+            journal,
             account: account_ports::AccountPorts::new(),
             observations: Arc::new(os_facts::Observations::new()),
-            #[cfg(target_os = "windows")]
-            files,
-            #[cfg(target_os = "windows")]
+            documents,
             protected,
             #[cfg(target_os = "macos")]
             defaults,
             #[cfg(target_os = "macos")]
             identity: identity.into(),
-            #[cfg(target_os = "macos")]
-            protected,
         })
     }
     fn handles(key: &str) -> bool {
-        #[cfg(target_os = "windows")]
-        {
-            matches!(
-                key,
-                "dictionary.document"
-                    | "statistics.document"
-                    | "sync.content"
-                    | "sync.preferences"
-                    | "sync.enrollment"
-                    | "styles.document"
-                    | "selfHost.document"
-                    | "clipboard.document"
-                    | "hotkeys.document"
-                    | "recording.document"
-            )
-        }
-        #[cfg(target_os = "macos")]
-        {
-            matches!(
-                key,
-                "dictionary.document"
-                    | "statistics.document"
-                    | "sync.content"
-                    | "sync.preferences"
-                    | "sync.enrollment"
-                    | "styles.document"
-                    | "selfHost.document"
-                    | "clipboard.document"
-                    | "hotkeys.document"
-                    | "recording.document"
-            )
-        }
+        document_db::DOCUMENTS.contains(&key)
     }
 }
 impl AgentTransport for Transport {
@@ -233,14 +263,12 @@ impl AgentTransport for Transport {
                 }
                 let observations = self.observations.clone();
                 #[cfg(target_os = "macos")]
-                let defaults = self.defaults.clone();
-                #[cfg(target_os = "macos")]
-                let identity = self.identity.clone();
+                let documents = self.documents.clone();
                 return tokio::task::spawn_blocking(move || {
                     #[cfg(target_os = "macos")]
                     {
                         objc2::rc::autoreleasepool(|_| {
-                            observations.load(&os_facts::saved(defaults.as_ref()))
+                            observations.load(&os_facts::saved(documents.as_ref()))
                         })
                     }
                     #[cfg(target_os = "windows")]
@@ -267,7 +295,7 @@ impl AgentTransport for Transport {
                     return Ok(Value::Null);
                 }
                 #[cfg(target_os = "windows")]
-                let files = self.files.clone();
+                let documents = self.documents.clone();
                 let store = self.protected.clone();
                 let recovery = effect == Some("recoverVault");
                 #[cfg(target_os = "macos")]
@@ -280,7 +308,7 @@ impl AgentTransport for Transport {
                     }) }
                     #[cfg(target_os = "windows")]
                     {
-                        let vault = windows_secrets::invoke(store.as_ref(),files.as_ref(),"secret.read",
+                        let vault = windows_secrets::invoke(store.as_ref(),&documents.scope("account"),"secret.read",
                             &serde_json::json!({"key":"stylePass.vault","allowInteraction":recovery}));
                         if recovery {
                             return match vault["status"].as_str() {
@@ -288,7 +316,7 @@ impl AgentTransport for Transport {
                                 _ => Err("storage_unavailable"),
                             };
                         }
-                        let session = windows_secrets::invoke(store.as_ref(),files.as_ref(),"secret.read",
+                        let session = windows_secrets::invoke(store.as_ref(),&documents.scope("account"),"secret.read",
                             &serde_json::json!({"key":"account.session","allowInteraction":false}));
                         Ok(account_ports::facts(account_ports::windows_access(&session,&vault),device_name::current(),false))
                     }
@@ -316,10 +344,10 @@ impl AgentTransport for Transport {
             #[cfg(target_os = "windows")]
             if params["key"].as_str().is_some_and(windows_secrets::handles) {
                 let store = self.protected.clone();
-                let files = self.files.clone();
+                let documents = self.documents.clone();
                 let method = method.to_owned();
                 return tokio::task::spawn_blocking(move || {
-                    windows_secrets::invoke(store.as_ref(), files.as_ref(), &method, &params)
+                    windows_secrets::invoke(store.as_ref(), &documents.scope("account"), &method, &params)
                 })
                 .await
                 .map_err(|_| "storage_unavailable");
@@ -336,14 +364,12 @@ impl AgentTransport for Transport {
             }
             if method.starts_with("storage.") && params["key"].as_str().is_some_and(Self::handles) {
                 let method = method.to_string();
-                #[cfg(target_os = "windows")]
-                let store = self.files.clone();
-                #[cfg(target_os = "macos")]
-                let store = self.defaults.clone();
+                let store = self.documents.clone();
                 return tokio::task::spawn_blocking(move || {
                     #[cfg(target_os = "windows")]
                     {
-                        file_documents::invoke(store.as_ref(), &method, &params)
+                        let owner = params["key"].as_str().unwrap_or_default().to_owned();
+                        file_documents::invoke(&store.scope(&owner), &method, &params)
                     }
                     #[cfg(target_os = "macos")]
                     {

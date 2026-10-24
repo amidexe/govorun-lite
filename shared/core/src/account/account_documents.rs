@@ -19,7 +19,8 @@ impl AccountHost {
         if let Some(owner) = self.self_host() {
             ports.attach_self_host(owner);
         }
-        let documents = ports.build(self.events.clone(), ports.diagnostics())?;
+        let diagnostics = ports.diagnostics();
+        let documents = ports.build(self.events.clone(), diagnostics.clone())?;
         self.document_ports
             .set(ports)
             .map_err(|_| "documents_already_initialized")?;
@@ -30,7 +31,7 @@ impl AccountHost {
         self.billing
             .get()
             .ok_or("account_storage_unavailable")?
-            .attach_documents(documents.clone())?;
+            .attach_documents(documents.clone(), diagnostics)?;
         self.documents.send_replace(Some(documents));
         Ok(())
     }
@@ -39,6 +40,12 @@ impl AccountHost {
             .borrow()
             .clone()
             .ok_or("documents_unavailable")
+    }
+    /// One journal row per launch for local data left unread (see DocumentsHost).
+    pub fn report_unread(&self, event: &'static str, code: &'static str) {
+        if let Ok(documents) = self.documents_owner() {
+            documents.report_once(event, code);
+        }
     }
     pub async fn document(&self, method: &str, params: Value) -> Reply {
         if self.stopping.load(Ordering::SeqCst) {

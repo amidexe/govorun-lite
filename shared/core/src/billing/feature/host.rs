@@ -1,7 +1,8 @@
 //! Desktop owns the feature lifetime; the common session owns every financial decision.
 use super::{dto::BillingSnapshot, format::Dates, links, snapshot};
 use crate::features::snapshot_gate::SnapshotGate;
-use govorun_core::{AccountSession, PromotionController};
+use crate::features::sync::{Diagnostics, Failure};
+use govorun_core::{AccountSession, Error, PromotionController};
 use crate::features::ports::Reply;
 use crate::features::runtime::session::Session as HostSession;
 use serde_json::{json, Value};
@@ -13,6 +14,13 @@ use tokio::sync::Semaphore;
 
 pub type Events = Arc<dyn Fn(&str, Value) + Send + Sync>;
 pub type Opener = Arc<dyn Fn(&str) -> Result<(), &'static str> + Send + Sync>;
+/// A bare HTTP failure keeps its status for the journal; every other one keeps its own code.
+fn cause(error: Error) -> Failure {
+    match error {
+        Error::Http(status) => Failure { code: error.code(), status: Some(status) },
+        _ => error.code().into(),
+    }
+}
 #[derive(Default)]
 struct State {
     epoch: u64,
@@ -27,6 +35,7 @@ pub struct BillingHost {
     stylization: std::sync::OnceLock<Arc<crate::features::stylization::Stylization>>,
     native: HostSession,
     documents: std::sync::OnceLock<Arc<crate::features::documents::DocumentsHost>>,
+    diagnostics: std::sync::OnceLock<Diagnostics>,
     terms: u32,
     scheme: String,
     instance: String,
@@ -54,6 +63,7 @@ impl BillingHost {
             stylization: std::sync::OnceLock::new(),
             native,
             documents: std::sync::OnceLock::new(),
+            diagnostics: std::sync::OnceLock::new(),
             terms,
             scheme,
             instance: crate::instance::next(),
@@ -69,9 +79,13 @@ impl BillingHost {
     pub fn attach_documents(
         &self,
         documents: Arc<crate::features::documents::DocumentsHost>,
+        diagnostics: Diagnostics,
     ) -> Result<(), &'static str> {
         self.documents
             .set(documents)
+            .map_err(|_| "documents_already_initialized")?;
+        self.diagnostics
+            .set(diagnostics)
             .map_err(|_| "documents_already_initialized")
     }
     pub fn attach_stylization(
@@ -246,7 +260,7 @@ impl BillingHost {
         if promotion {
             self.state().message = None;
             let _permit = self.request_permit(epoch).await?;
-            let result = self.subscription_result(epoch, command).await?;
+            let result = self.subscription_result(epoch, command).await.map_err(|failure| failure.code)?;
             self.effect(epoch, &result["effect"]).await?;
             self.publish().await;
             return self.snapshot().await;
@@ -283,20 +297,25 @@ impl BillingHost {
         tokio::spawn(async move {
             let _permit = permit;
             let result = host.execute(epoch, command).await;
+            let mut failed = None;
             if host.current(epoch) {
                 let mut state = host.state();
                 if serial.is_none() || state.operation == serial {
-                    if serial.is_some() && result.is_err() {
+                    if let (Some(_), Err(failure)) = (serial, result) {
                         state.message = Some(
                             "Не удалось выполнить действие. Проверьте связь и попробуйте ещё раз."
                                 .into(),
                         );
+                        failed = Some(failure);
                     }
                     if serial.is_some() {
                         state.operation = None;
                         state.presentation = false;
                     }
                 }
+            }
+            if let Some(failure) = failed {
+                host.journal(failure);
             }
             host.publish().await;
         });
@@ -308,13 +327,25 @@ impl BillingHost {
         if !self.current(epoch) { return Err("account_session_changed"); }
         Ok(permit)
     }
-    async fn subscription_result(&self, epoch: u64, command: Value) -> Reply {
-        let result = self.core.subscription_action(epoch, command).await
-            .map_err(|error| error.code())?;
+    async fn subscription_result(&self, epoch: u64, command: Value) -> Result<Value, Failure> {
+        let refused = Mutex::new(None);
+        let result = self.core.subscription_action_reporting(epoch, command, &|error| {
+            *refused.lock().unwrap() = Some(error);
+        }).await.map_err(cause)?;
         self.native.publish_authority(self.core.native_projection()).await?;
+        if let Some(error) = refused.into_inner().unwrap() {
+            self.journal(cause(error));
+        }
         Ok(result)
     }
-    async fn execute(&self, epoch: u64, mut command: Value) -> Result<(), &'static str> {
+    /// The line on screen names no cause, so the journal keeps it: Djinn66 saw only that line
+    /// and an empty journal when the home card's activation was refused (24 Oct 2026).
+    fn journal(&self, failure: Failure) {
+        if let Some(journal) = self.diagnostics.get() {
+            journal("billing_action_failed", failure);
+        }
+    }
+    async fn execute(&self, epoch: u64, mut command: Value) -> Result<(), Failure> {
         if command["action"] == "activateStarter" {
             let options = self
                 .documents
@@ -325,10 +356,10 @@ impl BillingHost {
             command["activationOptions"] = options;
         }
         if !self.current(epoch) {
-            return Err("account_session_changed");
+            return Err("account_session_changed".into());
         }
         let result = self.subscription_result(epoch, command).await?;
-        self.effect(epoch, &result["effect"]).await
+        Ok(self.effect(epoch, &result["effect"]).await?)
     }
     async fn effect(&self, epoch: u64, effect: &Value) -> Result<(), &'static str> {
         if !self.current(epoch) {

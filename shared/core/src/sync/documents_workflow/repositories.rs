@@ -12,34 +12,51 @@ pub struct Repositories {
     pub styles: Arc<StyleLibraryFeature>,
     pub statistics: Arc<StatisticsFeature>,
 }
+impl Repositories {
+    /// Local content as stored, before the upload check. Sign-in needs only this.
+    pub async fn content(&self) -> super::Result {
+        let library = self
+            .styles
+            .execute(json!({"kind":"snapshot"}), None, false)
+            .await?;
+        let context = &library["configuration"]["context"];
+        let dictionary = self
+            .dictionary
+            .execute(json!({"kind":"snapshot"}), None, false)
+            .await?;
+        let selected = if context["state"]["selectedStyle"] == "custom" {
+            library["projection"]["activeId"].as_str().unwrap_or("")
+        } else {
+            ""
+        };
+        Ok(json!({"schemaVersion":1,"dictionary":{
+            "enabled":dictionary["storage"]["enabled"],"text":dictionary["storage"]["text"]},
+            "selectedCustomStyleId":selected,"customStyles":context["state"]["presets"]}))
+    }
+}
 impl Local for Repositories {
     fn snapshot<'a>(&'a self, stage: Stage, _: &'a Scope) -> Work<'a> {
         Box::pin(async move {
+            // A style this version skipped would read as deleted on every other device,
+            // and its fallback selection as a new default: styles wait for a version
+            // that reads them. Sign-in uses content() and never waits on this.
+            if matches!(stage, Stage::Content | Stage::Preferences)
+                && self.styles.execute(json!({"kind":"snapshot"}), None, false).await?["configuration"]["skipped"] == true
+            {
+                return Err("styles_entry_skipped");
+            }
+            if stage == Stage::Content {
+                let document = self.content().await?;
+                return Ok(evaluate("contentSync", json!({"kind":"validate","document":document}))?
+                    ["document"]
+                    .clone());
+            }
             let library = self
                 .styles
                 .execute(json!({"kind":"snapshot"}), None, false)
                 .await?;
             let context = &library["configuration"]["context"];
             match stage {
-                Stage::Content => {
-                    let dictionary = self
-                        .dictionary
-                        .execute(json!({"kind":"snapshot"}), None, false)
-                        .await?;
-                    let selected = if context["state"]["selectedStyle"] == "custom" {
-                        library["projection"]["activeId"].as_str().unwrap_or("")
-                    } else {
-                        ""
-                    };
-                    let document = json!({"schemaVersion":1,"dictionary":{
-                        "enabled":dictionary["storage"]["enabled"],"text":dictionary["storage"]["text"]},
-                        "selectedCustomStyleId":selected,"customStyles":context["state"]["presets"]});
-                    Ok(evaluate(
-                        "contentSync",
-                        json!({"kind":"validate","document":document}),
-                    )?["document"]
-                        .clone())
-                }
                 Stage::Preferences => Ok(json!({"defaultStyle":context["state"]["selectedStyle"],
                     "punctuationMode":context["currentOptions"]["punctuationMode"],
                     "emojiMode":context["currentOptions"]["emojiMode"],

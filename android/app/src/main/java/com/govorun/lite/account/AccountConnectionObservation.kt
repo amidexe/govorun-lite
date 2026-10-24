@@ -1,5 +1,7 @@
 package com.govorun.lite.account
 
+import com.govorun.lite.network.NetworkRefusal
+
 /** Content-free Android network and transport observations, independent of account authority. */
 internal class AccountConnectionObservation {
     private var usableNetwork = true
@@ -26,11 +28,14 @@ internal const val NO_INTERNET_HINT = "Проверьте подключение
 /** Localized display of OS connectivity and the common owner's profile freshness. */
 internal val AccountState.connectionMessage: String?
     get() = when {
+        !networkAvailable && networkRefusal == NetworkRefusal.OFFLINE -> "Сеть выключена в меню"
+        !networkAvailable && networkRefusal == NetworkRefusal.ROAMING -> "Роуминг: включён офлайн"
         !networkAvailable -> NO_INTERNET_MESSAGE
         signedIn && !profileFresh -> "Не удалось проверить доступ к улучшению текста"
         else -> null
     }
 
 internal val AccountState.connectionHint: String
-    get() = if (!networkAvailable) NO_INTERNET_HINT
+    get() = if (!networkAvailable && networkRefusal != null) "Диктовка работает офлайн."
+        else if (!networkAvailable) NO_INTERNET_HINT
         else "Не удалось связаться с сервером. Повторите попытку. Диктовка работает офлайн."

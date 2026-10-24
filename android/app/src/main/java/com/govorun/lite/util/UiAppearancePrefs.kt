@@ -4,6 +4,7 @@ import com.govorun.lite.model.settings.UiThemeMode
 import android.content.Context
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import com.govorun.lite.storage.GovorunPreferences
 
 data class UiAppearance(
     val themeMode: UiThemeMode = UiThemeMode.SYSTEM,
@@ -30,7 +31,7 @@ object UiAppearancePrefs {
     }
 
     fun read(context: Context): UiAppearance {
-        val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        val prefs = GovorunPreferences.of(context, FILE_NAME)
         return UiAppearance(
             themeMode = UiThemeMode.fromId(prefs.getString(KEY_THEME_MODE, null)),
             dynamicColor = prefs.getBoolean(KEY_DYNAMIC_COLOR, false),
@@ -38,7 +39,7 @@ object UiAppearancePrefs {
     }
 
     fun setThemeMode(context: Context, mode: UiThemeMode) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putString(KEY_THEME_MODE, mode.id)
             .apply()
@@ -46,7 +47,7 @@ object UiAppearancePrefs {
     }
 
     fun setDynamicColor(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putBoolean(KEY_DYNAMIC_COLOR, enabled)
             .apply()
@@ -54,7 +55,7 @@ object UiAppearancePrefs {
     }
 
     fun reset(context: Context) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .clear()
             .apply()

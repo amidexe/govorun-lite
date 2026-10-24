@@ -18,4 +18,5 @@ sealed interface SettingsChange {
     data class SetKeepScreenOn(val enabled: Boolean) : SettingsChange
     data class SetRememberLastDictation(val enabled: Boolean) : SettingsChange
     data class SetAutoStop(val minutes: Int) : SettingsChange
+    data class SetNoNetworkInRoaming(val enabled: Boolean) : SettingsChange
 }

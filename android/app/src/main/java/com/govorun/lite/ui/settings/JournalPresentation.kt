@@ -1,6 +1,7 @@
 package com.govorun.lite.ui.settings
 
 import android.content.Context
+import com.govorun.lite.account.ACCOUNT_SESSION_ENDED_MESSAGE
 import com.govorun.lite.diagnostics.LifecycleDiagnosticReason
 import com.govorun.lite.stylization.diagnosticOrElse
 import com.govorun.lite.stylization.LocalDiagnosticEntry
@@ -83,6 +84,11 @@ private fun lifecycleRow(reason: LifecycleDiagnosticReason, day: String, time: S
         LifecycleDiagnosticReason.EXIT_CRASH,
         LifecycleDiagnosticReason.EXIT_NATIVE_CRASH -> "Сбой приложения"
         LifecycleDiagnosticReason.EXIT_HISTORY_UNAVAILABLE -> "История остановок недоступна"
+        LifecycleDiagnosticReason.ACCOUNT_ENDED_BY_SERVER -> "Сервер завершил вход"
+        LifecycleDiagnosticReason.STORAGE_MOVED,
+        LifecycleDiagnosticReason.STORAGE_LEGACY_REIMPORTED,
+        LifecycleDiagnosticReason.STORAGE_RESTORED_FROM_BACKUP,
+        LifecycleDiagnosticReason.STORAGE_DATABASE_REPLACED -> "Перенос локальных данных"
         else -> "Приложение остановлено"
     }
     val detail = when (reason) {
@@ -101,6 +107,11 @@ private fun lifecycleRow(reason: LifecycleDiagnosticReason, day: String, time: S
         LifecycleDiagnosticReason.EXIT_SIGNALED,
         LifecycleDiagnosticReason.EXIT_UNKNOWN -> "Android не сообщил точную причину."
         LifecycleDiagnosticReason.EXIT_HISTORY_UNAVAILABLE -> "Android не предоставил сведения о предыдущих остановках."
+        LifecycleDiagnosticReason.ACCOUNT_ENDED_BY_SERVER -> ACCOUNT_SESSION_ENDED_MESSAGE
+        LifecycleDiagnosticReason.STORAGE_MOVED,
+        LifecycleDiagnosticReason.STORAGE_LEGACY_REIMPORTED,
+        LifecycleDiagnosticReason.STORAGE_RESTORED_FROM_BACKUP,
+        LifecycleDiagnosticReason.STORAGE_DATABASE_REPLACED -> "Код: ${reason.name.lowercase()}."
         else -> lifecycleDiagnosticSummary(reason)
     }
     val attention = (checkEvent && reason != LifecycleDiagnosticReason.CHECK_COMPLETED) || reason in setOf(
@@ -111,6 +122,7 @@ private fun lifecycleRow(reason: LifecycleDiagnosticReason, day: String, time: S
     val serviceEvent = reason in setOf(LifecycleDiagnosticReason.SERVICE_CONNECTED,
         LifecycleDiagnosticReason.SERVICE_STOPPED, LifecycleDiagnosticReason.SERVICE_INTERRUPTED)
     return DiagnosticEventRow(day, time, title, detail, attention,
-        category = if (checkEvent) "Распознавание" else if (serviceEvent) "Птичка" else "Приложение",
+        category = if (checkEvent) "Распознавание" else if (serviceEvent) "Птичка"
+            else if (reason == LifecycleDiagnosticReason.ACCOUNT_ENDED_BY_SERVER) "Аккаунт" else "Приложение",
         success = reason == LifecycleDiagnosticReason.SERVICE_CONNECTED || reason == LifecycleDiagnosticReason.CHECK_COMPLETED)
 }

@@ -68,8 +68,8 @@ impl NativeDocuments {
     pub fn diagnostics(self: &Arc<Self>) -> Diagnostics {
         let owner = self.clone();
         Arc::new(move |event, failure| {
-            let reason = crate::journal_report::input::sync_reason(failure.code)
-                .filter(|_| failure.status.is_none());
+            let reason = Some(failure.code)
+                .filter(|code| crate::journal_report::input::code(code) && failure.status.is_none());
             owner.queue_diagnostic(match reason {
                 Some(reason) => json!({"event":event,"status":null,"reason":reason}),
                 None => json!({"event":event,"status":failure.status}),

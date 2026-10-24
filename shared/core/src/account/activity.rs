@@ -1,6 +1,7 @@
 use crate::profile_cadence::profile_refresh_jitter;
 use crate::{
-    AccountSession, Error, Profile, ProfileActivity, ProfileAdmission, Result, PROFILE_SYNC_MAX_AGE,
+    AccountSession, Error, Profile, ProfileActivity, ProfileAdmission, Result, PROFILE_REFRESH_INTERVAL,
+    PROFILE_SYNC_MAX_AGE,
 };
 use std::time::Duration;
 use tokio::{sync::watch, time::Instant};
@@ -80,7 +81,12 @@ impl AccountSession {
         let mut state = self.state();
         let epoch = state.epoch;
         state.activity.scope(epoch);
-        if state.tokens.is_none() || !state.storage_available {
+        if state.tokens.is_none() {
+            // Nothing to read until sign-in, and sign-in wakes the host loop itself.
+            return PROFILE_REFRESH_INTERVAL
+                + Duration::from_millis(profile_refresh_jitter(&self.inner.entropy));
+        }
+        if !state.storage_available {
             return state.activity.owner.next_delay(
                 None,
                 state.activity.now_ms(),

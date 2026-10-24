@@ -30,7 +30,9 @@ use crate::types::{Key, KeyEvent, Modifiers};
 
 use super::keycode::{is_altgr_phantom_ctrl, map_key, vk_to_modifier};
 
-const HOOK_LOOP_TIMEOUT_MS: u32 = 10;
+/// Hook callbacks and session/power messages wake the wait at once; the timeout only
+/// re-checks `running`, which `KeyboardListener::drop` documents as about every 100 ms.
+const HOOK_LOOP_TIMEOUT_MS: u32 = 100;
 
 /// Modifiers whose lone press-and-release makes the shell activate a menu:
 /// Win opens the Start menu, Alt focuses the active window's menu bar.
@@ -462,7 +464,7 @@ pub(crate) fn spawn(blocking_hotkeys: Option<BlockingHotkeys>, ignored_source_ta
         let _ = initialized.send(Ok(()));
 
         // Message loop - required for low-level hooks to function.
-        // Keep the short timeout so shutdown polling behavior remains unchanged.
+        // The timeout only bounds the shutdown re-check (see HOOK_LOOP_TIMEOUT_MS).
         let mut msg = MSG::default();
         loop {
             // Check if we should stop

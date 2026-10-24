@@ -31,10 +31,10 @@ impl Hotkeys {
     }
     fn now(&self) -> u64 { self.started.elapsed().as_millis().min(u64::MAX as u128) as u64 }
     async fn refresh(&self, state: &mut Option<State>) -> Result<(), &'static str> {
+        // An unreadable preferences file reads as the default keys: dictation stays available.
         let document = self.store.read_document(settings::KEY.into()).await.map_err(ports::storage_error)?
             .ok_or("hotkeys_storage_unavailable")?;
-        settings::values(&document.value)?;
-        let facts = serde_json::from_value::<Facts>(self.call("hotkeys.localFacts", serde_json::json!({"storage":document.value})).await?)
+        let facts = serde_json::from_value::<Facts>(self.call("hotkeys.localFacts", serde_json::json!({"storage":self.facts_storage(&document.value).await})).await?)
             .map_err(|_| "hotkeys_invalid_facts")?.normalized();
         if !facts.checked() { return Err("hotkeys_invalid_facts"); }
         if let Some(state) = state { state.facts = facts; state.document = document; }

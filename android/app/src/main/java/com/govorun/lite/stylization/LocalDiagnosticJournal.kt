@@ -4,6 +4,7 @@ import android.content.Context
 import com.govorun.lite.diagnostics.LifecycleDiagnosticReason
 import com.govorun.lite.diagnostics.ProcessExitRecord
 import com.govorun.lite.diagnostics.unseenProcessExits
+import com.govorun.lite.storage.GovorunPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONArray
@@ -110,8 +111,5 @@ internal object LocalDiagnosticJournal {
         return journalEntries(diagnosticCommand(JSONObject().put("kind", "journal").put("entries", array)).getJSONArray("entries"))
     }
 
-    private fun preferences(context: Context) = context.applicationContext.getSharedPreferences(
-        PREFERENCES,
-        Context.MODE_PRIVATE,
-    )
+    private fun preferences(context: Context) = GovorunPreferences.of(context.applicationContext, PREFERENCES)
 }

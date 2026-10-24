@@ -1,5 +1,6 @@
 <script lang="ts">
   import { useBilling } from '../../features/billing/state.svelte';
+  import { shownPromoProgram } from '../../features/billing/promo-program';
   import type { StylesSnapshot } from '../../features/styles/model';
   import StyleTerms from '../../features/styles/StyleTerms.svelte';
   import StyleBetaNotice from '../../features/styles/StyleBetaNotice.svelte';
@@ -30,6 +31,7 @@
     await store.act('activateStarter', {
       confirmed: true,
       termsVersion: billing.termsVersion,
+      ...shownPromoProgram(billing),
       selection,
     });
   }

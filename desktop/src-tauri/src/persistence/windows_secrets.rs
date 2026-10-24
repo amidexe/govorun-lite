@@ -86,24 +86,10 @@ fn settings(disk: &impl Disk) -> Result<Value, Error> {
     let Some(raw) = raw else {
         return Ok(json!({}));
     };
-    let normalized = raw.trim_start_matches('\u{feff}');
-    super::file_documents::settings_document::validate(
-        "styles.document",
-        Some(normalized),
-        normalized,
-    )
-    .map_err(|_| Error::Unavailable)?;
+    // The sign-in reads only its own logout marker. Other settings belong to their
+    // owners: «Ярко» (21 Oct 2026) made every sign-in unreadable through a check here.
     let value =
         parse(raw.trim_start_matches('\u{feff}'), 8 * 1_048_576).map_err(|_| Error::Unavailable)?;
-    if value["inputModeContractVersion"] != 1
-        || value["emojiMode"]
-            .as_i64()
-            // The style codec writes four emoji modes (off, restrained, lively, bright = 0..=3);
-            // «Ярко» made every session read unavailable here since 6 Oct 2026.
-            .is_none_or(|n| !(0..=3).contains(&n))
-    {
-        return Err(Error::Unavailable);
-    }
     let markers: Vec<_> = value
         .as_object()
         .ok_or(Error::Unavailable)?

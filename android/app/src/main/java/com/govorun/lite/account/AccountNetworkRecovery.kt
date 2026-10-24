@@ -54,6 +54,10 @@ internal class AccountNetworkRecovery(
         runCatching { manager?.registerDefaultNetworkCallback(callback) }
     }
 
+    /** The user's offline or roaming choice changed: same path as a network change. */
+    @Synchronized
+    fun policyChanged() = update()
+
     @Synchronized
     fun requestCompleted(succeeded: Boolean) {
         onConnectionChanged(observation.requestCompleted(succeeded))
@@ -68,7 +72,8 @@ internal class AccountNetworkRecovery(
     }
 
     private fun update() {
-        val internet = capabilities?.hasInternet() == true
+        val internet = capabilities?.hasInternet() == true &&
+            com.govorun.lite.network.NetworkPolicy.allows(context, capabilities)
         val recovered = signal.update(internet && !blocked,
             capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true)
         onConnectionChanged(observation.networkChanged(internet, blocked, recovered))

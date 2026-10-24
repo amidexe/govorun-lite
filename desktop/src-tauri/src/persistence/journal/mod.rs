@@ -14,21 +14,22 @@ pub struct Journal {
     serial: Mutex<()>,
     changed: OnceLock<Changed>,
     #[cfg(target_os = "macos")]
-    store: Arc<super::macos_defaults::Defaults>,
+    store: super::database_defaults::Journal<Arc<super::macos_defaults::Defaults>>,
     #[cfg(target_os = "windows")]
-    store: Arc<super::file_documents::Files>,
+    store: Arc<super::database_files::Documents>,
 }
 impl Journal {
+    /// The journal is a row of the documents base on both desktops since 2.1.112.
     #[cfg(target_os = "macos")]
-    pub fn new(store: Arc<super::macos_defaults::Defaults>) -> Self {
+    pub fn new(store: Arc<super::database_defaults::Documents<Arc<super::macos_defaults::Defaults>>>) -> Self {
         Self {
-            store,
+            store: super::database_defaults::Journal(store),
             serial: Mutex::new(()),
             changed: OnceLock::new(),
         }
     }
     #[cfg(target_os = "windows")]
-    pub fn new(store: Arc<super::file_documents::Files>) -> Self {
+    pub fn new(store: Arc<super::database_files::Documents>) -> Self {
         Self {
             store,
             serial: Mutex::new(()),
@@ -43,11 +44,11 @@ impl Journal {
     fn report(&self) -> Result<Report, &'static str> {
         #[cfg(target_os = "macos")]
         {
-            Ok(Report::Macos(macos::read(self.store.as_ref())?))
+            Ok(Report::Macos(macos::read(&self.store)?))
         }
         #[cfg(target_os = "windows")]
         {
-            let mut events = windows::read(self.store.as_ref())?;
+            let mut events = windows::read(&self.store.scope(windows::OWNER))?;
             events.reverse();
             Ok(Report::Windows(events))
         }
@@ -66,7 +67,7 @@ impl Journal {
             use govorun_core::journal_report::MacEvent;
             let (message, category, level, timing, deduplicate) = match input {
                 Input::CaptureFailure(code) => {
-                    return macos::append(self.store.as_ref(), MacEvent {
+                    return macos::append(&self.store, MacEvent {
                         id: uuid::Uuid::new_v4().to_string().to_uppercase(),
                         date: now.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
                         level: "error".into(), category: "Запись".into(),
@@ -76,7 +77,7 @@ impl Journal {
                 }
                 Input::InsertionFailure(code) => {
                     let message = govorun_core::journal_report::insertion::stored(code).ok_or("invalid_parameters")?;
-                    return macos::append(self.store.as_ref(), MacEvent {
+                    return macos::append(&self.store, MacEvent {
                         id: uuid::Uuid::new_v4().hyphenated().to_string().to_uppercase(),
                         date: now.to_rfc3339_opts(chrono::SecondsFormat::Nanos, true), level: "error".into(),
                         category: govorun_core::journal_report::insertion::CATEGORY.into(), message, timing: None,
@@ -89,7 +90,7 @@ impl Journal {
                     name: "self_host_request_failed",
                     status,
                     ..
-                } => return macos::append(self.store.as_ref(), MacEvent {
+                } => return macos::append(&self.store, MacEvent {
                     id: uuid::Uuid::new_v4().to_string().to_uppercase(),
                     date: now.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
                     level: "error".into(), category: "Стили".into(),
@@ -105,16 +106,35 @@ impl Journal {
                     None,
                     true,
                 ),
-                Input::Failure { .. } => (
-                    "Синхронизация статистики отложена",
-                    "Статистика",
-                    "warning",
-                    None,
-                    true,
-                ),
+                // The move into the base is a fact, not a failure.
+                Input::Failure { name: "local_data_moved", reason, .. } => return macos::append(&self.store, MacEvent {
+                    id: uuid::Uuid::new_v4().hyphenated().to_string().to_uppercase(),
+                    date: now.to_rfc3339_opts(chrono::SecondsFormat::Nanos, true),
+                    level: "info".into(), category: "Приложение".into(),
+                    message: input::failure_message("Перенос локальных данных", None, reason.as_deref()), timing: None,
+                }, true),
+                Input::Failure { name, status, reason } => {
+                    let (title, category) = match name {
+                        "content_sync_failed" => ("Не удалось синхронизировать настройки", "Аккаунт"),
+                        "preferences_sync_failed" => ("Не удалось синхронизировать параметры", "Аккаунт"),
+                        "account_sync_driver_failed" => ("Не удалось продолжить синхронизацию", "Аккаунт"),
+                        "settings_load_failed" => ("Не удалось загрузить настройки", "Приложение"),
+                        "dictionary_load_failed" => ("Не удалось загрузить словарь", "Приложение"),
+                        "statistics_journal_unavailable" => ("Не удалось прочитать сохранённую статистику", "Статистика"),
+                        "sync_state_load_failed" => ("Не удалось проверить синхронизацию", "Аккаунт"),
+                        "billing_action_failed" => ("Не удалось выполнить действие", "Подписка"),
+                        _ => ("Не удалось синхронизировать статистику", "Статистика"),
+                    };
+                    return macos::append(&self.store, MacEvent {
+                        id: uuid::Uuid::new_v4().hyphenated().to_string().to_uppercase(),
+                        date: now.to_rfc3339_opts(chrono::SecondsFormat::Nanos, true),
+                        level: "warning".into(), category: category.into(),
+                        message: input::failure_message(title, status, reason.as_deref()), timing: None,
+                    }, true);
+                }
             };
             macos::append(
-                self.store.as_ref(),
+                &self.store,
                 MacEvent {
                     id: uuid::Uuid::new_v4().hyphenated().to_string().to_uppercase(),
                     date: now.to_rfc3339_opts(chrono::SecondsFormat::Nanos, true),
@@ -140,12 +160,12 @@ impl Journal {
                     name,
                     status
                         .map(|code| format!("http_{code}"))
-                        .or(reason.map(Into::into))
+                        .or(reason)
                         .unwrap_or_default(),
                 ),
             };
             windows::append(
-                self.store.as_ref(),
+                &self.store.scope(windows::OWNER),
                 WindowsEvent {
                     date: now.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
                     identity_date: format!(
@@ -188,15 +208,9 @@ impl Journal {
                 return Err("invalid_parameters");
             }
             #[cfg(target_os = "macos")]
-            macos::clear(self.store.as_ref())?;
+            macos::clear(&self.store)?;
             #[cfg(target_os = "windows")]
-            {
-                match std::fs::remove_file(self.store.root().join("diagnostics.log")) {
-                    Ok(()) => {}
-                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-                    Err(_) => return Err("storage_unavailable"),
-                }
-            }
+            windows::clear(&self.store.scope(windows::OWNER))?;
             json!({"accepted":true})
         } else {
             return Err("invalid_parameters");

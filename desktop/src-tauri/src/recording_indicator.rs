@@ -346,6 +346,7 @@ fn create(app: &AppHandle) -> Result<(), &'static str> {
         .skip_taskbar(true)
         .always_on_top(true)
         .visible(false)
+        .additional_browser_args(crate::windows::BROWSER_ARGUMENTS)
         .on_navigation(local)
         .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
         .build()

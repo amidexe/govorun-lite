@@ -10,6 +10,11 @@ import org.json.JSONObject
 /** Current V1 keys and DTO conversion. No trimming, limits, selection or mutation policy. */
 internal object CustomStyleBinding {
     fun presets(array: JSONArray): List<CustomStylePreset> = (0 until array.length()).map { preset(array.getJSONObject(it)) }
+    /** Every saved style that can be read; one broken entry never hides the others. */
+    fun readablePresets(raw: String?): List<CustomStylePreset> {
+        val array = runCatching { JSONArray(raw ?: "[]") }.getOrElse { return emptyList() }
+        return (0 until array.length()).mapNotNull { index -> runCatching { preset(array.getJSONObject(index)) }.getOrNull() }
+    }
     fun preset(item: JSONObject): CustomStylePreset {
         for (key in listOf("id", "name", "instruction")) require(item.get(key) is String)
         val enabled = item.optBoolean("emojiEnabled", false)

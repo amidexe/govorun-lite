@@ -31,18 +31,17 @@ impl DocumentsHost {
     pub async fn identity_changed(&self, remote_data: Option<bool>) -> Result<(), &'static str> {
         let _gate = self.gate.lock().await;
         self.admit()?;
-        self.local
-            .dictionary
-            .execute(json!({"kind":"snapshot"}), None, false)
-            .await?;
-        self.local
-            .styles
-            .execute(json!({"kind":"snapshot"}), None, false)
-            .await?;
-        self.local
-            .statistics
-            .execute(json!({"kind":"inspect"}), false, false)
-            .await?;
+        let dictionary = self.local.dictionary.execute(json!({"kind":"snapshot"}), None, false).await;
+        let styles = self.local.styles.execute(json!({"kind":"snapshot"}), None, false).await;
+        let statistics = self.local.statistics.execute(json!({"kind":"inspect"}), false, false).await;
+        // A document that cannot be opened is named once per launch; its own page shows it.
+        for (result, event) in [(&dictionary, "dictionary_load_failed"), (&styles, "settings_load_failed"),
+            (&statistics, "statistics_journal_unavailable")] {
+            if let Err(code) = result.as_ref().map(|_| ()) {
+                stopped(code)?;
+                self.report_once(event, code);
+            }
+        }
         let identity = (self.identity)();
         // Profile/status refreshes preserve the account lifetime. Restarting
         // sync for each profile publication would loop after statistics ACK
@@ -60,29 +59,41 @@ impl DocumentsHost {
             self.driver.request(false);
             return Ok(());
         };
-        let content = self.local.snapshot(Stage::Content, &scope).await?;
-        let stats = self
-            .local
-            .statistics
-            .execute(json!({"kind":"inspect"}), false, false)
-            .await?;
-        if stats["configuration"]["writable"] != true {
-            return Err("statistics_storage_invalid");
+        // The decision asks only whether local data exists. Upload limits, a
+        // read-only statistics journal or an unreadable sync journal belong to the
+        // stage that uses them and are reported there; they never hold sign-in.
+        // A document that cannot be opened counts as local data: the person is asked.
+        let mut unread = false;
+        let content = match self.local.content().await {
+            Ok(content) => content,
+            Err(code) => {
+                stopped(code)?;
+                unread = true;
+                json!({"schemaVersion":1,"dictionary":{"enabled":false,"text":""},
+                    "selectedCustomStyleId":"","customStyles":[]})
+            }
+        };
+        let statistics = match self.local.statistics.execute(json!({"kind":"inspect"}), false, false).await {
+            Ok(stats) => {
+                if stats["configuration"]["writable"] != true {
+                    self.report_once("statistics_journal_unavailable", "statistics_storage_invalid");
+                }
+                let projection = &stats["configuration"]["result"]["projection"]["local"];
+                json!({"total":projection["total"],"days":projection["days"]})
+            }
+            Err(code) => {
+                stopped(code)?;
+                unread = true;
+                json!({"total":{"words":0,"speechSeconds":0,"recognitions":0},"days":[]})
+            }
+        };
+        let mut history = false;
+        for kind in [JournalKind::Content, JournalKind::Preferences] {
+            match self.journals.capture(kind, &scope.account).await {
+                Ok(journal) => history |= journal.has_history(),
+                Err(_) => self.report_once("sync_state_load_failed", "sync_storage_unavailable"),
+            }
         }
-        let projection = &stats["configuration"]["result"]["projection"]["local"];
-        let statistics = json!({"total":projection["total"],"days":projection["days"]});
-        let content_history = self
-            .journals
-            .capture(JournalKind::Content, &scope.account)
-            .await
-            .map_err(|_| "sync_storage_unavailable")?
-            .has_history();
-        let preference_history = self
-            .journals
-            .capture(JournalKind::Preferences, &scope.account)
-            .await
-            .map_err(|_| "sync_storage_unavailable")?
-            .has_history();
         if (self.identity)() != identity {
             return Err("account_session_changed");
         }
@@ -93,8 +104,9 @@ impl DocumentsHost {
                 LocalFacts {
                     content,
                     statistics,
-                    history: content_history || preference_history,
+                    history,
                     remote_data,
+                    unread,
                 },
             )
             .await
@@ -107,10 +119,12 @@ impl DocumentsHost {
             mode,
             resolved_identity: Some(identity),
         };
-        self.local
+        // Republish the account view; its own failure never cancels the sync start.
+        let _ = self
+            .local
             .statistics
             .execute(json!({"kind":"inspect"}), false, false)
-            .await?;
+            .await;
         self.pending.store(true, Ordering::SeqCst);
         self.driver.request(true);
         Ok(())
@@ -129,11 +143,13 @@ impl DocumentsHost {
             return Err("account_session_changed");
         }
         if matches!(choice, Choice::Merge) {
-            let local = self.local.snapshot(Stage::Preferences, &scope).await?;
-            self.journals
-                .append_preference(&scope.account, json!({"kind":"replace","local":local}))
-                .await
-                .map_err(|_| "sync_storage_unavailable")?;
+            // Unreadable styles leave no preference intent; their stage reports itself.
+            if let Ok(local) = self.local.snapshot(Stage::Preferences, &scope).await {
+                self.journals
+                    .append_preference(&scope.account, json!({"kind":"replace","local":local}))
+                    .await
+                    .map_err(|_| "sync_storage_unavailable")?;
+            }
             self.journals
                 .mark_content_changed()
                 .await
@@ -148,10 +164,11 @@ impl DocumentsHost {
             return Err("account_session_changed");
         }
         self.state.lock().unwrap().mode = mode;
-        self.local
+        let _ = self
+            .local
             .statistics
             .execute(json!({"kind":"inspect"}), false, false)
-            .await?;
+            .await;
         self.pending
             .store(mode == DataSyncMode::Enabled, Ordering::SeqCst);
         self.driver.request(true);
@@ -240,6 +257,14 @@ impl DocumentsHost {
                 true,
             )
             .await?;
+        Ok(())
+    }
+}
+/// Shutdown and an account change end the attempt; any other code is local data.
+fn stopped(code: &'static str) -> Result<(), &'static str> {
+    if matches!(code, "documents_stopped" | "account_session_changed") {
+        Err(code)
+    } else {
         Ok(())
     }
 }

@@ -1,7 +1,9 @@
 package com.govorun.lite.ui.settings
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -9,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import com.adamglin.PhosphorIcons
@@ -17,8 +20,10 @@ import com.adamglin.phosphoricons.regular.GearSix
 import com.adamglin.phosphoricons.regular.MagicWand
 import com.adamglin.phosphoricons.regular.Microphone
 import com.govorun.lite.R
+import com.product.ui.FeedCard
 import com.product.ui.ProductSectionItem
 import com.product.ui.ProductSettingsShell
+import com.product.ui.ProductTokens
 
 private enum class SettingsTab(
     val title: String,
@@ -63,6 +68,12 @@ fun SettingsScreen(
         onSelected = { selectedName = it.name },
         onBack = { onEvent(SettingsEvent.Back) },
     ) {
+        if (state.storageUnavailable) item {
+            FeedCard {
+                Text("Настройки сейчас не сохраняются: не удалось открыть хранилище. Диктовка работает.",
+                    modifier = Modifier.padding(ProductTokens.Spacing.Section), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
         when (selected) {
             SettingsTab.DICTATION -> item { DictationSettings(state, onEvent) }
             SettingsTab.BIRD -> item { AppearanceSettings(state, onEvent) }

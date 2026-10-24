@@ -12,6 +12,7 @@ private-fixtures = []
 
 [dependencies]
 govorun-core = { path = "../core" }
+govorun-document-store = { path = "../document-store" }
 govorun-styles-http = { path = "../styles-http" }
 jni = "=0.21.1"
 serde_json.workspace = true

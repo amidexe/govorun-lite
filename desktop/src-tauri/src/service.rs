@@ -438,6 +438,7 @@ impl Services {
         let available = self.account.lock().await.as_ref().is_some_and(|owner| owner.documents_available());
         let mut snapshot = crate::features::runtime::project(result?, available)?;
         if let Some(owner) = self.recording.lock().await.clone() { snapshot = owner.project(snapshot)?; }
+        crate::persistence::mark_storage(&mut snapshot);
         #[cfg(feature = "private-fixtures")]
         let snapshot = match self.private_runtime { Some(adapter) => adapter(snapshot), None => snapshot };
         Ok(snapshot)

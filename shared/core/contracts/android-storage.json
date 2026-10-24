@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "comment": "Android SharedPreferences files and the documents of govorun.db that own their keys. Rules are tried in order; the first match wins. Consent entries are row prefixes: their changes refresh the good copy at once. A key no rule names belongs to the file's default document, so no stored value is ever left behind. Keys keep their names inside the base.",
+  "separate": ["govorun_account_secure_v1", "govorun_style_pass_pool_v1"],
+  "consent": ["govorun_lite_prefs/stylization_", "govorun_account_sync_enrollment_v1/"],
+  "files": {
+    "govorun_lite_prefs": {
+      "rules": [
+        {"document": "selfHost.apiKey", "exact": ["stylization_self_hosted_api_key_v3", "stylization_self_hosted_api_key_v2"]},
+        {"document": "selfHost.document", "exact": ["stylization_server_mode_v2"], "prefix": ["stylization_self_hosted_"]},
+        {"document": "styles.document", "prefix": ["stylization_"]},
+        {"document": "bird.document", "exact": ["haptics_enabled"], "prefix": ["bubble_"]},
+        {"document": "dictionary.document", "exact": ["dictionary_text", "dictionary_enabled"]},
+        {"document": "statistics.document", "prefix": ["stats_"]},
+        {"document": "recording.document", "exact": ["pause_length", "auto_stop_minutes", "keep_screen_on", "recording_interaction_mode_v2", "voice_marker_mode", "voice_suffix_enabled"]},
+        {"document": "clipboard.document", "exact": ["remember_last_dictation"]}
+      ],
+      "default": "app.document"
+    },
+    "govorun_ui_v2": {"default": "app.document"},
+    "govorun_local_diagnostic_journal_v1": {"default": "diagnostics.journal"},
+    "govorun_stylization_diagnostics_v2": {"default": "diagnostics.journal"},
+    "recognition_api_authorization_v1": {"default": "recognitionApi.document"},
+    "govorun_content_journal_v1": {"default": "sync.content"},
+    "govorun_preferences_journal_v1": {"default": "sync.preferences"},
+    "govorun_account_sync_enrollment_v1": {"default": "sync.enrollment"},
+    "govorun_statistics_v1": {"default": "statistics.document"},
+    "govorun_stats_sync_v2": {"default": "statistics.document"},
+    "govorun.account.login_return": {"default": "account.handoff"},
+    "govorun.account.starter_return": {"default": "account.handoff"}
+  }
+}

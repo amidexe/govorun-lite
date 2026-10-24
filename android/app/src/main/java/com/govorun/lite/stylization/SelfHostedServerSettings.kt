@@ -2,6 +2,7 @@ package com.govorun.lite.stylization
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.util.StorageKeys
 
 internal enum class StylizationServerMode {
@@ -53,10 +54,7 @@ internal object StylizationServerPreferences {
     private const val MODE_SELF_HOSTED = "self_hosted"
     const val GENERAL_STYLE = "general"
 
-    private fun preferences(context: Context) = context.getSharedPreferences(
-        StorageKeys.PREFS_FILE,
-        Context.MODE_PRIVATE,
-    )
+    private fun preferences(context: Context) = GovorunPreferences.of(context, StorageKeys.PREFS_FILE)
 
     fun mode(context: Context): StylizationServerMode =
         if (preferences(context).getString(KEY_MODE, null) == MODE_SELF_HOSTED) {
@@ -126,8 +124,10 @@ internal object StylizationServerPreferences {
     fun deleteApiKey(context: Context): Boolean = preferences(context).edit()
         .remove(KEY_API_KEY).remove(OLD_API_KEY).remove(KEY_VERIFIED_CONFIGURATION)
         .putBoolean(KEY_STYLIZATION_ENABLED, false).commit()
+        .also { GovorunPreferences.forgetOld(context, StorageKeys.PREFS_FILE, listOf(KEY_API_KEY, OLD_API_KEY)) }
 
     fun clearServer(context: Context): Boolean = clearServer(preferences(context))
+        .also { GovorunPreferences.forgetOld(context, StorageKeys.PREFS_FILE, listOf(KEY_API_KEY, OLD_API_KEY)) }
 
     internal fun clearServer(prefs: SharedPreferences): Boolean = prefs.edit().apply {
         listOf(KEY_ENDPOINT, KEY_MODEL, KEY_PROMPT, KEY_API_KEY, OLD_API_KEY,

@@ -2,6 +2,7 @@ package com.govorun.lite.stats
 
 import android.content.Context
 import com.govorun.lite.shared.SharedBusiness
+import com.govorun.lite.storage.GovorunPreferences
 import org.json.JSONObject
 import java.time.LocalDate
 
@@ -16,7 +17,7 @@ internal object StatisticsJournal {
                 .put("continuity", continuity ?: JSONObject.NULL)))
 
     fun snapshot(context: Context): JSONObject = synchronized(StatsSyncBarrier.lock) {
-        val raw = context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+        val raw = GovorunPreferences.of(context.applicationContext, FILE)
             .getString(KEY, null)
         val snapshot = if (raw == null) evaluate(JSONObject.NULL, JSONObject().put("kind", "inspect"))
         else JSONObject(raw).also {
@@ -40,7 +41,7 @@ internal object StatisticsJournal {
         val decision = evaluate(snapshot, event, previous)
         val saved = JSONObject().put("schemaVersion", 1).put("state", decision.getJSONObject("state"))
             .put("projection", decision.getJSONObject("projection"))
-        check(context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE).edit()
+        check(GovorunPreferences.of(context.applicationContext, FILE).edit()
             .putString(KEY, saved.toString()).commit())
         decision
     }

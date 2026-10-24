@@ -5,6 +5,7 @@ import com.govorun.lite.model.stylization.CustomStylePreset
 import com.govorun.lite.model.stylization.EmojiMode
 import com.govorun.lite.model.stylization.PunctuationMode
 import com.govorun.lite.model.stylization.TextStyle
+import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.stylization.CustomStylePresets
 import com.govorun.lite.util.Prefs
 import org.json.JSONObject
@@ -12,7 +13,7 @@ import org.json.JSONObject
 /** IO only: current documents and an opaque shared workflow journal. No legacy imports. */
 internal class AccountContentSyncStore(context: Context) {
     private val appContext = context.applicationContext
-    private val preferences = appContext.getSharedPreferences("govorun_content_journal_v1", Context.MODE_PRIVATE)
+    private val preferences = GovorunPreferences.of(appContext, "govorun_content_journal_v1")
     private var applying = false
 
     @Synchronized

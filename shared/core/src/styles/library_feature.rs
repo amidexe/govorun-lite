@@ -74,7 +74,7 @@ impl StyleLibraryFeature {
             }
         }
         let configuration = json!({"context":result.context,"applicationRules":result.application_rules,"metadata":result.metadata,
-            "revision":result.revision,"changed":result.changed,
+            "revision":result.revision,"changed":result.changed,"skipped":result.skipped,
             "localChange":self.pending_local.load(Ordering::SeqCst),
             "contentDirty":self.pending_content.load(Ordering::SeqCst),
             "preferencesDirty":self.pending_preferences.load(Ordering::SeqCst)});

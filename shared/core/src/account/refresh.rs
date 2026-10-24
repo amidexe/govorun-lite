@@ -104,7 +104,9 @@ impl AccountSession {
         let _refresh = self.inner.refresh_gate.lock().await;
         self.current(failed.epoch)?;
         let current = self.lease()?;
-        if current.token_revision != failed.token_revision { return Ok(current); }
+        // A restore of the same pair bumps the revision without rotating; only a
+        // different access token means another caller already refreshed.
+        if current.tokens.access_token != failed.tokens.access_token { return Ok(current); }
         let request = AccountRequest::internal(Method::Post, "/v1/auth/refresh",
             Some(json!({"refreshToken": current.tokens.refresh_token})));
         let response = self.send_scoped(current.epoch, current.boundary.clone(), request, None).await?;
@@ -143,7 +145,9 @@ impl AccountSession {
         let ended = {
             let mut state = self.mutate();
             if state.epoch != epoch || state.token_revision != revision { None } else {
-                Some(self.end_locked(&mut state))
+                let ended = self.end_locked(&mut state);
+                state.ended_by_server = Some(ended);
+                Some(ended)
             }
         };
         if let Some(epoch) = ended { self.finish_logout(epoch).await?; }

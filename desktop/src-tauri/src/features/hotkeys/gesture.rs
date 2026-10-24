@@ -105,7 +105,8 @@ pub fn bindings_raw(platform: Platform, raw: &Value) -> Result<Gesture, &'static
     Ok(describe(platform, candidate))
 }
 pub fn facts(document: &Value, busy: bool, permission_ready: bool) -> Result<Facts, &'static str> {
-    let values = settings::values(document)?;
+    // Unreadable preferences mean the default keys; an assignment still refuses them.
+    let values = settings::values(document).unwrap_or_default();
     let platform = if document["source"] == "macos" {
         Platform::MacOS
     } else {

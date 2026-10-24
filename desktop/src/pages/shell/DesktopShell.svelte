@@ -20,6 +20,7 @@
   let {
     platform,
     failure = false,
+    storageUnavailable = false,
     reconnecting = false,
     displayName = 'Говорун',
     recordingDiagnostics = false,
@@ -29,6 +30,7 @@
   }: {
     platform: 'macos' | 'windows';
     failure?: boolean;
+    storageUnavailable?: boolean;
     reconnecting?: boolean;
     displayName?: string;
     recordingDiagnostics?: boolean;
@@ -187,6 +189,9 @@
           <button onclick={onreconnect} disabled={reconnecting}
             >{reconnecting ? 'Подключаемся…' : 'Попробовать ещё раз'}</button
           >
+        </div>{/if}
+      {#if storageUnavailable}<div class="notice" role="status">
+          Настройки сейчас не сохраняются: не удалось открыть хранилище. Диктовка работает.
         </div>{/if}
       {#key page.id}<div class="page-enter">
           {#if page.id === 'general'}<DictationPage

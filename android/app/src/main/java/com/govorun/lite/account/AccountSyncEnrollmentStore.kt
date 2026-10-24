@@ -1,6 +1,7 @@
 package com.govorun.lite.account
 
 import android.content.Context
+import com.govorun.lite.storage.GovorunPreferences
 import java.security.MessageDigest
 import org.json.JSONObject
 
@@ -12,10 +13,7 @@ enum class AccountDataSyncMode {
 }
 
 internal class AccountSyncEnrollmentStore(context: Context) {
-    private val preferences = context.applicationContext.getSharedPreferences(
-        FILE_NAME,
-        Context.MODE_PRIVATE,
-    )
+    private val preferences = GovorunPreferences.of(context.applicationContext, FILE_NAME)
 
     @Synchronized
     fun resolve(
@@ -32,7 +30,8 @@ internal class AccountSyncEnrollmentStore(context: Context) {
             hasOtherAccountHistory = preferences.all.keys.any {
                 it.startsWith("mode_") && it != key(accountId)
             },
-            explicitDecisionRequested = preferences.getBoolean("requested_" + key(accountId), false),
+            explicitDecisionRequested = preferences.getBoolean("requested_" + key(accountId), false) ||
+                preferences.getBoolean(REQUESTED_ANY, false),
             hasRemoteData = hasRemoteData,
             statistics = statistics,
         )
@@ -62,7 +61,7 @@ internal class AccountSyncEnrollmentStore(context: Context) {
     private fun save(accountId: String, mode: AccountDataSyncMode) {
         require(mode != AccountDataSyncMode.EVALUATING)
         preferences.edit().putString(key(accountId), mode.name).apply {
-            if (mode != AccountDataSyncMode.PENDING) remove("requested_" + key(accountId))
+            if (mode != AccountDataSyncMode.PENDING) remove("requested_" + key(accountId)).remove(REQUESTED_ANY)
         }.commit()
     }
 
@@ -73,6 +72,8 @@ internal class AccountSyncEnrollmentStore(context: Context) {
 
     private companion object {
         const val FILE_NAME = "govorun_account_sync_enrollment_v1"
+        /** Written by a recreated documents base: the lost choice is asked once again. */
+        const val REQUESTED_ANY = "requested_any"
     }
 }
 

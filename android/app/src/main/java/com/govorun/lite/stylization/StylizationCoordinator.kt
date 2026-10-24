@@ -68,6 +68,8 @@ internal class StylizationCoordinator(
             preparationMilliseconds = GovorunAccountRepository.joinDictationPreparation(requiredCredits)
         }
         override fun customDraftActive() = CustomStyleDraftSession.isActive()
+        // Only the person's refusal counts: a server in the home network keeps working without internet.
+        override fun networkRefused() = com.govorun.lite.network.NetworkPolicy.activeRefusal(appContext) != null
         override fun selfHostedSelected() =
             StylizationServerPreferences.mode(appContext) == StylizationServerMode.SELF_HOSTED
 

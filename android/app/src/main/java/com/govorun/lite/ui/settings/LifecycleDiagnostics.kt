@@ -30,4 +30,9 @@ internal fun lifecycleDiagnosticSummary(reason: LifecycleDiagnosticReason): Stri
     LifecycleDiagnosticReason.EXIT_PACKAGE_UPDATED -> "Приложение остановлено для обновления"
     LifecycleDiagnosticReason.EXIT_UNKNOWN -> "Приложение завершилось; Android не сообщил причину"
     LifecycleDiagnosticReason.EXIT_HISTORY_UNAVAILABLE -> "Не удалось получить историю остановок от Android"
+    LifecycleDiagnosticReason.ACCOUNT_ENDED_BY_SERVER -> "Сервер завершил вход на этом устройстве"
+    LifecycleDiagnosticReason.STORAGE_MOVED,
+    LifecycleDiagnosticReason.STORAGE_LEGACY_REIMPORTED,
+    LifecycleDiagnosticReason.STORAGE_RESTORED_FROM_BACKUP,
+    LifecycleDiagnosticReason.STORAGE_DATABASE_REPLACED -> "Перенос локальных данных"
 }

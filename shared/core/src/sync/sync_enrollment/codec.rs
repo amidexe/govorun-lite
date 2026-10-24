@@ -23,6 +23,9 @@ pub(super) struct Physical {
     choices: Value,
     requested: Value,
 }
+/// A desktop base recreated without its copy lost every sync choice: each account on
+/// this computer is asked once (desktop/src-tauri/src/persistence/document_db.rs).
+const ANY_ACCOUNT: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 fn parse(raw: &str) -> Result<Value, EnrollmentError> {
     serde_json::from_str(raw.trim_start_matches('\u{feff}'))
         .map_err(|_| EnrollmentError::InvalidStorage)
@@ -123,10 +126,10 @@ impl Physical {
                 .get(slot)
                 .map(|v| mode(v, self.source))
                 .transpose()?,
-            requested: match self.source {
-                Source::Macos => self.requested[slot].as_bool().unwrap_or(false),
-                Source::Windows => self.requested.get(slot).is_some(),
-            },
+            requested: [slot, ANY_ACCOUNT].iter().any(|slot| match self.source {
+                Source::Macos => self.requested[*slot].as_bool().unwrap_or(false),
+                Source::Windows => self.requested.get(*slot).is_some(),
+            }),
             other_account_history: self
                 .choices
                 .as_object()
@@ -161,10 +164,9 @@ impl Physical {
                 Source::Windows => json!(1),
             };
         } else if mode != DataSyncMode::Pending {
-            self.requested
-                .as_object_mut()
-                .ok_or(EnrollmentError::InvalidStorage)?
-                .remove(slot);
+            let requested = self.requested.as_object_mut().ok_or(EnrollmentError::InvalidStorage)?;
+            requested.remove(slot);
+            requested.remove(ANY_ACCOUNT);
         }
         Ok(())
     }

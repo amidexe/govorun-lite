@@ -5,7 +5,7 @@ use govorun_core::{
     stylization::{reconnect::Step, scheduling::Trigger},
     Error, Result,
 };
-use std::sync::Arc;
+use std::sync::{atomic::Ordering, Arc};
 use tokio::time::Duration;
 
 impl Stylization {
@@ -132,6 +132,10 @@ impl Stylization {
         result.unwrap_or(Ok(false))
     }
     pub fn connectivity_changed(&self, online: bool) -> Result<()> {
+        // Hosts may repeat "online" after every account response. Only a change
+        // is news: a repeat must not restart reconnect, probes or the reserve.
+        let previous = self.connectivity.swap(if online { 2 } else { 1 }, Ordering::AcqRel);
+        if online && previous == 2 { return Ok(()); }
         if !online { self.foreground.close_connection(None); }
         self.current(self.account.snapshot().session_generation)?;
         if let Some(reporter) = self.reporter.get() {

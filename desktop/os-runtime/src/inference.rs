@@ -1,8 +1,6 @@
 //! Pinned GigaAM/Silero inference. Capture feeds normalized PCM here; product
 //! modes, delivery, statistics and network access stay in the shared owner.
 use crate::pinned_asr::Session;
-#[cfg(windows)]
-use crate::segmentation::ShortUtterance;
 use crate::{
     recognition::{Cancellation, Failure, Queue, Recognition},
     vad::Vad,
@@ -47,10 +45,12 @@ impl Recognizer {
 pub struct Recording {
     vad: Vad,
     queue: Queue,
-    #[cfg(windows)]
-    short: ShortUtterance,
     window: Vec<f32>,
+    /// Every sample since the last finished fragment, still unread by VAD included.
+    tail: Vec<f32>,
 }
+/// About a minute of input; continuous speech without a pause is cut earlier.
+const TAIL_MAX: usize = 16_000 * 60;
 /// A finished capture can leave its VAD on the owning thread and enqueue only
 /// the decoder queue. No unsafe transfer of a native VAD pointer is required.
 pub struct Job {
@@ -81,9 +81,8 @@ impl Recording {
         Ok(Self {
             vad,
             queue: recognizer.queue(),
-            #[cfg(windows)]
-            short: ShortUtterance::default(),
             window: Vec::new(),
+            tail: Vec::new(),
         })
     }
     pub fn cancellation(&self) -> Cancellation {
@@ -97,8 +96,9 @@ impl Recording {
         if pcm.iter().any(|sample| !sample.is_finite()) {
             return Err("recording_invalid_pcm");
         }
-        #[cfg(windows)]
-        self.short.accept(pcm);
+        self.tail.extend_from_slice(pcm);
+        let excess = self.tail.len().saturating_sub(TAIL_MAX);
+        self.tail.drain(..excess);
         self.window.extend_from_slice(pcm);
         let mut offset = 0;
         while self.window.len() - offset >= 512 {
@@ -106,10 +106,11 @@ impl Recording {
                 .vad
                 .accept(&self.window[offset..offset + 512])
                 .map_err(|_| "recognition_vad_failed")?;
-            #[cfg(windows)]
-            self.short
-                .detected(self.vad.speech_detected() || !segments.is_empty());
-            self.enqueue(segments, cfg!(target_os = "macos"))?;
+            if !segments.is_empty() {
+                self.tail.clear();
+                self.tail.extend_from_slice(&self.window[offset + 512..]);
+            }
+            self.enqueue(segments)?;
             offset += 512;
         }
         self.window.drain(..offset);
@@ -121,35 +122,17 @@ impl Recording {
     }
 
     pub fn stop(mut self) -> Result<Job, &'static str> {
-        // Flush the final partial model window immediately, without dropping
-        // the end of a word or waiting for a real-time pause.
-        if !self.window.is_empty() {
-            self.window.resize(512, 0.0);
-            let segments = self
-                .vad
-                .accept(&self.window)
-                .map_err(|_| "recognition_vad_failed")?;
-            #[cfg(windows)]
-            self.short
-                .detected(self.vad.speech_detected() || !segments.is_empty());
-            self.enqueue(segments, cfg!(target_os = "macos"))?;
-        }
-        let segments = self.vad.flush().map_err(|_| "recognition_vad_failed")?;
-        #[cfg(windows)]
-        self.short.detected(!segments.is_empty());
-        self.enqueue(segments, cfg!(target_os = "macos"))?;
-        #[cfg(windows)]
-        {
-            let segments = std::mem::take(&mut self.short).finish();
-            self.enqueue(segments, false)?;
-        }
+        // Key release ends the phrase, as on Android: every sample since the
+        // last finished fragment is recognized without another VAD decision.
+        let tail = std::mem::take(&mut self.tail);
+        self.enqueue(vec![tail])?;
         Ok(Job { queue: self.queue })
     }
 
-    fn enqueue(&self, segments: Vec<Vec<f32>>, strict: bool) -> Result<(), &'static str> {
+    fn enqueue(&self, segments: Vec<Vec<f32>>) -> Result<(), &'static str> {
         for segment in segments {
-            // macOS formerly rejects exactly 1600; Windows accepts it.
-            if segment.len() > 1600 || (!strict && segment.len() == 1600) {
+            // A tenth of a second or less carries no word.
+            if segment.len() > 1600 {
                 self.queue
                     .enqueue(segment)
                     .map_err(|_| "recognition_queue_closed")?;

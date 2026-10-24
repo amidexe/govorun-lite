@@ -26,6 +26,7 @@ class SettingsSnapshotReader(context: Context) {
         return SettingsUiState(
             selfHosted = com.govorun.lite.stylization.StylizationServerPreferences.mode(appContext) ==
                 com.govorun.lite.stylization.StylizationServerMode.SELF_HOSTED,
+            storageUnavailable = com.govorun.lite.storage.GovorunPreferences.unavailable(appContext),
             themeMode = appearance.themeMode,
             dynamicColor = appearance.dynamicColor,
             bubbleSide = Prefs.getBubbleSide(appContext),
@@ -48,6 +49,8 @@ class SettingsSnapshotReader(context: Context) {
             appFilterSummary = appFilterSummary(),
             keepScreenOn = Prefs.isKeepScreenOnEnabled(appContext),
             rememberLastDictation = com.govorun.lite.service.LastDictation.isEnabled(appContext),
+            noNetworkInRoaming = com.govorun.lite.network.NetworkPolicy.choice(appContext).value
+                ?.noNetworkInRoaming ?: true,
             autoStopMinutes = Prefs.getAutoStopMinutes(appContext),
             serviceEnabled = AccessibilityHelper.isLiteServiceEnabled(appContext),
             diagnosticEvents = localDiagnosticRows(appContext),

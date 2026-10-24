@@ -33,6 +33,8 @@ pub struct StyleDocumentResult {
     pub projection: Value,
     pub application_rules: Value,
     pub stored_options_present: bool,
+    /// The journal names it once: an entry or value was left in the file unread.
+    pub skipped: bool,
     pub revision: String,
     pub changed: bool,
     pub mark_dirty: bool,
@@ -203,6 +205,7 @@ impl StyleRepository {
             projection,
             application_rules: rules,
             stored_options_present: options_present,
+            skipped: original.skipped,
             revision,
             changed,
             mark_dirty: dirty,

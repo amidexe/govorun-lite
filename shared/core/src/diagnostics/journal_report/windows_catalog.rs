@@ -25,6 +25,7 @@ pub(super) const EVENTS: &[&str] = &[
     "audio_device_fallback",
     "audio_dispose_deferred",
     "audio_first_buffer_delayed",
+    "billing_action_failed",
     "billing_status_refresh_failed",
     "billing_catalog_refresh_failed",
     "billing_promo_preview_failed",
@@ -39,6 +40,7 @@ pub(super) const EVENTS: &[&str] = &[
     "insertion_failed",
     "insertion_succeeded",
     "instance_message_failed",
+    "local_data_moved",
     "online_initial_recovery_degraded",
     "online_recovery_deferred",
     "online_recovery_completed",
@@ -215,6 +217,7 @@ pub(super) const TITLES: &[(&str, &str)] = &[
         "audio_first_buffer_delayed",
         "Микрофон запускался дольше обычного",
     ),
+    ("billing_action_failed", "Не удалось выполнить действие"),
     (
         "billing_status_refresh_failed",
         "Не удалось обновить подписку",
@@ -261,6 +264,7 @@ pub(super) const TITLES: &[(&str, &str)] = &[
         "instance_message_failed",
         "Не удалось передать команду приложению",
     ),
+    ("local_data_moved", "Перенос локальных данных"),
     (
         "online_initial_recovery_degraded",
         "Онлайн-обработка временно недоступна",

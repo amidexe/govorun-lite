@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import com.govorun.lite.BuildConfig
+import com.govorun.lite.network.NetworkPolicy
 import com.govorun.lite.stylization.StylizationTerms
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,6 +12,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 object GovorunAccountRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -62,7 +64,8 @@ object GovorunAccountRepository {
                     secureStorageProblem = SecureStorageProblem.TEMPORARILY_UNAVAILABLE)
             },
             transport = AccountHttpTransport(BuildConfig.ACCOUNT_API_URL,
-                onNetworkResult = { networkRecovery?.requestCompleted(it) }), styles = styles::execute)
+                onNetworkResult = { networkRecovery?.requestCompleted(it) },
+                networkAllowed = { NetworkPolicy.allowsActiveNetwork(appContext) }), styles = styles::execute)
         api = AccountApiClient(account, account.configured)
         sessionApi = AccountSessionApi(account, api)
         preferences = PortablePreferenceSyncStore(appContext)
@@ -92,7 +95,10 @@ object GovorunAccountRepository {
         initialized = true
         networkRecovery = AccountNetworkRecovery(appContext, onConnectionChanged = { connected ->
             sendStyles("stylizationConnectivity") { put("online", connected) }
-            sessionTransitions.locked { mutableState.value = mutableState.value.copy(networkAvailable = connected) }
+            val refusal = NetworkPolicy.activeRefusal(appContext)
+            sessionTransitions.locked {
+                mutableState.value = mutableState.value.copy(networkAvailable = connected, networkRefusal = refusal)
+            }
         }) {
             if (account.storageProblem != null) storageRecovery.request()
             if (account.session() != null) {
@@ -101,6 +107,7 @@ object GovorunAccountRepository {
                 sendStyles("stylizationStart")
             }
         }.also(AccountNetworkRecovery::start)
+        scope.launch { NetworkPolicy.choice(appContext).drop(1).collect { networkRecovery?.policyChanged() } }
         if (account.configured) account.start()
         profileRefresh.startMaintenance()
     }

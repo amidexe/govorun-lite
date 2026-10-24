@@ -84,10 +84,24 @@
 * {
   box-sizing: border-box;
 }
+/* As in a native app, labels, headings and buttons are not text to select;
+   fields and the user's own text (marked .selectable) still are. */
 body {
   margin: 0;
   min-width: 320px;
   -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+input,
+textarea,
+.selectable {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.selectable {
+  cursor: text;
 }
 /* Style before the first runtime snapshot: native macOS tracks can otherwise
    flash white until a resize when the app and system use different themes. */

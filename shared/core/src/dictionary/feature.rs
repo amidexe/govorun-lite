@@ -111,8 +111,11 @@ impl DictionaryFeature {
         if local_change && result.changed {
             self.pending_local.store(true, Ordering::SeqCst);
         }
+        let skipped = result.storage["text"]
+            .as_str()
+            .is_some_and(govorun_core::dictionary_document::has_unusable);
         let configuration = json!({"storage":result.storage,"revision":result.revision,
-            "changed":result.changed,"localChange":self.pending_local.load(Ordering::SeqCst)});
+            "changed":result.changed,"skipped":skipped,"localChange":self.pending_local.load(Ordering::SeqCst)});
         (self.configure)(configuration.clone()).await?;
         self.pending_local.store(false, Ordering::SeqCst);
         let snapshot = projection(&configuration)?;

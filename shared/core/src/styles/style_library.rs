@@ -1,7 +1,7 @@
 #[path="style_library/android_preferences.rs"]
 pub(crate) mod android_preferences;
 use crate::{
-    style_definition::{valid_id, Style, MAX_INSTRUCTION, MAX_NAME, MAX_PRESETS},
+    style_definition::{valid_id, words, Style, MAX_INSTRUCTION, MAX_NAME, MAX_PRESETS},
     Error, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -12,12 +12,18 @@ mod activation_options;
 #[path="style_library/application_rules.rs"]
 mod application_rules;
 #[path="style_library/choices.rs"]
-mod choices;
+pub(crate) mod choices;
 #[path="style_library/dictation.rs"]
 pub(crate) mod dictation;
 #[path="style_library/stored.rs"]
 mod stored;
 
+pub(crate) use stored::usable as usable_stored_preset;
+/// A stored rule this version can use. Others stay in the file and are skipped.
+pub(crate) fn usable_application_rule(value: &Value) -> bool {
+    serde_json::from_value::<choices::ApplicationRule>(value.clone())
+        .is_ok_and(|rule| application_rules::admit(std::slice::from_ref(&rule)).is_ok())
+}
 pub(crate) fn validate_stored_application_rules(value: &Value) -> Result<()> {
     let rules: Vec<choices::ApplicationRule> =
         serde_json::from_value(value.clone()).map_err(|_| Error::InvalidRequest)?;
@@ -253,8 +259,8 @@ fn save(
     select_saved: bool,
 ) -> Result<Value> {
     validate(&original)?;
-    let name = name.split_whitespace().collect::<Vec<_>>().join(" ");
-    let instruction = instruction.split_whitespace().collect::<Vec<_>>().join(" ");
+    let name = words(&name);
+    let instruction = words(&instruction);
     let reject = |reason| frame(&original, original.clone(), false, reason, None);
     if !(1..=MAX_NAME).contains(&name.chars().count()) {
         return Ok(reject("invalidName"));
@@ -361,7 +367,7 @@ pub(crate) fn evaluate(command: Command) -> Result<Value> {
                 Field::Name => (1, MAX_NAME),
                 Field::Instruction => (3, MAX_INSTRUCTION),
             };
-            let normalized = value.split_whitespace().collect::<Vec<_>>().join(" ");
+            let normalized = words(&value);
             let count = normalized.chars().count();
             return Ok(
                 json!({"normalized":normalized,"input":value.chars().take(maximum).collect::<String>(),

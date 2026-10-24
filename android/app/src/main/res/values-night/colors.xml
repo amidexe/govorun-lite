@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark half of the DayPlan palette; see values/colors.xml. -->
-    <color name="govorun_primary">#216E72</color>
-    <color name="govorun_on_primary">#3B2F2B</color>
-    <color name="govorun_primary_container">#17474A</color>
-    <color name="govorun_on_primary_container">#D5EFF0</color>
-    <color name="govorun_on_surface">#F7F7F7</color>
-    <color name="govorun_surface_container_high">#303030</color>
+    <!-- Dark half of the monochrome palette; see values/colors.xml. -->
+    <color name="govorun_primary">#F9F9F9</color>
+    <color name="govorun_on_primary">#5F5F5F</color>
+    <color name="govorun_primary_container">#A0A0A0</color>
+    <color name="govorun_on_primary_container">#232323</color>
+    <color name="govorun_on_surface">#E5E5E5</color>
+    <color name="govorun_surface_container_high">#262626</color>
 </resources>

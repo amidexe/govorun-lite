@@ -90,6 +90,11 @@ pub fn builder() -> tauri::Builder<tauri::Wry> {
         .invoke_handler(tauri::generate_handler![commands::native_command, commands::native_reconnect, commands::window_action, commands::window_layout, appearance::appearance, setup::setup, erase::erase_local_data, updates::updates, recording_indicator::recording_indicator])
         .on_window_event(|window, event| {
             focus::observed(window, event);
+            // Fires both for the app's own theme switch and for a Windows theme change.
+            #[cfg(target_os = "windows")]
+            if let (WindowEvent::ThemeChanged(theme), "main", Ok(hwnd)) = (event, window.label(), window.hwnd()) {
+                appearance::paint_title_bar(hwnd.0, *theme);
+            }
             if matches!(event, WindowEvent::Focused(true)) {
                 if let Some(services) = window.app_handle().try_state::<Services>() {
                     let services = services.inner().clone();
@@ -110,7 +115,7 @@ pub fn builder() -> tauri::Builder<tauri::Wry> {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {
                     api.prevent_close();
-                    let _ = window.hide();
+                    windows::close_main(window.app_handle());
                 }
             }
         })

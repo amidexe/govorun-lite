@@ -160,6 +160,8 @@ object NotificationRepository {
         if (signingOut || accountScope().isEmpty()) return@withLock true
         val plan = synchronized(this) { value.decision("syncPlan", extra = JSONObject().put("storageAvailable", storageAvailable).put("configured", api.configured)) }
         if (!plan.getBoolean("reconcile")) return@withLock true
+        // Offline or roaming choice: keep the change pending for the daily job.
+        if (!com.govorun.lite.network.NetworkPolicy.allowsActiveNetwork(context)) return@withLock true
         try {
             var cleanupFailed = false
             var snapshot = snapshot()

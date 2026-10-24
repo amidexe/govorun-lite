@@ -1,6 +1,7 @@
 package com.govorun.lite.util
 
 import android.content.Context
+import com.govorun.lite.storage.GovorunPreferences
 
 internal object AppFilterPrefs {
     private const val FILE_NAME = StorageKeys.PREFS_FILE
@@ -31,5 +32,5 @@ internal object AppFilterPrefs {
     }
 
     private fun prefs(context: Context) =
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
 }

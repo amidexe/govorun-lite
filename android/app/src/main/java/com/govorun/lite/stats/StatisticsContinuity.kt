@@ -2,6 +2,7 @@ package com.govorun.lite.stats
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.govorun.lite.storage.GovorunPreferences
 import java.security.MessageDigest
 import org.json.JSONArray
 import org.json.JSONObject
@@ -9,8 +10,8 @@ import org.json.JSONObject
 /** Read-only values from the preceding v3 store; all merge decisions stay in Rust. */
 internal object StatisticsContinuity {
     fun read(context: Context, accountId: String?, today: String): JSONObject = read(
-        context.applicationContext.getSharedPreferences("govorun_lite_prefs", Context.MODE_PRIVATE),
-        context.applicationContext.getSharedPreferences("govorun_stats_sync_v2", Context.MODE_PRIVATE),
+        GovorunPreferences.of(context.applicationContext, "govorun_lite_prefs"),
+        GovorunPreferences.of(context.applicationContext, "govorun_stats_sync_v2"),
         accountId, today)
 
     internal fun read(local: SharedPreferences, sync: SharedPreferences, accountId: String?, today: String): JSONObject {

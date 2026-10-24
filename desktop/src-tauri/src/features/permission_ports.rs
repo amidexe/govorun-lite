@@ -192,7 +192,10 @@ impl Physical {
             input_channel: windows.then_some(Value::Null),
             input_channels: windows.then_some(catalog.channels),
         };
-        let snapshot = permission_setup::settings::overlay(&document.value, snapshot)?;
+        let (snapshot, defaulted) = permission_setup::settings::overlay_noted(&document.value, snapshot)?;
+        if defaulted {
+            self.account.report_unread("settings_load_failed", "recording_setting_defaulted");
+        }
         *self
             .observed
             .lock()

@@ -1,13 +1,14 @@
 package com.govorun.lite.overlay
 
 import android.content.Context
+import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.util.StorageKeys
 import com.govorun.lite.util.Prefs
 import kotlin.math.roundToInt
 
 internal object BubblePlacement {
     fun hasCustomMargin(context: Context): Boolean =
-        context.getSharedPreferences(StorageKeys.PREFS_FILE, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, StorageKeys.PREFS_FILE)
             .contains(StorageKeys.Key.BUBBLE_EDGE_MARGIN)
 
     fun horizontalOffsetPx(context: Context): Int = bubbleHorizontalOffsetPx(

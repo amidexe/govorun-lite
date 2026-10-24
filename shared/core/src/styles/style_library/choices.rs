@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 
-const BUILT_INS: [&str; 3] = ["formal", "light", "concise"];
+pub(crate) const BUILT_INS: [&str; 3] = ["formal", "light", "concise"];
 
 /// Stored option maps and legacy mirrors are facts. Selection, defaults and
 /// updates have the same meaning on every binding.

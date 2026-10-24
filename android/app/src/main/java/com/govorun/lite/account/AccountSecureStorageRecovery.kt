@@ -28,7 +28,9 @@ internal class AccountSecureStorageRecovery(
                 }
                 if (schedule.isNull("milliseconds")) return@launch
                 delay(schedule.getLong("milliseconds"))
-                runCatching { account.restore() }
+                // Before the first projection every start looks unavailable; a record
+                // read by then must not be written again.
+                if (account.storageProblem != null) runCatching { account.restore() }
                 if (account.storageProblem == null) {
                     if (account.session() != null) onRecovered()
                     return@launch

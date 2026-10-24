@@ -88,6 +88,14 @@ internal fun AfterRecordingSettings(
             }
         }
     }
+    SettingsSection("Сеть") {
+        SettingsSwitchRow(
+            title = "Офлайн в роуминге",
+            summary = "Включается сам, пока телефон в роуминге",
+            checked = state.noNetworkInRoaming,
+            onCheckedChange = { onEvent(SettingsEvent.Change(SettingsChange.SetNoNetworkInRoaming(it))) },
+        )
+    }
 }
 
 @Composable

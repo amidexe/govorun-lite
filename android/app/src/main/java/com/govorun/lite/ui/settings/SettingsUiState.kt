@@ -34,6 +34,9 @@ data class SettingsUiState(
     val edgeMarginMax: Int = Prefs.BUBBLE_EDGE_MARGIN_MAX,
     val legacyVoiceMarker: Boolean = false,
     val rememberLastDictation: Boolean = false,
+    val noNetworkInRoaming: Boolean = true,
+    /** The documents base did not open: settings read as defaults and are not kept. */
+    val storageUnavailable: Boolean = false,
 ) {
     companion object {
         fun loading() = SettingsUiState(

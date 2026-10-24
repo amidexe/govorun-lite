@@ -104,19 +104,23 @@ pub(super) fn run(context: Arc<Context>, ready: SyncSender<Result<(), &'static s
     }
     let mut was_focused = false;
     while context.running.load(Ordering::Acquire) {
-        // Focus loss ends assignment suppression even when no new key arrives.
-        let focused = context.state.lock().is_ok_and(|state| {
-            state.capture.active()
+        // Focus loss ends assignment suppression even when no new key arrives,
+        // so only an active assignment polls; otherwise the thread sleeps until a key.
+        let (assigning, focused) = context.state.lock().map_or((false, false), |state| {
+            let assigning = state.capture.active();
+            let focused = assigning
                 && state
                     .capture_ports
                     .as_ref()
-                    .is_some_and(|ports| (ports.focus)())
+                    .is_some_and(|ports| (ports.focus)());
+            (assigning, focused)
         });
         if focused != was_focused {
             synchronize(&context);
             was_focused = focused;
         }
-        match listener.recv_timeout(Duration::from_millis(5)) {
+        let wait = Duration::from_millis(if assigning { 5 } else { 250 });
+        match listener.recv_timeout(wait) {
             Ok(raw) => {
                 if let Some(code) = code(raw) {
                     context.route(code, raw);

@@ -26,8 +26,6 @@
     <!-- Onboarding: accessibility service -->
     <string name="onb_accessibility_title">Разрешите Говоруну использовать специальные возможности</string>
     <string name="onb_accessibility_body_pending">Без них Говорун не сможет вставлять текст в другие программы.</string>
-    <string name="onb_accessibility_body_enabled">Готово — Говорун может работать в других программах</string>
-    <string name="onb_accessibility_open">Разрешить специальные возможности</string>
     <string name="onb_accessibility_do_row">Говорун — голосовой ввод (включить)</string>
     <string name="onb_accessibility_dont_row">Быстрый запуск (не включать)</string>
 
@@ -46,7 +44,6 @@
          confused about why the bubble stopped working. -->
     <string name="onb_try_grant_hint">Выберите «При использовании приложения»</string>
     <string name="onb_try_denied">Доступ к микрофону закрыт</string>
-    <string name="onb_try_open_settings">Открыть настройки</string>
     <string name="onb_try_tap_to_stop">Говорите…</string>
     <string name="onb_try_done">Отлично! У Вас получилось! Нажмите «Далее» для продолжения настройки</string>
     <string name="onb_try_preparing">Готовим распознавание…</string>
@@ -62,10 +59,8 @@
 
     <!-- Onboarding: battery optimization (optional) -->
     <string name="onb_battery_title">Почти у цели — работа в фоне</string>
-    <string name="onb_battery_body">Android может останавливать приложения в фоне для экономии батареи — тогда Говорун пропадает в самый неподходящий момент. Можно попросить систему этого не делать. Это последний шаг.</string>
-    <string name="onb_battery_body_done">Работа в фоне уже разрешена. Можно нажать «Готово».</string>
-    <string name="onb_battery_open">Разрешить работу в фоне</string>
-    <string name="onb_battery_skip_note">Шаг не обязательный — можно сразу нажать «Готово» и настроить позже.</string>
+    <string name="onb_battery_body">Android может останавливать приложения в фоне для экономии батареи — тогда Говорун пропадает в самый неподходящий момент. Можно попросить систему этого не делать.</string>
+    <string name="onb_battery_skip_note">Шаг не обязательный — его можно пропустить и настроить позже.</string>
 
     <string name="onb_step_soon">Этот шаг будет достроен в ближайших обновлениях. Пока просто нажмите «Далее».</string>
     <string name="onb_open_app_settings">Открыть настройки приложения</string>
@@ -85,7 +80,6 @@
     <string name="main_card_service_button">Разрешить специальные возможности</string>
     <string name="main_card_battery_title">Разрешите работу в фоне</string>
     <string name="main_card_battery_body">Без этого Android со временем может выгрузить Говоруна, и птичка перестанет появляться — пока вы заново не откроете приложение.</string>
-    <string name="main_card_battery_button">Разрешить</string>
 
 
     <string name="main_needs_setup_sub">Несколько мелочей надо подкрутить — карточки ниже подскажут, что и где.</string>

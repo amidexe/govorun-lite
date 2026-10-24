@@ -1,6 +1,6 @@
 [package]
 name = "govorun-desktop-host"
-version = "2.1.105"
+version = "2.1.112"
 edition = "2021"
 publish = false
 
@@ -30,6 +30,7 @@ reqwest = { version = "=0.13.5", default-features = false, features = ["native-t
 url = "=2.5.8"
 tauri-plugin-updater = { version = "=2.11.0", default-features = false, features = ["native-tls", "system-proxy", "zip"] }
 base64 = "=0.22.1"
+govorun-document-store = { path = "../../shared/document-store" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "=0.10.1"
@@ -40,4 +41,4 @@ objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["NSA
 objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSAttributedString", "NSDictionary", "NSString", "NSValue", "NSArray", "NSBundle", "NSData", "NSError", "NSJSONSerialization", "NSUserDefaults", "NSObject", "NSValue"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows-sys = { version = "=0.61.2", features = ["Win32_Security_Cryptography", "Win32_Foundation", "Win32_System_Registry"] }
+windows-sys = { version = "=0.61.2", features = ["Win32_Security_Cryptography", "Win32_Foundation", "Win32_Graphics_Dwm", "Win32_System_Registry"] }

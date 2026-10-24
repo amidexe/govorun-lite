@@ -109,5 +109,9 @@ fn event_detail(name: &str, detail: &str) -> String {
             &detail[5..]
         );
     }
-    lookup(catalog::DETAIL_TITLES, detail).unwrap_or("").into()
+    match lookup(catalog::DETAIL_TITLES, detail) {
+        Some(title) => title.into(),
+        None if super::input::code(detail) => format!("Код: {detail}"),
+        None => String::new(),
+    }
 }

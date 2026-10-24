@@ -145,7 +145,7 @@
                 <span class="caret"><Icon name="ph_caret_down" /></span>
                 {#if event.compact}<span class="compact">{event.compact}</span>{/if}
               </summary>
-              <div class="details">
+              <div class="details selectable">
                 {#each event.details.split('\n') as line}<p class:stage={/^[1-3]\. /.test(line)}>
                     {line.trimStart()}
                   </p>{/each}
@@ -326,5 +326,4 @@
     font-weight: 600;
     color: var(--text);
   }
-
 </style>

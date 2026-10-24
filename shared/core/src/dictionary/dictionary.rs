@@ -83,9 +83,9 @@ pub(crate) fn evaluate(command: Command) -> Result<Value> {
             captured,
         } => {
             document::parse(&raw)?;
-            let raw = voice::mappings(&raw, &correct, captured);
-            document::parse(&raw)?;
-            json!({"raw":raw})
+            let next = voice::mappings(&raw, &correct, captured);
+            document::no_new_unusable(&raw, &next)?;
+            json!({"raw":next})
         }
         Command::TextMapping {
             raw,
@@ -93,9 +93,9 @@ pub(crate) fn evaluate(command: Command) -> Result<Value> {
             replacement,
         } => {
             document::parse(&raw)?;
-            let raw = voice::text_mapping(&raw, &recognized, &replacement);
-            document::parse(&raw)?;
-            json!({"raw":raw})
+            let next = voice::text_mapping(&raw, &recognized, &replacement);
+            document::no_new_unusable(&raw, &next)?;
+            json!({"raw":next})
         }
     })
 }

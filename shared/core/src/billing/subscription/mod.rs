@@ -15,6 +15,11 @@ use state::Operation;
 
 impl AccountSession {
     pub async fn subscription_action(&self, epoch: u64, command: Value) -> Result<Value> {
+        self.subscription_action_reporting(epoch, command, &|_| {}).await
+    }
+    /// A refused action shows one generic line; `refused` receives its cause for the journal.
+    pub async fn subscription_action_reporting(&self, epoch: u64, command: Value,
+        refused: &(dyn Fn(Error) + Sync)) -> Result<Value> {
         self.current(epoch)?;
         let action = command["action"].as_str().ok_or(Error::InvalidRequest)?;
         if action == "dismissPromo" {
@@ -88,6 +93,7 @@ impl AccountSession {
             Err(error @ (Error::SessionChanged | Error::SignedOut)) => Err(error),
             Err(error) => {
                 self.inner.subscription.fail(operation, &error)?;
+                refused(error);
                 Ok(json!({"effect":null, "failed":true}))
             }
         }

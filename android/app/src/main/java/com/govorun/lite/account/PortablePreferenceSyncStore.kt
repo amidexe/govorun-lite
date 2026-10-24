@@ -4,6 +4,7 @@ import android.content.Context
 import com.govorun.lite.model.stylization.EmojiMode
 import com.govorun.lite.model.stylization.PunctuationMode
 import com.govorun.lite.shared.SharedBusiness
+import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.stylization.StylizationStylePreferences
 import com.govorun.lite.util.Prefs
 import java.security.MessageDigest
@@ -13,7 +14,7 @@ import org.json.JSONObject
 /** Stores raw UI intents and opaque Rust state; it does not merge preference fields. */
 internal class PortablePreferenceSyncStore(context: Context) {
     private val appContext = context.applicationContext
-    private val prefs = appContext.getSharedPreferences("govorun_preferences_journal_v1", Context.MODE_PRIVATE)
+    private val prefs = GovorunPreferences.of(appContext, "govorun_preferences_journal_v1")
     private var applying = false
 
     @Synchronized

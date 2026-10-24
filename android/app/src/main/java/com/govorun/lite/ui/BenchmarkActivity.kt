@@ -43,6 +43,7 @@ class BenchmarkActivity : ComponentActivity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var state by mutableStateOf(BenchmarkUiState())
     private var shareText = ""
+    private var summaryText = ""
     private var checkJob: Job? = null
     private var reportState = "idle"
     private var reportStage = "fixtures"
@@ -76,7 +77,7 @@ class BenchmarkActivity : ComponentActivity() {
             state = state.copy(error = "Сначала завершите диктовку")
             return
         }
-        shareText = ""; reportState = "running"; reportStage = "fixtures"
+        shareText = ""; summaryText = ""; reportState = "running"; reportStage = "fixtures"
         state = BenchmarkUiState(running = true)
         refreshReport()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -145,7 +146,7 @@ class BenchmarkActivity : ComponentActivity() {
     }
 
     private fun refreshReport() {
-        state = state.copy(report = RecognitionDiagnosticReport.render(systemReport, reportState, reportStage, shareText))
+        state = state.copy(report = RecognitionDiagnosticReport.render(systemReport, reportState, reportStage, shareText, summaryText))
     }
 
     private fun copyReport() {
@@ -176,10 +177,13 @@ class BenchmarkActivity : ComponentActivity() {
             system = system,
         )
         val version = packageManager.getPackageInfo(packageName, 0).versionName
+        summaryText = RecognitionDiagnosticReport.summary(
+            version.orEmpty(), device, if (result.provider == "nnapi") "NNAPI" else "CPU", speedText.replace('×', 'x'),
+        )
         shareText = buildString {
             appendLine("Говорун: голос в текст ($version)")
             appendLine("${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}, $provider")
-            appendLine("Скорость: $speedText")
+            appendLine("Скорость: ${speedText.replace('×', 'x')}") // cp1251 forums turn «×» into «Ч»
             appendLine("11 сек: ${result.coldMs} / ${result.warmMs} мс, 71 сек: ${result.longMs} мс")
             appendLine("Загрузка модели: ${result.loadMs} мс (входит в первый запуск)")
             append("Фактический ускоритель каждого из трёх замеров: $provider")

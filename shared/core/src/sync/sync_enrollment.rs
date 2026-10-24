@@ -29,6 +29,8 @@ pub struct LocalFacts {
     pub statistics: Value,
     pub history: bool,
     pub remote_data: Option<bool>,
+    /// Some local data could not be read: the person decides, as if they had asked.
+    pub unread: bool,
 }
 pub struct EnrollmentSnapshot {
     pub stored: Option<DataSyncMode>,
@@ -71,7 +73,7 @@ impl SyncEnrollmentRepository {
         let current = physical.snapshot(&slot)?;
         let command = serde_json::from_value(json!({"kind":"enrollment","stored":current.stored,
             "content":facts.content,"statistics":facts.statistics,"history":facts.history,
-            "otherAccountHistory":current.other_account_history,"requested":current.requested,
+            "otherAccountHistory":current.other_account_history,"requested":current.requested || facts.unread,
             "remoteData":facts.remote_data}))
         .map_err(|_| EnrollmentError::InvalidRequest)?;
         let result = crate::synchronization::evaluate(command)

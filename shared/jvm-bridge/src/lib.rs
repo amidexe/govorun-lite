@@ -7,6 +7,7 @@ use std::{
     panic::{catch_unwind, AssertUnwindSafe},
     ptr,
 };
+mod documents;
 mod session_host;
 mod session_ports;
 mod session_style_ports;

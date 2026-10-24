@@ -26,6 +26,14 @@ export function validPromoProgram(value: unknown): value is PromoProgram {
   );
 }
 
+/** The Promo a free-access request joins. Core accepts only the version shown to the user and
+ * refuses any version while no Promo is shown, so a hidden Promo sends none (as Android does). */
+export function shownPromoProgram(value: { promoProgram?: PromoProgram | null }): {
+  programVersion?: string;
+} {
+  return value.promoProgram?.visible ? { programVersion: value.promoProgram.programVersion } : {};
+}
+
 export function promoProgramDescription(program: PromoProgram): string {
   if (program.state !== 'active')
     return program.message

@@ -1,5 +1,5 @@
 [workspace]
-members = ["core", "core-http", "styles-http", "jvm-bridge"]
+members = ["core", "core-http", "document-store", "styles-http", "jvm-bridge"]
 resolver = "2"
 
 [workspace.dependencies]

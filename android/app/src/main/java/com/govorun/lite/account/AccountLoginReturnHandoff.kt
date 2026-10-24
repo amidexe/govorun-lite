@@ -1,6 +1,7 @@
 package com.govorun.lite.account
 
 import android.content.Context
+import com.govorun.lite.storage.GovorunPreferences
 
 internal object AccountLoginReturnHandoff {
     private const val PREFS = "govorun.account.login_return"
@@ -8,17 +9,17 @@ internal object AccountLoginReturnHandoff {
     private const val KEY_STYLIZATION_AT = "stylization_created_at"
 
     fun beginSubscription(context: Context, nowMillis: Long = System.currentTimeMillis()) {
-        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context.applicationContext, PREFS)
             .edit().remove(KEY_STYLIZATION_AT).putLong(KEY_CREATED_AT, nowMillis).apply()
     }
 
     fun beginStylization(context: Context, nowMillis: Long = System.currentTimeMillis()) {
-        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context.applicationContext, PREFS)
             .edit().remove(KEY_CREATED_AT).putLong(KEY_STYLIZATION_AT, nowMillis).apply()
     }
 
     fun clear(context: Context) {
-        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context.applicationContext, PREFS)
             .edit().remove(KEY_CREATED_AT).remove(KEY_STYLIZATION_AT).apply()
     }
 
@@ -26,7 +27,7 @@ internal object AccountLoginReturnHandoff {
         context: Context,
         nowMillis: Long = System.currentTimeMillis(),
     ): AccountLoginDestination {
-        val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val prefs = GovorunPreferences.of(context.applicationContext, PREFS)
         val createdAt = prefs.getLong(KEY_CREATED_AT, 0L)
         val stylizationAt = prefs.getLong(KEY_STYLIZATION_AT, 0L)
         clear(context)

@@ -158,13 +158,22 @@ fn model_path(model: &Path) -> Result<CString, Box<dyn Error>> {
     Ok(CString::new(model.to_str().ok_or("non-UTF8 model path")?)?)
 }
 
+/// Silero starts a phrase a little after its first sound; a later fragment gets up to
+/// this much input before its native start (Handy keeps the same 450 ms).
+const PREROLL: usize = 16_000 * 450 / 1000;
+/// Recent input that can still hold a later fragment's start (native fragments stay near 30 s).
+const HISTORY: usize = 16_000 * 32;
+/// The first fragment keeps up to six seconds of input before its native start.
+const BEGINNING_MAX: usize = 16_000 * 6;
+
 pub struct Vad {
     api: Api,
     detector: *const c_void,
-    #[cfg(windows)]
     beginning: Vec<f32>,
-    #[cfg(windows)]
     first_pending: bool,
+    history: Vec<f32>,
+    history_start: usize,
+    last_end: usize,
 }
 impl Vad {
     pub fn new(model: &Path, runtime: &Path) -> Result<Self, Box<dyn Error>> {
@@ -173,13 +182,18 @@ impl Vad {
         let config = Config {
             silero: Silero {
                 model: path.as_ptr(),
-                threshold: 0.5,
-                min_silence: 1.0,
-                min_speech: if cfg!(windows) { 0.10 } else { 0.25 },
+                // Handy's threshold. With the preroll and the raw tail on key release it
+                // lost fewer quiet phrases in long synthetic dictations and produced no
+                // text on 132 noise clips (bench of 23 Oct 2026).
+                threshold: 0.3,
+                // Cut only at pauses of 2 s: shorter cuts split sentences and lost
+                // boundary words on the dictation-pauses corpus (24 Oct 2026).
+                min_silence: 2.0,
+                min_speech: 0.25,
                 window: 512,
-                // Preserve the existing macOS pause policy on both desktops.
-                // This native setting is a soft threshold, not a hard limit.
-                max_speech: 30.0,
+                // Soft cap: past 15 s the detector cuts at a shorter pause, so the
+                // decode left after key release stays short on slow CPUs.
+                max_speech: 15.0,
             },
             sample_rate: 16000,
             threads: 1,
@@ -195,10 +209,11 @@ impl Vad {
         Ok(Self {
             api,
             detector,
-            #[cfg(windows)]
             beginning: Vec::new(),
-            #[cfg(windows)]
             first_pending: true,
+            history: Vec::new(),
+            history_start: 0,
+            last_end: 0,
         })
     }
     pub fn segments(&self, pcm: &[f32]) -> Vec<usize> {
@@ -220,15 +235,16 @@ impl Vad {
         if pcm.len() != 512 || pcm.iter().any(|sample| !sample.is_finite()) {
             return Err("canonical finite Silero window required".into());
         }
-        #[cfg(windows)]
-        {
-            if self.first_pending && self.beginning.len() < crate::segmentation::SHORT_MAX {
-                let count = pcm
-                    .len()
-                    .min(crate::segmentation::SHORT_MAX - self.beginning.len());
-                self.beginning.extend_from_slice(&pcm[..count]);
-            }
+        if self.first_pending && self.beginning.len() < BEGINNING_MAX {
+            let count = pcm
+                .len()
+                .min(BEGINNING_MAX - self.beginning.len());
+            self.beginning.extend_from_slice(&pcm[..count]);
         }
+        self.history.extend_from_slice(pcm);
+        let excess = self.history.len().saturating_sub(HISTORY);
+        self.history.drain(..excess);
+        self.history_start += excess;
         unsafe {
             (self.api.accept)(self.detector, pcm.as_ptr(), pcm.len() as i32);
         }
@@ -255,9 +271,22 @@ impl Vad {
                 let samples = (*segment).samples;
                 let valid = count > 0 && !samples.is_null();
                 if valid {
-                    #[cfg(windows)]
                     let mut pcm = Vec::new();
-                    #[cfg(windows)]
+                    let start = usize::try_from((*segment).start).ok();
+                    if !self.first_pending {
+                        // Never reach into the previous fragment or past retained input.
+                        if let Some(start) = start {
+                            let from = start
+                                .saturating_sub(PREROLL)
+                                .max(self.last_end)
+                                .max(self.history_start);
+                            if from < start && start <= self.history_start + self.history.len() {
+                                pcm.extend_from_slice(
+                                    &self.history[from - self.history_start..start - self.history_start],
+                                );
+                            }
+                        }
+                    }
                     if self.first_pending {
                         // Native segment.start is an absolute input offset.
                         // Restore only the missing prefix, never duplicate the
@@ -270,15 +299,11 @@ impl Vad {
                         self.beginning.clear();
                         self.first_pending = false;
                     }
-                    #[cfg(windows)]
-                    {
-                        pcm.extend_from_slice(std::slice::from_raw_parts(samples, count as usize));
+                    pcm.extend_from_slice(std::slice::from_raw_parts(samples, count as usize));
+                    if let Some(start) = start {
+                        self.last_end = start + count as usize;
                     }
-                    if valid {
-                        #[cfg(not(windows))]
-                        let pcm = std::slice::from_raw_parts(samples, count as usize).to_vec();
-                        output.push(pcm);
-                    }
+                    output.push(pcm);
                 }
                 (self.api.destroy_segment)(segment);
                 (self.api.pop)(self.detector);

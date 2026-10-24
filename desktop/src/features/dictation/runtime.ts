@@ -17,6 +17,7 @@ export interface RuntimeSnapshot {
   readiness?: RuntimeReadiness | null;
   hasLocalDictation?: boolean | null;
   displayName?: string;
+  storageUnavailable?: boolean;
 }
 
 export function runtimeSnapshot(value: unknown): RuntimeSnapshot {
@@ -54,6 +55,8 @@ export function runtimeSnapshot(value: unknown): RuntimeSnapshot {
   }
   if (snapshot.hasLocalDictation != null && typeof snapshot.hasLocalDictation !== 'boolean')
     throw new Error('Invalid setup history');
+  if (snapshot.storageUnavailable !== undefined && snapshot.storageUnavailable !== true)
+    throw new Error('Invalid storage state');
   if (
     snapshot.displayName !== undefined &&
     (typeof snapshot.displayName !== 'string' || snapshot.displayName.length > 64)

@@ -2,6 +2,7 @@ package com.govorun.lite.stylization
 
 import android.content.Context
 import com.govorun.lite.model.stylization.CustomStylePreset
+import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.util.StorageKeys
 import org.json.JSONArray
 import org.json.JSONObject
@@ -26,5 +27,5 @@ internal object SelfHostedStylePresets {
     private fun decision(context: Context, command: JSONObject): JSONObject = selfHostedDecision(command.put("kind", "presets")
         .put("items", JSONArray(preferences(context).getString(KEY_PRESETS, "[]"))))
     private fun store(context: Context, values: JSONArray) { preferences(context).edit().putString(KEY_PRESETS, values.toString()).apply() }
-    private fun preferences(context: Context) = context.getSharedPreferences(StorageKeys.PREFS_FILE, Context.MODE_PRIVATE)
+    private fun preferences(context: Context) = GovorunPreferences.of(context, StorageKeys.PREFS_FILE)
 }

@@ -6,6 +6,7 @@ import com.govorun.lite.account.currentOnlineTermsActionRequired
 import com.govorun.lite.account.styleSetupNeedsSubscription
 import com.govorun.lite.account.connectionMessage
 import com.govorun.lite.account.connectionHint
+import com.govorun.lite.network.NetworkRefusal
 import java.time.Duration
 import java.time.Instant
 
@@ -36,7 +37,11 @@ internal fun homeAccessPresentation(
     account.connectionMessage != null -> HomeAccessPresentation(
         active = false,
         label = "${account.connectionMessage}. Диктовка работает офлайн.",
-        actionTitle = "Повторить",
+        actionTitle = when (account.networkRefusal.takeUnless { account.networkAvailable }) {
+            NetworkRefusal.OFFLINE -> "Включить сеть"
+            NetworkRefusal.ROAMING -> "Настройки"
+            null -> "Повторить"
+        },
         actionHint = account.connectionHint,
     )
     styleSetupNeedsSubscription(account) -> HomeAccessPresentation(

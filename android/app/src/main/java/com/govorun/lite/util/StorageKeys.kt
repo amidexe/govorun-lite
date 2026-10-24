@@ -36,5 +36,7 @@ internal object StorageKeys {
         const val STATS_SECONDS = "stats_seconds_total"
         const val STATS_WORDS_TODAY = "stats_words_today"
         const val STATS_TODAY_DATE = "stats_today_date"
+        const val OFFLINE_MODE = "offline_mode"
+        const val NO_NETWORK_IN_ROAMING = "no_network_in_roaming"
     }
 }

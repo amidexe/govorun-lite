@@ -92,7 +92,7 @@
               ><Icon name={copied === 'improved' ? 'ph_check' : 'ph_copy'} size={16} /></button
             >
           </div>{/if}
-        <p class="dictation" use:measure={'improved'}>{improved}</p>
+        <p class="dictation selectable" use:measure={'improved'}>{improved}</p>
         {#if cut.improved}<p class="note">Показано начало · копируется весь текст</p>{/if}
         {#if original}<div class="footer">
             <div class="version">
@@ -105,7 +105,7 @@
                 ><Icon name={copied === 'original' ? 'ph_check' : 'ph_copy'} size={16} /></button
               >
             </div>
-            <p class="dictation" use:measure={'original'}>{original}</p>
+            <p class="dictation selectable" use:measure={'original'}>{original}</p>
             {#if cut.original}<p class="note">Показано начало · копируется весь текст</p>{/if}
           </div>{/if}
       </div>{/if}

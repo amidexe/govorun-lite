@@ -149,6 +149,7 @@ sealed interface HomeEvent {
     data object KeepAccountDataLocal : HomeEvent
     data object OpenReview : HomeEvent
     data object OpenProducts : HomeEvent
+    data class SetOffline(val enabled: Boolean) : HomeEvent
     data object OpenAccessibility : HomeEvent
     data object OpenAutostart : HomeEvent
     data object OpenAppDetails : HomeEvent

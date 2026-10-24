@@ -11,6 +11,8 @@ internal interface SharedStylizationPorts : StylizationPorts {
     fun storageAvailable(): Boolean
     fun sessionGeneration(): Long
     suspend fun prepareAccess(requiredCredits: Int)
+    /** «Офлайн» or roaming refusal: the person's own server is network too. */
+    fun networkRefused(): Boolean
 }
 
 /** Executes the local Rust use case; no admission or routing policy lives here. */
@@ -60,7 +62,10 @@ internal class SharedStylizationExecutor(private val ports: SharedStylizationPor
                         response = ports.request(text, mode, checkNotNull(selection), frame.getJSONObject("plan").getInt("characters"))
                         JSONObject().put("kind", "response").put("input", units(text)).put("output", units(response.text))
                     }
-                    "selfHosted" -> return ports.processSelfHosted(text, mode)
+                    "selfHosted" -> return if (ports.networkRefused()) {
+                        StylizationResult(text, usedFallback = true, fallbackReason = StylizationFallbackReason.OFFLINE)
+                            .also(ports::recordResult)
+                    } else ports.processSelfHosted(text, mode)
                     "complete" -> {
                         val reason = enumName(frame.getString("reason"))
                         val result = when (frame.getString("outcome")) {

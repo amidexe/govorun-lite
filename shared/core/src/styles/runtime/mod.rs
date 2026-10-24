@@ -16,7 +16,7 @@ use govorun_core::{
 };
 use serde_json::{json, Value};
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicU8, Ordering},
     Arc, OnceLock,
 };
 use tokio::sync::Mutex;
@@ -47,6 +47,8 @@ pub struct Stylization {
     clock: Clock,
     statistics: OnceLock<StatisticsSink>,
     stopped: AtomicBool,
+    /// Last reported connectivity: 0 unknown, 1 offline, 2 online.
+    connectivity: AtomicU8,
     workers: OnceLock<workers::Workers>,
     reporter: OnceLock<reporting::Reporter>,
     usage_worker: OnceLock<usage::Worker>,
@@ -81,6 +83,7 @@ impl Stylization {
             maintenance: Mutex::new(None),
             statistics: OnceLock::new(),
             stopped: AtomicBool::new(false),
+            connectivity: AtomicU8::new(0),
             workers: OnceLock::new(),
             reporter: OnceLock::new(),
             usage_worker: OnceLock::new(),

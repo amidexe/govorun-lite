@@ -108,6 +108,12 @@ fn preset(value: StoredPreset, inherited: &Options) -> Style {
     }
 }
 
+/// A stored catalog preset this version can use; the macOS reader skips the others.
+pub(crate) fn usable(value: &Value) -> bool {
+    serde_json::from_value::<StoredPreset>(value.clone())
+        .is_ok_and(|stored| preset(stored, &Options::defaults()).admissible_stored())
+}
+
 pub(super) fn read(stored: Stored) -> Result<Value> {
     if stored.instruction.len() > 64 * 1024
         || stored

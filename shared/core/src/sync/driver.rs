@@ -81,6 +81,8 @@ struct State {
     immediate: bool,
     stopped: bool,
     paused: Option<Scope>,
+    /// Local data a stage cannot read is named once per launch, not per attempt.
+    reported: std::collections::BTreeSet<(&'static str, &'static str)>,
 }
 pub struct SyncDriver {
     context: Context,
@@ -251,7 +253,13 @@ impl SyncDriver {
                 let result = (self.stages)(stage, scope.clone(), cancellation.clone()).await;
                 self.check(scope, cancellation)?;
                 if let Err(error) = result {
-                    (self.diagnostics)(stage.diagnostic(), error);
+                    let local = error.status.is_none()
+                        && ["_storage_invalid", "_storage_unavailable", "_entry_skipped"].iter().any(|end| error.code.ends_with(end));
+                    let first = !local
+                        || self.state.lock().unwrap().reported.insert((stage.diagnostic(), error.code));
+                    if first {
+                        (self.diagnostics)(stage.diagnostic(), error);
+                    }
                 }
                 decision = call(
                     json!({"kind":"advance","flow":decision["flow"],"scope":scope,

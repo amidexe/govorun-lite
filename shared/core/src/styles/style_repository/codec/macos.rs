@@ -1,4 +1,5 @@
-use super::{call, parse, Error, Logical};
+use super::{call, parse, usable, Error, Logical};
+use crate::style_library::{usable_application_rule, usable_stored_preset};
 use serde_json::{json, Value};
 const CATALOG: &str = "govorunGatewayCustomPresetsV1";
 const RULES: &str = "govorunApplicationStyleRulesV1";
@@ -10,30 +11,52 @@ pub(super) fn read(values: &Value) -> Result<Logical, Error> {
     for style in ["formal", "light", "concise", "custom"] {
         options.insert(style.into(), stored_options(values, &format!(".{style}")));
     }
-    let reply=call(json!({"kind":"readStored","stored":{
-        "presets":parse(&values[CATALOG])?,"activeId":values["govorunGatewayActiveCustomPresetV1"],
-        "selectedStyle":values["govorunGatewayStyle"],"instruction":values.get("govorunGatewayCustomInstruction").unwrap_or(&json!("")),
-        "optionsByStyle":options,"legacyOptions":stored_options(values,"")}})).map_err(|_|Error::InvalidStorage)?;
-    let mut rules = parse(&values[RULES])?.unwrap_or(json!([]));
-    for rule in rules.as_array_mut().ok_or(Error::InvalidStorage)? {
-        let id = rule["bundleID"]
-            .as_str()
-            .ok_or(Error::InvalidStorage)?
-            .to_owned();
-        let name = rule["applicationName"]
-            .as_str()
-            .ok_or(Error::InvalidStorage)?
-            .to_owned();
-        *rule = json!({"applicationId":id,"applicationName":name,"styleValue":rule["styleValue"],
-            "emojiEnabled":rule["emojiEnabled"],"emojiMode":rule["emojiMode"],
-            "reducedPunctuationEnabled":rule["reducedPunctuationEnabled"]});
+    // A preset or rule this version cannot use is skipped and stays stored; an
+    // unreadable catalog reads as no presets and is never overwritten by a save.
+    let mut skipped = false;
+    let presets = match parse(&values[CATALOG]) {
+        Ok(Some(Value::Array(items))) => {
+            let (kept, unread) = usable(&items, Value::clone, usable_stored_preset, "id", 1000);
+            skipped |= !unread.is_empty();
+            json!(kept)
+        }
+        Ok(None) => Value::Null,
+        _ => {
+            skipped = true;
+            Value::Null
+        }
+    };
+    // A chosen preset this version skipped leaves the default style chosen; dictation
+    // never sends a custom style without its instruction. The stored choice stays.
+    let active = values["govorunGatewayActiveCustomPresetV1"].as_str();
+    let mut selected = values["govorunGatewayStyle"].clone();
+    if skipped && selected == "custom" && active.is_some()
+        && !presets.as_array().is_some_and(|kept| kept.iter().any(|preset| preset["id"].as_str() == active)) {
+        selected = json!("formal");
     }
+    let reply=call(json!({"kind":"readStored","stored":{
+        "presets":presets,"activeId":values["govorunGatewayActiveCustomPresetV1"],
+        "selectedStyle":selected,"instruction":values.get("govorunGatewayCustomInstruction").unwrap_or(&json!("")),
+        "optionsByStyle":options,"legacyOptions":stored_options(values,"")}})).map_err(|_|Error::InvalidStorage)?;
+    let rules = match parse(&values[RULES]) {
+        Ok(Some(Value::Array(items))) => {
+            let (kept, unread) = usable(&items, rule, usable_application_rule, "applicationId", 100);
+            skipped |= !unread.is_empty();
+            kept
+        }
+        Ok(None) => vec![],
+        _ => {
+            skipped = true;
+            vec![]
+        }
+    };
     Ok(Logical {
         context: reply["context"].clone(),
-        rules,
+        rules: json!(rules),
         options_present: reply["storedOptionsPresent"]
             .as_bool()
             .ok_or(Error::InvalidStorage)?,
+        skipped,
     })
 }
 pub(super) fn write(
@@ -45,7 +68,9 @@ pub(super) fn write(
     let state = &context["state"];
     let previous = &original.context["state"];
     if state["presets"] != previous["presets"] {
-        values[CATALOG] = json!(state["presets"].to_string());
+        let mut presets = state["presets"].as_array().ok_or(Error::InvalidStorage)?.clone();
+        presets.extend(unread(values, CATALOG, Value::clone, usable_stored_preset, "id", 1000)?);
+        values[CATALOG] = json!(Value::Array(presets).to_string());
     }
     for (field, key) in [
         ("selectedStyle", "govorunGatewayStyle"),
@@ -84,7 +109,9 @@ pub(super) fn write(
                 .ok_or(Error::InvalidStorage)?;
             object.insert("bundleID".into(), id);
         }
-        values[RULES] = json!(stored.to_string());
+        let mut stored = stored.as_array().ok_or(Error::InvalidStorage)?.clone();
+        stored.extend(unread(values, RULES, rule, usable_application_rule, "applicationId", 100)?);
+        values[RULES] = json!(Value::Array(stored).to_string());
     }
     Ok(())
 }
@@ -108,3 +135,18 @@ fn put(values: &mut Value, suffix: &str, options: &Value) {
         values["govorunGatewayReducedPunctuation"] = json!(options["punctuationMode"] == "less");
     }
 }
+fn rule(value: &Value) -> Value {
+    json!({"applicationId":value["bundleID"],"applicationName":value["applicationName"],
+        "styleValue":value["styleValue"],"emojiEnabled":value["emojiEnabled"],"emojiMode":value["emojiMode"],
+        "reducedPunctuationEnabled":value["reducedPunctuationEnabled"]})
+}
+/// Stored entries skipped on read, kept as they are; an unreadable list is never overwritten.
+fn unread(values: &Value, key: &str, view: fn(&Value) -> Value, admitted: fn(&Value) -> bool, id: &str, limit: usize)
+    -> Result<Vec<Value>, Error> {
+    Ok(match parse(&values[key])? {
+        Some(Value::Array(items)) => usable(&items, view, admitted, id, limit).1,
+        Some(_) => return Err(Error::InvalidStorage),
+        None => vec![],
+    })
+}
+

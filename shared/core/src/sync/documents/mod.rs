@@ -53,6 +53,8 @@ pub struct DocumentsHost {
     port: Port,
     pending: AtomicBool,
     stopped: AtomicBool,
+    diagnostics: Diagnostics,
+    reported: Mutex<std::collections::HashSet<(&'static str, &'static str)>>,
 }
 impl DocumentsHost {
     pub fn new(
@@ -144,7 +146,7 @@ impl DocumentsHost {
                     weak.upgrade()
                         .is_some_and(|h| h.pending.load(Ordering::SeqCst))
                 }),
-                diagnostics,
+                diagnostics.clone(),
                 Arc::new(|| 0.5),
             );
             let view = StylesFeature::new(
@@ -170,8 +172,17 @@ impl DocumentsHost {
                 port,
                 pending: AtomicBool::new(false),
                 stopped: AtomicBool::new(false),
+                diagnostics,
+                reported: Mutex::new(Default::default()),
             }
         })
+    }
+    /// Local data this version left unread or could not open: one journal row with
+    /// its code per launch, never one per dictation or profile change.
+    pub(crate) fn report_once(&self, event: &'static str, code: &'static str) {
+        if self.reported.lock().unwrap().insert((event, code)) {
+            (self.diagnostics)(event, code.into());
+        }
     }
     fn sync_scope(&self) -> Option<Scope> {
         if self.stopped.load(Ordering::SeqCst) {
@@ -189,6 +200,13 @@ impl DocumentsHost {
         // notification finishes. Auth changes alone cannot retarget this edit.
         let scope = self.state.lock().unwrap().scope.clone();
         (self.port)(kind, value.clone()).await?;
+        if value["skipped"] == true {
+            match kind {
+                "styles" => self.report_once("settings_load_failed", "styles_entry_skipped"),
+                "dictionary" => self.report_once("dictionary_load_failed", "dictionary_line_skipped"),
+                _ => (),
+            }
+        }
         if value["localChange"] == true {
             if kind == "styles"
                 && value["contentDirty"] != true

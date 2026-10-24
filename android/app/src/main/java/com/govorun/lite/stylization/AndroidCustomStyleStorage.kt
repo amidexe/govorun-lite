@@ -3,6 +3,7 @@ package com.govorun.lite.stylization
 import android.content.Context
 import com.govorun.lite.model.stylization.CustomStylePreset
 import com.govorun.lite.model.stylization.StyleOptions
+import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.util.StorageKeys
 import com.govorun.lite.util.Prefs
 import org.json.JSONArray
@@ -11,19 +12,21 @@ import org.json.JSONObject
 /** Atomic current-key persistence. No normalization, truncation or library rules. */
 internal class AndroidCustomStyleStorage(context: Context) : CustomStyleStorage {
     private val app = context.applicationContext
-    private val preferences = app.getSharedPreferences(StorageKeys.PREFS_FILE, Context.MODE_PRIVATE)
+    private val preferences = GovorunPreferences.of(app, StorageKeys.PREFS_FILE)
     override val lock: Any get() = libraryLock
     val activeId: String? get() = preferences.getString(KEY_ACTIVE_ID, null)
-    fun list(): List<CustomStylePreset> = synchronized(lock) {
-        try { CustomStyleBinding.presets(JSONArray(preferences.getString(KEY_PRESETS, "[]"))) }
-        catch (_: Exception) { emptyList() }
-    }
+    fun list(): List<CustomStylePreset> = synchronized(lock) { CustomStyleBinding.readablePresets(preferences.getString(KEY_PRESETS, "[]")) }
+    /** Strict: a catalog the library cannot read whole is never rewritten by an edit. */
     override fun read(): JSONObject = synchronized(lock) {
         val raw = try { CustomStyleBinding.presets(JSONArray(preferences.getString(KEY_PRESETS, "[]"))) }
             catch (_: Exception) { throw IllegalArgumentException("style_storage_unavailable") }
-        JSONObject().put("presets", CustomStyleBinding.encode(raw)).put("activeId", activeId ?: JSONObject.NULL)
-            .put("selectedStyle", Prefs.getStylizationStyle(app)).put("instruction", Prefs.getStylizationCustomInstruction(app))
+        state(raw)
     }
+    /** What dictation reads: every saved style that is readable. */
+    fun readable(): JSONObject = synchronized(lock) { state(list()) }
+    private fun state(presets: List<CustomStylePreset>) = JSONObject().put("presets", CustomStyleBinding.encode(presets))
+        .put("activeId", activeId ?: JSONObject.NULL)
+        .put("selectedStyle", Prefs.getStylizationStyle(app)).put("instruction", Prefs.getStylizationCustomInstruction(app))
     override fun apply(before: JSONObject, after: JSONObject) {
         val editor = preferences.edit()
         if (CustomStyleBinding.presets(before.getJSONArray("presets")) != CustomStyleBinding.presets(after.getJSONArray("presets"))) {

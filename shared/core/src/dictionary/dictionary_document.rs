@@ -18,6 +18,7 @@ struct Line<'a> {
     body: &'a str,
     ending: &'a str,
     entry: Option<Entry>,
+    unusable: bool,
 }
 
 pub(crate) fn pair(line: &str) -> Option<(&str, &str)> {
@@ -33,8 +34,11 @@ pub(crate) fn pair(line: &str) -> Option<(&str, &str)> {
     (!from.is_empty()).then_some((from, to.trim()))
 }
 
+/// A rule line this version cannot use stays in the text untouched and is skipped;
+/// it never makes the whole dictionary unreadable. Writers check new lines strictly.
 fn lines(raw: &str) -> Vec<Line<'_>> {
     let mut result = Vec::new();
+    let (mut entries, mut variants) = (0, 0);
     let mut offset = 0;
     while offset < raw.len() {
         let end = raw[offset..]
@@ -49,7 +53,7 @@ fn lines(raw: &str) -> Vec<Line<'_>> {
             end
         };
         let body = &raw[offset..end];
-        let entry = pair(body).map(|(from, to)| {
+        let candidate = pair(body).map(|(from, to)| {
             // Stable view identity, independent of OS UUID generators. Not a content log.
             let digest = Sha256::digest(format!("{}\0{from}\0{to}", result.len()).as_bytes());
             let hex: String = digest[..16].iter().map(|b| format!("{b:02x}")).collect();
@@ -66,9 +70,19 @@ fn lines(raw: &str) -> Vec<Line<'_>> {
                 to: to.to_owned(),
             }
         });
+        let entry = candidate.clone().filter(|entry| {
+            let count = entry.from.split(',').filter(|v| !v.trim().is_empty()).count();
+            let fits = usable(entry) && entries < 5_000 && variants + count <= 5_000;
+            if fits {
+                entries += 1;
+                variants += count;
+            }
+            fits
+        });
         result.push(Line {
             body,
             ending: &raw[end..next],
+            unusable: candidate.is_some() && entry.is_none(),
             entry,
         });
         offset = next;
@@ -87,6 +101,15 @@ fn valid_id(id: &str) -> bool {
         })
 }
 
+fn usable(e: &Entry) -> bool {
+    !e.from.trim().is_empty()
+        && e.from.chars().count() <= 500
+        && e.to.chars().count() <= 500
+        && !e.from.contains(['\r', '\n', '='])
+        && !e.from.contains(" → ")
+        && !e.to.contains(['\r', '\n'])
+}
+
 fn validate_entries(entries: &[Entry]) -> Result<()> {
     let mut ids = HashSet::new();
     let variants: usize = entries
@@ -95,17 +118,24 @@ fn validate_entries(entries: &[Entry]) -> Result<()> {
         .sum();
     if entries.len() > 5_000
         || variants > 5_000
-        || entries.iter().any(|e| {
-            !ids.insert(e.id.to_ascii_lowercase())
-                || !valid_id(&e.id)
-                || e.from.trim().is_empty()
-                || e.from.chars().count() > 500
-                || e.to.chars().count() > 500
-                || e.from.contains(['\r', '\n', '='])
-                || e.from.contains(" → ")
-                || e.to.contains(['\r', '\n'])
-        })
+        || entries
+            .iter()
+            .any(|e| !ids.insert(e.id.to_ascii_lowercase()) || !valid_id(&e.id) || !usable(e))
     {
+        return Err(Error::InvalidRequest);
+    }
+    Ok(())
+}
+
+/// Whether a stored line is kept in the text but skipped; the journal names it once.
+pub fn has_unusable(raw: &str) -> bool {
+    lines(raw).iter().any(|line| line.unusable)
+}
+
+/// A writer may keep lines it found unusable, but never add one.
+pub(crate) fn no_new_unusable(before: &str, after: &str) -> Result<()> {
+    let unusable = |raw| lines(raw).iter().filter(|line| line.unusable).count();
+    if after.len() > MAX_BYTES || unusable(after) > unusable(before) {
         return Err(Error::InvalidRequest);
     }
     Ok(())

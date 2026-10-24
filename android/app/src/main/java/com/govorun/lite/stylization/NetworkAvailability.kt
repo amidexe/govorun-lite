@@ -9,6 +9,7 @@ internal object NetworkAvailability {
         val manager = context.getSystemService(ConnectivityManager::class.java) ?: return false
         val network = manager.activeNetwork ?: return false
         val capabilities = manager.getNetworkCapabilities(network) ?: return false
+        if (!com.govorun.lite.network.NetworkPolicy.allows(context, capabilities)) return false
         // VALIDATED is only a momentary Android probe result. Slow Wi-Fi and
         // handovers can clear it while an HTTPS exchange is still viable, so
         // the request itself must decide success/failure once a network with

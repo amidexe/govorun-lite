@@ -2,6 +2,7 @@ package com.govorun.lite.stylization
 
 import android.content.Context
 import com.govorun.lite.model.stylization.StylizationFallbackReason
+import com.govorun.lite.storage.GovorunPreferences
 import org.json.JSONObject
 
 internal enum class StylizationDiagnosticOutcome {
@@ -83,7 +84,7 @@ internal object StylizationDiagnosticsStore {
     private fun writeState(context: Context, snapshot: StylizationDiagnosticsSnapshot) {
         preferences(context).edit().putString(STATE, encode(snapshot)).apply()
     }
-    private fun preferences(context: Context) = context.applicationContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private fun preferences(context: Context) = GovorunPreferences.of(context.applicationContext, PREFERENCES)
 }
 
 internal fun diagnosticReason(fallbackReason: StylizationFallbackReason): StylizationDiagnosticReason =

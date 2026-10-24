@@ -1,42 +1,59 @@
 package com.govorun.lite.ui.onboarding
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.CheckCircle
+import com.adamglin.phosphoricons.regular.Clock
+import com.adamglin.phosphoricons.regular.Microphone
+import com.adamglin.phosphoricons.regular.PersonArmsSpread
 import com.adamglin.phosphoricons.regular.XCircle
 import com.govorun.lite.R
 import com.govorun.lite.overlay.BubbleThemeColors
 import com.govorun.lite.overlay.BubbleView
 import com.govorun.lite.util.RecordingModePrefs
+import com.product.ui.FeedCard
+import com.product.ui.ProductDivider
+import com.product.ui.ProductTokens
 import com.product.ui.ProductWizardShell
+import com.product.ui.SettingsLinkRow
 
 data class OnboardingState(
     val step: OnboardingStep = OnboardingStep.WELCOME,
@@ -84,7 +101,6 @@ fun OnboardingScreen(
 ) {
     val index = state.steps.indexOf(state.step)
     ProductWizardShell(
-        title = stringResource(R.string.app_name),
         step = index + 1,
         totalSteps = state.steps.size,
         canContinue = state.canContinue,
@@ -104,34 +120,70 @@ fun OnboardingScreen(
     }
 }
 
+/** One step as Echo lays it out: a hero on top, then cards and notes with even gaps. */
 @Composable
-private fun OnboardingPage(content: @Composable () -> Unit) {
+internal fun OnboardingPage(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 24.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Spacer(Modifier.height(12.dp))
+        content()
+    }
+}
+
+/** A large title and a quiet centred line, as at the top of every Echo step, under an optional picture. */
+@Composable
+internal fun OnboardingHero(
+    title: String,
+    body: String?,
+    visual: (@Composable () -> Unit)? = null,
+) {
+    Column(
+        Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        content = { content() },
-    )
+        verticalArrangement = Arrangement.spacedBy(ProductTokens.Spacing.Lg),
+    ) {
+        visual?.let {
+            it()
+            Spacer(Modifier.height(4.dp))
+        }
+        Text(title, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+        body?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+/** The app icon itself on the first step, as Echo shows its own: the white release tile with the bird, in debug too. */
+@Composable
+private fun GovorunArt() {
+    val shape = RoundedCornerShape(24.dp)
+    Box(
+        Modifier
+            .size(104.dp)
+            .clip(shape)
+            .background(Color.White)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape),
+        contentAlignment = Alignment.Center,
+    ) {
+        // The adaptive foreground is drawn for a 108 dp canvas with a 72 dp safe zone, so it is scaled by 1.5.
+        Image(painterResource(R.drawable.ic_launcher_foreground), contentDescription = null, modifier = Modifier.requiredSize(156.dp))
+    }
 }
 
 @Composable
 private fun WelcomeStep() = OnboardingPage {
-    Spacer(Modifier.height(16.dp))
-    BirdHero()
-    Spacer(Modifier.height(32.dp))
-    OnboardingHeading(stringResource(R.string.onb_welcome_title))
-    Spacer(Modifier.height(16.dp))
-    OnboardingBody(
-        value = stringResource(R.string.onb_welcome_body),
-        textAlign = TextAlign.Start,
-    )
-    Spacer(Modifier.height(16.dp))
-    OnboardingNote(
-        value = stringResource(R.string.onb_welcome_note),
-        textAlign = TextAlign.Start,
-    )
+    OnboardingHero(stringResource(R.string.onb_welcome_title), stringResource(R.string.onb_welcome_body)) { GovorunArt() }
+    OnboardingNote(stringResource(R.string.onb_welcome_note), TextAlign.Center)
 }
 
 @Composable
@@ -140,69 +192,20 @@ private fun TryStep(
     onTry: () -> Unit,
     onAppSettings: () -> Unit,
 ) = OnboardingPage {
-    Spacer(Modifier.height(16.dp))
-    val bubbleColors = MaterialTheme.colorScheme
-    Box(
-        modifier = Modifier.fillMaxWidth().height(96.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        AndroidView(
-            factory = { context ->
-                BubbleView(context).apply { configureForOnboarding() }
-            },
-            update = { bubble ->
-                bubble.configureForOnboarding()
-                bubble.setThemeColors(
-                    BubbleThemeColors(
-                        primary = bubbleColors.primary.toArgb(),
-                        onPrimary = bubbleColors.onPrimary.toArgb(),
-                        primaryContainer = bubbleColors.primaryContainer.toArgb(),
-                        onPrimaryContainer = bubbleColors.onPrimaryContainer.toArgb(),
-                        onSurface = bubbleColors.onSurface.toArgb(),
-                        surfaceContainerHigh = bubbleColors.surfaceContainerHigh.toArgb(),
-                        error = bubbleColors.error.toArgb(),
-                    ),
-                )
-                bubble.setRecording(state.recording)
-                bubble.setIdlePulse(state.showMicrophoneTapCue)
-                bubble.isEnabled = state.modelReady
-                bubble.setOnClickListener { if (state.modelReady) onTry() }
-            },
-            modifier = Modifier.size(96.dp),
-        )
+    val status = when {
+        !state.modelReady -> stringResource(R.string.onb_try_preparing)
+        state.recording -> stringResource(R.string.onb_try_tap_to_stop)
+        state.micGranted -> stringResource(R.string.onb_try_tap_to_start)
+        else -> stringResource(R.string.onb_try_tap_to_grant)
     }
-    Spacer(Modifier.height(24.dp))
-    Text(
-        text = when {
-            !state.modelReady -> stringResource(R.string.onb_try_preparing)
-            state.recording -> stringResource(R.string.onb_try_tap_to_stop)
-            state.micGranted -> stringResource(R.string.onb_try_tap_to_start)
-            else -> stringResource(R.string.onb_try_tap_to_grant)
-        },
-        modifier = Modifier.fillMaxWidth(),
-        style = MaterialTheme.typography.titleMedium,
-        textAlign = TextAlign.Center,
-        color = MaterialTheme.colorScheme.onSurface,
-    )
+    OnboardingHero(stringResource(R.string.onb_try_title), status) { TryBubble(state, onTry) }
     if (!state.micGranted && !state.micDenied) {
-        Spacer(Modifier.height(6.dp))
-        OnboardingNote(
-            value = stringResource(R.string.onb_try_grant_hint),
-            textAlign = TextAlign.Center,
-        )
+        OnboardingNote(stringResource(R.string.onb_try_grant_hint), TextAlign.Center)
     }
-    Spacer(Modifier.height(24.dp))
-    Surface(
-        modifier = Modifier.fillMaxWidth().height(180.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = MaterialTheme.shapes.extraLarge,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
+    FeedCard {
         Text(
-            text = state.transcript.ifBlank {
-                stringResource(R.string.onb_try_result_placeholder)
-            },
-            modifier = Modifier.padding(20.dp),
+            text = state.transcript.ifBlank { stringResource(R.string.onb_try_result_placeholder) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp).padding(ProductTokens.Spacing.Section),
             style = MaterialTheme.typography.bodyLarge,
             color = if (state.transcript.isBlank()) {
                 MaterialTheme.colorScheme.onSurfaceVariant
@@ -212,7 +215,6 @@ private fun TryStep(
         )
     }
     if (state.transcript.isNotBlank()) {
-        Spacer(Modifier.height(16.dp))
         Text(
             stringResource(R.string.onb_try_done),
             modifier = Modifier.fillMaxWidth(),
@@ -222,55 +224,65 @@ private fun TryStep(
         )
     }
     if (state.micDenied) {
-        Spacer(Modifier.height(12.dp))
-        Button(
-            onClick = onAppSettings,
-            shape = MaterialTheme.shapes.extraLarge,
-        ) {
-            Text(stringResource(R.string.onb_try_open_settings))
+        FeedCard {
+            SettingsLinkRow(PhosphorIcons.Regular.Microphone, "Разрешите микрофон", "Аудио остаётся на телефоне", onClick = onAppSettings)
         }
     }
 }
 
 @Composable
+private fun TryBubble(state: OnboardingState, onTry: () -> Unit) {
+    val bubbleColors = MaterialTheme.colorScheme
+    AndroidView(
+        factory = { context ->
+            BubbleView(context).apply { configureForOnboarding() }
+        },
+        update = { bubble ->
+            bubble.configureForOnboarding()
+            bubble.setThemeColors(
+                BubbleThemeColors(
+                    primary = bubbleColors.primary.toArgb(),
+                    onPrimary = bubbleColors.onPrimary.toArgb(),
+                    primaryContainer = bubbleColors.primaryContainer.toArgb(),
+                    onPrimaryContainer = bubbleColors.onPrimaryContainer.toArgb(),
+                    onSurface = bubbleColors.onSurface.toArgb(),
+                    surfaceContainerHigh = bubbleColors.surfaceContainerHigh.toArgb(),
+                    error = bubbleColors.error.toArgb(),
+                ),
+            )
+            bubble.setRecording(state.recording)
+            bubble.setIdlePulse(state.showMicrophoneTapCue)
+            bubble.isEnabled = state.modelReady
+            bubble.setOnClickListener { if (state.modelReady) onTry() }
+        },
+        modifier = Modifier.size(96.dp),
+    )
+}
+
+// Every step is a title over one card of the same rows as Settings and the home «Нужно настроить» card: the action
+// is a row with a chevron, and a done step turns it into a green row, as the home «Всё готово» card.
+@Composable
 private fun AccessibilityStep(
     state: OnboardingState,
     onAccessibility: () -> Unit,
 ) = OnboardingPage {
-    Spacer(Modifier.height(16.dp))
-    BirdHero()
-    Spacer(Modifier.height(32.dp))
-    OnboardingHeading(stringResource(R.string.onb_accessibility_title))
-    Spacer(Modifier.height(16.dp))
-    OnboardingBody(
-        value = if (state.accessibilityReady) {
-            stringResource(R.string.onb_accessibility_body_enabled)
-        } else {
-            stringResource(R.string.onb_accessibility_body_pending)
-        },
-        textAlign = TextAlign.Start,
-    )
-    if (!state.accessibilityReady) {
-        Spacer(Modifier.height(20.dp))
-        Column(horizontalAlignment = Alignment.Start) {
-            OnboardingChecklistRow(
-                icon = PhosphorIcons.Regular.CheckCircle,
-                text = stringResource(R.string.onb_accessibility_do_row),
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.height(10.dp))
-            OnboardingChecklistRow(
-                icon = PhosphorIcons.Regular.XCircle,
-                text = stringResource(R.string.onb_accessibility_dont_row),
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-        Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = onAccessibility,
-            shape = MaterialTheme.shapes.extraLarge,
-        ) {
-            Text(stringResource(R.string.onb_accessibility_open))
+    OnboardingHero(stringResource(R.string.onb_accessibility_title), stringResource(R.string.onb_accessibility_body_pending))
+    FeedCard {
+        Column {
+            if (state.accessibilityReady) {
+                OnboardingChecklistRow(PhosphorIcons.Regular.CheckCircle, "Говорун включён", successColor())
+            } else {
+                SettingsLinkRow(
+                    PhosphorIcons.Regular.PersonArmsSpread,
+                    "Включите Говоруна",
+                    "Чтобы вставлять текст в активное поле",
+                    onClick = onAccessibility,
+                )
+                ProductDivider()
+                // Which service to switch on and which to leave off: the colours guard against picking the wrong one.
+                OnboardingChecklistRow(PhosphorIcons.Regular.CheckCircle, stringResource(R.string.onb_accessibility_do_row), successColor())
+                OnboardingChecklistRow(PhosphorIcons.Regular.XCircle, stringResource(R.string.onb_accessibility_dont_row), MaterialTheme.colorScheme.error)
+            }
         }
     }
 }
@@ -280,80 +292,42 @@ private fun BatteryStep(
     state: OnboardingState,
     onBattery: () -> Unit,
 ) = OnboardingPage {
-    Spacer(Modifier.height(16.dp))
-    BirdHero()
-    Spacer(Modifier.height(32.dp))
-    OnboardingHeading(stringResource(R.string.onb_battery_title))
-    Spacer(Modifier.height(16.dp))
-    OnboardingBody(
-        value = if (state.batteryReady) {
-            stringResource(R.string.onb_battery_body_done)
+    OnboardingHero(stringResource(R.string.onb_battery_title), stringResource(R.string.onb_battery_body))
+    FeedCard {
+        if (state.batteryReady) {
+            OnboardingChecklistRow(PhosphorIcons.Regular.CheckCircle, "Работа в фоне разрешена", successColor())
         } else {
-            stringResource(R.string.onb_battery_body)
-        },
-        textAlign = TextAlign.Start,
-    )
-    if (!state.batteryReady) {
-        Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = onBattery,
-            shape = MaterialTheme.shapes.extraLarge,
-            colors = ButtonDefaults.filledTonalButtonColors(),
-        ) {
-            Text(stringResource(R.string.onb_battery_open))
+            SettingsLinkRow(PhosphorIcons.Regular.Clock, "Разрешите работу в фоне", "Для стабильной диктовки", onClick = onBattery)
         }
-        Spacer(Modifier.height(24.dp))
-        OnboardingNote(
-            value = stringResource(R.string.onb_battery_skip_note),
-            textAlign = TextAlign.Start,
-        )
+    }
+    if (!state.batteryReady) {
+        OnboardingNote(stringResource(R.string.onb_battery_skip_note), TextAlign.Start)
     }
 }
 
+/** Green as on the home «Всё готово» card: the monochrome primary would make it plain white or black. */
 @Composable
-private fun BirdHero() {
-    Icon(
-        imageVector = ImageVector.vectorResource(R.drawable.logo_bird),
-        contentDescription = null,
-        modifier = Modifier.size(96.dp),
-        tint = MaterialTheme.colorScheme.primary,
-    )
-}
+private fun successColor(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() > 0.5f) ProductTokens.Color.Success else ProductTokens.Color.SuccessDark
 
+/** A settings-style row whose icon and text carry the meaning in colour. */
 @Composable
 private fun OnboardingChecklistRow(
     icon: ImageVector,
     text: String,
-    color: androidx.compose.ui.graphics.Color,
+    color: Color,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = color)
-        Spacer(Modifier.size(12.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = ProductTokens.Size.Row)
+            .padding(horizontal = ProductTokens.Spacing.Section, vertical = ProductTokens.Spacing.Md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = color)
+        Spacer(Modifier.width(ProductTokens.Spacing.Lg))
         Text(text, style = MaterialTheme.typography.bodyMedium, color = color)
     }
-}
-
-@Composable
-private fun OnboardingHeading(value: String) {
-    Text(
-        value,
-        style = MaterialTheme.typography.headlineSmall,
-        textAlign = TextAlign.Center,
-    )
-}
-
-@Composable
-private fun OnboardingBody(
-    value: String,
-    textAlign: TextAlign,
-) {
-    Text(
-        value,
-        modifier = Modifier.fillMaxWidth(),
-        style = MaterialTheme.typography.bodyLarge,
-        textAlign = textAlign,
-        color = MaterialTheme.colorScheme.onSurface,
-    )
 }
 
 @Composable

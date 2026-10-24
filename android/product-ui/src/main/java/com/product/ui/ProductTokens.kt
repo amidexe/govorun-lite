@@ -5,9 +5,8 @@ import androidx.compose.ui.unit.dp
 
 object ProductTokens {
     object Color {
-        // DayPlan's palette: one teal accent for light and dark.
+        // The teal of the shared benchmark card, drawn on its own light background.
         val BrandAccent = Color(0xFF216E72)
-        val BrandAccentDark = Color(0xFF216E72)
         val Warning = Color(0xFF946200)
         val WarningDark = Color(0xFFFFD166)
         val Success = Color(0xFF2E7D32)

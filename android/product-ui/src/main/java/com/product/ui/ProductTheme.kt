@@ -24,66 +24,87 @@ import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 
-private val LightColors = lightColorScheme(
-    primary = ProductTokens.Color.BrandAccent,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFC9E5E6),
-    onPrimaryContainer = Color(0xFF123638),
-    secondary = ProductTokens.Color.LightText,
-    onSecondary = ProductTokens.Color.LightSurface,
-    secondaryContainer = Color(0xFFDCEBEC),
-    onSecondaryContainer = Color(0xFF193638),
-    background = ProductTokens.Color.LightBackground,
-    onBackground = ProductTokens.Color.LightText,
-    surface = ProductTokens.Color.LightSurface,
-    onSurface = ProductTokens.Color.LightText,
-    surfaceVariant = ProductTokens.Color.LightMutedSurface,
-    onSurfaceVariant = ProductTokens.Color.LightMutedText,
-    surfaceContainerLowest = ProductTokens.Color.LightSurface,
-    surfaceContainerLow = ProductTokens.Color.LightMutedSurface,
-    surfaceContainer = Color(0xFFF2EEE9),
-    surfaceContainerHigh = Color(0xFFEBE7E2),
-    surfaceContainerHighest = Color(0xFFE0DAD4),
-    outline = Color(0xFF9E9790),
-    outlineVariant = Color(0xFFB5AFA8),
-    inverseSurface = ProductTokens.Color.DarkSurface,
-    inverseOnSurface = ProductTokens.Color.DarkText,
-    inversePrimary = Color(0xFFFFB3B0),
-    error = Color(0xFFE34A55),
-    errorContainer = Color(0xFFFFE2E2),
-    onErrorContainer = Color(0xFF4C0608),
+// The default palette is Android 16's Monochrome wallpaper style as the system builds it, read on the Pixel 10
+// (light and dark). It goes through readableDynamic like any wallpaper palette, so without Dynamic Colors the app
+// looks exactly as it does with them on a monochrome phone.
+private val MonochromeLight = lightColorScheme(
+    primary = Color(0xFF5F5F5F),
+    onPrimary = Color(0xFFF9F9F9),
+    primaryContainer = Color(0xFFEBEBEB),
+    onPrimaryContainer = Color(0xFF575757),
+    inversePrimary = Color(0xFFFFFFFF),
+    primaryFixed = Color(0xFFEBEBEB),
+    primaryFixedDim = Color(0xFFDDDDDD),
+    onPrimaryFixed = Color(0xFF444444),
+    onPrimaryFixedVariant = Color(0xFF616161),
+    secondary = Color(0xFF5F5F5F),
+    onSecondary = Color(0xFFF9F9F9),
+    secondaryContainer = Color(0xFFE2E2E2),
+    onSecondaryContainer = Color(0xFF525252),
+    tertiary = Color(0xFF5F5F5F),
+    tertiaryContainer = Color(0xFFFFFFFF),
+    background = Color(0xFFF9F9F9),
+    onBackground = Color(0xFF323232),
+    surface = Color(0xFFF9F9F9),
+    onSurface = Color(0xFF323232),
+    surfaceVariant = Color(0xFFE2E2E2),
+    onSurfaceVariant = Color(0xFF5F5F5F),
+    surfaceDim = Color(0xFFDADADA),
+    surfaceBright = Color(0xFFF9F9F9),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF3F3F3),
+    surfaceContainer = Color(0xFFEEEEEE),
+    surfaceContainerHigh = Color(0xFFE8E8E8),
+    surfaceContainerHighest = Color(0xFFE2E2E2),
+    outline = Color(0xFF7B7B7B),
+    outlineVariant = Color(0xFFB2B2B2),
+    inverseSurface = Color(0xFF0E0E0E),
+    inverseOnSurface = Color(0xFF9D9D9D),
+    error = Color(0xFFBB1B1B),
+    onError = Color(0xFFFFF7F6),
+    errorContainer = Color(0xFFFE4E44),
+    onErrorContainer = Color(0xFF570003),
 )
 
-private val DarkColors = darkColorScheme(
-    primary = ProductTokens.Color.BrandAccentDark,
-    onPrimary = Color(0xFF3B2F2B),
-    primaryContainer = Color(0xFF17474A),
-    onPrimaryContainer = Color(0xFFD5EFF0),
-    secondary = ProductTokens.Color.DarkText,
-    onSecondary = ProductTokens.Color.DarkBackground,
-    secondaryContainer = Color(0xFF203E40),
-    onSecondaryContainer = Color(0xFFD5EFF0),
-    background = ProductTokens.Color.DarkBackground,
-    onBackground = ProductTokens.Color.DarkText,
-    surface = ProductTokens.Color.DarkSurface,
-    onSurface = ProductTokens.Color.DarkText,
-    surfaceVariant = ProductTokens.Color.DarkMutedSurface,
-    surfaceDim = ProductTokens.Color.DarkBackground,
-    surfaceBright = Color(0xFF3A3A3A),
-    surfaceContainerLowest = ProductTokens.Color.DarkBackground,
-    surfaceContainerLow = ProductTokens.Color.DarkSurface,
-    surfaceContainer = ProductTokens.Color.DarkSurface,
-    surfaceContainerHigh = ProductTokens.Color.DarkMutedSurface,
-    surfaceContainerHighest = Color(0xFF383838),
-    onSurfaceVariant = ProductTokens.Color.DarkMutedText,
-    outline = Color(0xFF707070),
-    outlineVariant = Color(0xFF454545),
-    inverseSurface = ProductTokens.Color.LightMutedSurface,
-    inverseOnSurface = ProductTokens.Color.LightText,
-    inversePrimary = Color(0xFFC72029),
-    error = Color(0xFFFF6A70),
-    errorContainer = Color(0xFF651114),
-    onErrorContainer = Color(0xFFFFE2E2),
+private val MonochromeDark = darkColorScheme(
+    primary = Color(0xFFF9F9F9),
+    onPrimary = Color(0xFF5F5F5F),
+    // The one change to the system values: its mid grey #A0A0A0 container made the quiet lines of the improvement
+    // card unreadable, so the container takes the dark grey of the secondary one with the light text.
+    primaryContainer = Color(0xFF3B3B3B),
+    onPrimaryContainer = Color(0xFFE5E5E5),
+    inversePrimary = Color(0xFF5F5F5F),
+    primaryFixed = Color(0xFFEBEBEB),
+    primaryFixedDim = Color(0xFFDDDDDD),
+    onPrimaryFixed = Color(0xFF444444),
+    onPrimaryFixedVariant = Color(0xFF616161),
+    secondary = Color(0xFFC6C6C6),
+    onSecondary = Color(0xFF404040),
+    secondaryContainer = Color(0xFF3B3B3B),
+    onSecondaryContainer = Color(0xFFBFBFBF),
+    tertiary = Color(0xFFF9F9F9),
+    tertiaryContainer = Color(0xFFEBEBEB),
+    background = Color(0xFF0E0E0E),
+    onBackground = Color(0xFFE5E5E5),
+    surface = Color(0xFF0E0E0E),
+    onSurface = Color(0xFFE5E5E5),
+    surfaceVariant = Color(0xFF262626),
+    onSurfaceVariant = Color(0xFFABABAB),
+    surfaceDim = Color(0xFF0E0E0E),
+    surfaceBright = Color(0xFF2C2C2C),
+    surfaceContainerLowest = Color(0xFF000000),
+    surfaceContainerLow = Color(0xFF131313),
+    surfaceContainer = Color(0xFF191919),
+    surfaceContainerHigh = Color(0xFF1F1F1F),
+    surfaceContainerHighest = Color(0xFF262626),
+    outline = Color(0xFF757575),
+    outlineVariant = Color(0xFF484848),
+    inverseSurface = Color(0xFFF9F9F9),
+    inverseOnSurface = Color(0xFF555555),
+    error = Color(0xFFFF7164),
+    onError = Color(0xFF4A0002),
+    errorContainer = Color(0xFFAC0C12),
+    onErrorContainer = Color(0xFFFFB8B0),
 )
 
 private val ProductShapes = Shapes(
@@ -105,37 +126,31 @@ fun ProductTheme(
     val colors = when {
         usesDynamic && darkTheme -> readableDynamic(dynamicDarkColorScheme(LocalContext.current), true)
         usesDynamic -> readableDynamic(dynamicLightColorScheme(LocalContext.current), false)
-        darkTheme -> DarkColors
-        else -> LightColors
+        darkTheme -> readableDynamic(MonochromeDark, true)
+        else -> readableDynamic(MonochromeLight, false)
     }
     MaterialTheme(colors, ProductShapes, typography, content)
 }
 
-/** DayPlan font metrics, reduced to six shared roles across all app surfaces. */
+/** DayPlan's type scale: Material 3 roles in Geist, captions at 12–13 sp so notes and summaries stay readable. */
 fun productTypography(fontFamily: FontFamily): Typography {
-    val screenTitle = productTextStyle(fontFamily, FontWeight.SemiBold, 17.sp, 22.sp)
-    val title = productTextStyle(fontFamily, FontWeight.SemiBold, 15.sp, 20.sp)
-    val body = productTextStyle(fontFamily, FontWeight.Normal, 14.sp, 20.sp)
-    val caption = productTextStyle(fontFamily, FontWeight.Medium, 11.sp, 14.sp)
-    val action = productTextStyle(fontFamily, FontWeight.Medium, 13.sp, 18.sp)
-    val metric = productTextStyle(fontFamily, FontWeight.SemiBold, 22.sp, 28.sp)
-    // Material controls and app Text calls resolve through the same small role set.
+    fun style(weight: FontWeight, size: Int, height: Int) = productTextStyle(fontFamily, weight, size.sp, height.sp)
     return Typography(
-        displayLarge = metric,
-        displayMedium = metric,
-        displaySmall = metric,
-        headlineLarge = metric,
-        headlineMedium = metric,
-        headlineSmall = title,
-        titleLarge = screenTitle,
-        titleMedium = title,
-        titleSmall = title,
-        bodyLarge = body,
-        bodyMedium = body,
-        bodySmall = caption,
-        labelLarge = action,
-        labelMedium = caption,
-        labelSmall = caption,
+        displayLarge = style(FontWeight.SemiBold, 30, 36),
+        displayMedium = style(FontWeight.SemiBold, 26, 32),
+        displaySmall = style(FontWeight.SemiBold, 22, 28),
+        headlineLarge = style(FontWeight.SemiBold, 22, 28),
+        headlineMedium = style(FontWeight.SemiBold, 20, 26),
+        headlineSmall = style(FontWeight.SemiBold, 18, 24),
+        titleLarge = style(FontWeight.SemiBold, 17, 22),
+        titleMedium = style(FontWeight.SemiBold, 15, 20),
+        titleSmall = style(FontWeight.SemiBold, 14, 18),
+        bodyLarge = style(FontWeight.Normal, 15, 21),
+        bodyMedium = style(FontWeight.Normal, 14, 20),
+        bodySmall = style(FontWeight.Normal, 13, 18),
+        labelLarge = style(FontWeight.Medium, 13, 18),
+        labelMedium = style(FontWeight.Medium, 12, 16),
+        labelSmall = style(FontWeight.Medium, 11, 14),
     )
 }
 
@@ -171,10 +186,12 @@ private fun readableDynamic(dynamic: ColorScheme, dark: Boolean): ColorScheme =
         )
     } else {
         dynamic.copy(
-            error = Color(0xFFE34A55),
+            // Material 3 red and a darker quiet text: #E34A55 was 3.7:1 on the cards and the quiet text 4.4:1 on the
+            // grey background, now 6.1:1 and 5.0:1.
+            error = Color(0xFFBA1A1A),
             errorContainer = Color(0xFFFFE2E2),
             onErrorContainer = Color(0xFF4C0608),
-            onSurfaceVariant = lerp(dynamic.surface, dynamic.onSurface, 0.72f),
+            onSurfaceVariant = lerp(dynamic.surface, dynamic.onSurface, 0.76f),
             outline = lerp(dynamic.surface, dynamic.outline, 0.66f),
             outlineVariant = lerp(dynamic.surface, dynamic.outlineVariant, 0.72f),
             background = dynamic.surfaceContainerHigh,

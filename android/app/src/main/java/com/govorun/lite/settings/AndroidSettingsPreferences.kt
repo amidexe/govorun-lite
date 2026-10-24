@@ -38,6 +38,8 @@ internal class AndroidSettingsPreferences(context: Context) : SettingsPreference
             is SettingsChange.SetRememberLastDictation ->
                 com.govorun.lite.service.LastDictation.setEnabled(context, change.enabled)
             is SettingsChange.SetAutoStop -> Prefs.setAutoStopMinutes(context, change.minutes)
+            is SettingsChange.SetNoNetworkInRoaming ->
+                com.govorun.lite.network.NetworkPolicy.setNoNetworkInRoaming(context, change.enabled)
         }
     }
 

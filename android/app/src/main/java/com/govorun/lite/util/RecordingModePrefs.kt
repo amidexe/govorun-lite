@@ -2,6 +2,7 @@ package com.govorun.lite.util
 
 import android.content.Context
 import com.govorun.lite.settings.SettingsRules
+import com.govorun.lite.storage.GovorunPreferences
 
 /** Native storage adapter for the shared recording interaction policy. */
 internal object RecordingModePrefs {
@@ -13,24 +14,18 @@ internal object RecordingModePrefs {
     private const val KEY = "recording_interaction_mode_v2"
 
     fun onboardingChoice(context: Context): String = SettingsRules.recording("onboarding",
-        context.getSharedPreferences(StorageKeys.PREFS_FILE, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, StorageKeys.PREFS_FILE)
             .getString(KEY, null),
     ).getString("mode")
 
     fun read(context: Context): String {
-        val raw = context.getSharedPreferences(
-            StorageKeys.PREFS_FILE,
-            Context.MODE_PRIVATE,
-        ).getString(KEY, null)
+        val raw = GovorunPreferences.of(context, StorageKeys.PREFS_FILE).getString(KEY, null)
         return SettingsRules.recording("read", raw, Prefs.isStylizationEnabled(context)).getString("mode")
     }
 
     fun write(context: Context, value: String) {
         val validated = SettingsRules.recording("select", value).getString("mode")
-        context.getSharedPreferences(
-            StorageKeys.PREFS_FILE,
-            Context.MODE_PRIVATE,
-        ).edit().putString(KEY, validated).apply()
+        GovorunPreferences.of(context, StorageKeys.PREFS_FILE).edit().putString(KEY, validated).apply()
     }
 
     fun enableStylizationMode(context: Context) {

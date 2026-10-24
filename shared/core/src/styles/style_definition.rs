@@ -19,6 +19,12 @@ pub(crate) struct Style {
 }
 
 impl Style {
+    /// The editor's spacing rule. Older editors counted length without edge
+    /// spaces, so an old style can exceed a limit only by its spacing.
+    pub fn normalize(&mut self) {
+        self.name = words(&self.name);
+        self.instruction = words(&self.instruction);
+    }
     pub fn valid(&self) -> bool {
         self.admissible_stored()
             && (1..=MAX_NAME).contains(&self.name.chars().count())
@@ -33,6 +39,15 @@ impl Style {
             && matches!(self.emoji_mode.as_str(), "off" | "restrained" | "lively" | "bright")
             && self.emoji_enabled == (self.emoji_mode != "off")
     }
+}
+
+/// A stored preset this version can use. Others stay in the file and are skipped.
+pub(crate) fn usable_stored(value: &serde_json::Value) -> bool {
+    serde_json::from_value::<Style>(value.clone()).is_ok_and(|style| style.admissible_stored())
+}
+
+pub(crate) fn words(value: &str) -> String {
+    value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 pub(crate) fn valid_id(value: &str) -> bool {

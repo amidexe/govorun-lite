@@ -382,7 +382,7 @@ pub use oauth_flow::{AuthFlow, AuthIntent};
 pub use profile_activity::{ProfileActivity, ProfileAdmission, ProfileNextStep};
 pub use profile_cadence::{
     ProfileRefreshCadence, ProfileRefreshReason, PROFILE_FOCUS_MAX_AGE, PROFILE_REFRESH_INTERVAL,
-    PROFILE_REFRESH_JITTER, PROFILE_REFRESH_MAX_BACKOFF, PROFILE_SYNC_MAX_AGE,
+    PROFILE_REFRESH_JITTER, PROFILE_REFRESH_MAX_BACKOFF, PROFILE_RETRY_INTERVAL, PROFILE_SYNC_MAX_AGE,
 };
 pub use profile_fetch::{load_account_profile, ProfileIdentity, ProfileSource};
 pub use profile_refresh::{

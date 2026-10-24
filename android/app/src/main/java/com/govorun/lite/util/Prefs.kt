@@ -1,6 +1,7 @@
 package com.govorun.lite.util
 
 import android.content.Context
+import com.govorun.lite.storage.GovorunPreferences
 
 /**
  * Single place that knows the app's SharedPreferences file name + keys.
@@ -119,11 +120,11 @@ object Prefs {
     // explaining this and offering a one-tap path to disable, so users
     // who don't want it can flip it off without hunting through settings.
     fun isHapticsEnabled(context: Context): Boolean =
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .getBoolean(KEY_HAPTICS_ENABLED, true)
 
     fun setHapticsEnabled(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putBoolean(KEY_HAPTICS_ENABLED, enabled)
             .apply()
@@ -134,18 +135,18 @@ object Prefs {
      *  default — existing users mustn't suddenly find the bubble missing
      *  in places it used to appear. Surfaced as a Settings toggle. */
     fun isHideInSearchEnabled(context: Context): Boolean =
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .getBoolean(KEY_HIDE_IN_SEARCH, false)
 
     fun setHideInSearchEnabled(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putBoolean(KEY_HIDE_IN_SEARCH, enabled)
             .apply()
     }
 
     fun getBubbleAlpha(context: Context): Float {
-        val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        val prefs = GovorunPreferences.of(context, FILE_NAME)
         val raw = prefs.getFloat(KEY_BUBBLE_ALPHA, BUBBLE_ALPHA_DEFAULT)
         // A value saved before the bird had one strong colour applied to a pale
         // theme tone; above the new default it would hide the text underneath, so
@@ -155,14 +156,14 @@ object Prefs {
     }
 
     fun getBubbleRecordingAlpha(context: Context): Float {
-        val raw = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        val raw = GovorunPreferences.of(context, FILE_NAME)
             .getFloat(KEY_BUBBLE_RECORDING_ALPHA, BUBBLE_RECORDING_ALPHA_DEFAULT)
         return snapBubbleAlpha(raw)
     }
 
     fun setBubbleRecordingAlpha(context: Context, alpha: Float) {
         val snapped = snapBubbleAlpha(alpha)
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putFloat(KEY_BUBBLE_RECORDING_ALPHA, snapped)
             .apply()
@@ -171,11 +172,11 @@ object Prefs {
     /** One of [com.govorun.lite.overlay.BirdColors]; the app theme by default. */
     fun getBirdColor(context: Context): String =
         com.govorun.lite.overlay.BirdColors.normalize(
-            context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE).getString(KEY_BUBBLE_COLOR, null),
+            GovorunPreferences.of(context, FILE_NAME).getString(KEY_BUBBLE_COLOR, null),
         )
 
     fun setBirdColor(context: Context, value: String) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putString(KEY_BUBBLE_COLOR, com.govorun.lite.overlay.BirdColors.normalize(value))
             .apply()
@@ -183,7 +184,7 @@ object Prefs {
 
     fun setBubbleAlpha(context: Context, alpha: Float) {
         val snapped = snapBubbleAlpha(alpha)
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putFloat(KEY_BUBBLE_ALPHA, snapped)
             .putBoolean(StorageKeys.Key.BUBBLE_ALPHA_CHOSEN_FOR_COLOR, true)
@@ -199,14 +200,14 @@ object Prefs {
     const val BUBBLE_SIZE_DEFAULT = 1.0f
 
     fun getBubbleSize(context: Context): Float {
-        val raw = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        val raw = GovorunPreferences.of(context, FILE_NAME)
             .getFloat(KEY_BUBBLE_SIZE, BUBBLE_SIZE_DEFAULT)
         return snapBubbleSize(raw)
     }
 
     fun setBubbleSize(context: Context, size: Float) {
         val snapped = snapBubbleSize(size)
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putFloat(KEY_BUBBLE_SIZE, snapped)
             .apply()
@@ -228,20 +229,20 @@ object Prefs {
     // the keyboard height and available vertical space change radically after
     // rotation. Default 0 = vertical centre (LayoutParams uses CENTER_VERTICAL).
     fun getBubbleY(context: Context): Int {
-        val prefs = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        val prefs = GovorunPreferences.of(context, FILE_NAME)
         return prefs.getInt(bubbleYKey(context.resources.configuration.orientation),
             prefs.getInt(StorageKeys.Key.BUBBLE_Y, 0))
     }
 
     fun setBubbleY(context: Context, y: Int) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putInt(bubbleYKey(context.resources.configuration.orientation), y)
             .apply()
     }
 
     fun resetBubbleY(context: Context) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .remove(KEY_BUBBLE_Y_PORTRAIT)
             .remove(KEY_BUBBLE_Y_LANDSCAPE)
@@ -259,14 +260,14 @@ object Prefs {
     // Which screen edge the bubble snaps to. Default right (matches the
     // accessibility-overlay convention on most Android voice/translate apps).
     fun getBubbleSide(context: Context): String =
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .getString(KEY_BUBBLE_SIDE, BUBBLE_SIDE_RIGHT) ?: BUBBLE_SIDE_RIGHT
 
     fun setBubbleSide(context: Context, side: String) {
         require(side == BUBBLE_SIDE_LEFT || side == BUBBLE_SIDE_RIGHT) {
             "Invalid bubble side: $side"
         }
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putString(KEY_BUBBLE_SIDE, side)
             .apply()
@@ -280,11 +281,11 @@ object Prefs {
     // [com.govorun.lite.transcriber.Dictionary]. Stored as a single string
     // so import/export trivially round-trips through ACTION_OPEN/CREATE_DOCUMENT.
     fun getDictionary(context: Context): String =
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .getString(KEY_DICTIONARY, "") ?: ""
 
     fun setDictionary(context: Context, text: String) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putString(KEY_DICTIONARY, text)
             .apply()
@@ -296,18 +297,18 @@ object Prefs {
     // Enabling it is a deliberate one-tap action inside the dictionary
     // screen, after the user has seen what's there.
     fun isDictionaryEnabled(context: Context): Boolean =
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .getBoolean(KEY_DICTIONARY_ENABLED, false)
 
     fun setDictionaryEnabled(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putBoolean(KEY_DICTIONARY_ENABLED, enabled)
             .apply()
     }
 
     fun getPauseLength(context: Context): String {
-        val raw = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        val raw = GovorunPreferences.of(context, FILE_NAME)
             .getString(KEY_PAUSE_LENGTH, PAUSE_DEFAULT) ?: PAUSE_DEFAULT
         return when (raw) {
             PAUSE_SHORT, PAUSE_MEDIUM, PAUSE_LONG -> raw
@@ -319,7 +320,7 @@ object Prefs {
         require(value == PAUSE_SHORT || value == PAUSE_MEDIUM || value == PAUSE_LONG) {
             "Invalid pause length: $value"
         }
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putString(KEY_PAUSE_LENGTH, value)
             .apply()
@@ -339,11 +340,11 @@ object Prefs {
     // matching the pre-1.0.11 behaviour (intended for users with phone on
     // charger, wall-mounted tablet, long-form dictation).
     fun isKeepScreenOnEnabled(context: Context): Boolean =
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .getBoolean(KEY_KEEP_SCREEN_ON, false)
 
     fun setKeepScreenOnEnabled(context: Context, enabled: Boolean) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putBoolean(KEY_KEEP_SCREEN_ON, enabled)
             .apply()
@@ -361,7 +362,7 @@ object Prefs {
     const val AUTO_STOP_DEFAULT = AUTO_STOP_1H
 
     fun getAutoStopMinutes(context: Context): Int {
-        val raw = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        val raw = GovorunPreferences.of(context, FILE_NAME)
             .getInt(KEY_AUTO_STOP_MINUTES, AUTO_STOP_DEFAULT)
         return when (raw) {
             AUTO_STOP_15M, AUTO_STOP_1H, AUTO_STOP_3H, AUTO_STOP_OFF -> raw
@@ -374,7 +375,7 @@ object Prefs {
                 minutes == AUTO_STOP_3H || minutes == AUTO_STOP_OFF) {
             "Invalid auto-stop minutes: $minutes"
         }
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putInt(KEY_AUTO_STOP_MINUTES, minutes)
             .apply()
@@ -409,21 +410,21 @@ object Prefs {
     }
 
     fun getBubbleEdgeMargin(context: Context): Int {
-        val raw = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        val raw = GovorunPreferences.of(context, FILE_NAME)
             .getInt(KEY_BUBBLE_EDGE_MARGIN, BUBBLE_EDGE_MARGIN_DEFAULT)
         return snapBubbleEdgeMargin(raw)
     }
 
     /** Back to «Стандартный»: the first version's offset, not an explicit 0 dp. */
     fun clearBubbleEdgeMargin(context: Context) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .remove(KEY_BUBBLE_EDGE_MARGIN)
             .apply()
     }
 
     fun setBubbleEdgeMargin(context: Context, dp: Int) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putInt(KEY_BUBBLE_EDGE_MARGIN, snapBubbleEdgeMargin(dp))
             .apply()
@@ -441,11 +442,11 @@ object Prefs {
     private const val KEY_BUBBLE_POSITION_LOCKED = StorageKeys.Key.BUBBLE_POSITION_LOCKED
 
     fun isBubblePositionLocked(context: Context): Boolean =
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .getBoolean(KEY_BUBBLE_POSITION_LOCKED, false)
 
     fun setBubblePositionLocked(context: Context, locked: Boolean) {
-        context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE)
+        GovorunPreferences.of(context, FILE_NAME)
             .edit()
             .putBoolean(KEY_BUBBLE_POSITION_LOCKED, locked)
             .apply()
