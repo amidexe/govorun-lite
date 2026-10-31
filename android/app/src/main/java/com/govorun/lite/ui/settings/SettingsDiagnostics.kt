@@ -11,7 +11,7 @@ internal fun diagnosticReasonSummary(reason: StylizationDiagnosticReason): Strin
     StylizationDiagnosticReason.SERVICE_UNAVAILABLE -> "сервис недоступен"
     StylizationDiagnosticReason.ACCESS_INACTIVE -> "нет активного доступа"
     StylizationDiagnosticReason.SHORT_PHRASE -> "короткая фраза"
-    StylizationDiagnosticReason.TEXT_TOO_LONG -> "слишком длинный текст"
+    StylizationDiagnosticReason.TEXT_TOO_LONG -> "превышен лимит размера запроса"
     StylizationDiagnosticReason.NOT_CONFIGURED -> "сервис не настроен"
     StylizationDiagnosticReason.APP_RULE_DISABLED -> "выключено для приложения"
     StylizationDiagnosticReason.OFFLINE,

@@ -1,4 +1,9 @@
-export type IndicatorIssue = 'captureUnavailable' | 'processingFailed' | 'timerUnavailable';
+export type IndicatorIssue =
+  | 'captureUnavailable'
+  | 'processingFailed'
+  | 'timerUnavailable'
+  | 'targetElevated'
+  | 'hotkeyBlocked';
 
 export interface RuntimeReadiness {
   model: 'unprepared' | 'loading' | 'ready' | 'standby' | 'failed' | 'stopped';
@@ -36,7 +41,9 @@ export function runtimeSnapshot(value: unknown): RuntimeSnapshot {
     throw new Error('Invalid style status');
   if (
     snapshot.issue != null &&
-    !['captureUnavailable', 'processingFailed', 'timerUnavailable'].includes(snapshot.issue)
+    !['captureUnavailable', 'processingFailed', 'timerUnavailable', 'targetElevated', 'hotkeyBlocked'].includes(
+      snapshot.issue,
+    )
   )
     throw new Error('Invalid native issue');
   if (snapshot.readiness != null) {

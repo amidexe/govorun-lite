@@ -11,6 +11,8 @@ sealed interface SettingsChange {
     data class SetEdgeMargin(val value: Int) : SettingsChange
     data class SetRecordingMode(val value: String) : SettingsChange
     data class SetHaptics(val enabled: Boolean) : SettingsChange
+    data class SetVolumeKey(val enabled: Boolean) : SettingsChange
+    data class SetHoldPlain(val plain: Boolean) : SettingsChange
     data class SetPositionLocked(val enabled: Boolean) : SettingsChange
     data class SetPause(val value: String) : SettingsChange
     data class SetVoiceMarkerMode(val mode: VoiceMarkerMode) : SettingsChange

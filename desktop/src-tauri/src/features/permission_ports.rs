@@ -176,6 +176,8 @@ impl Physical {
             duration_mode: self.account.recording_setup_mode().await?,
             acceleration: Acceleration::Automatic,
             voice_marker: Marker::Off,
+            model_unload_minutes: permission_setup::DEFAULT_MODEL_UNLOAD_MINUTES,
+            pause: permission_setup::Pause::Auto,
             marker_minimum: constants["minimumCharacters"]
                 .as_u64()
                 .ok_or("dictation_invalid_facts")?,
@@ -187,7 +189,6 @@ impl Physical {
                 ),
             },
             push_to_talk: windows.then_some(false),
-            keep_model_loaded: windows.then_some(true),
             always_on_microphone: windows.then_some(false),
             input_channel: windows.then_some(Value::Null),
             input_channels: windows.then_some(catalog.channels),

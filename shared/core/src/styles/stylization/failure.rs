@@ -30,6 +30,7 @@ pub fn decide(error: Error) -> Decision {
         | Error::StorageUnavailable
         | Error::StorageInvalid => "account_state_changed",
         Error::StyleIssuance { .. } => "style_pass_issue_failed",
+        Error::StyleRequestTooLarge | Error::Http(413) => "text_too_long",
         Error::StyleService(ServiceFailure::Busy) | Error::Http(429) => "server_busy",
         Error::StyleService(ServiceFailure::Timeout) | Error::StyleTransport(Failure::Deadline)
         | Error::Http(504) => {
@@ -62,6 +63,7 @@ pub fn dictation(error: Error) -> Decision {
         "confirmed_offline" => "offline",
         "transport_failed" => "transportFailed",
         "invalid_response" => "invalidResponse",
+        "text_too_long" => "textTooLong",
         _ => "requestFailed",
     };
     decision

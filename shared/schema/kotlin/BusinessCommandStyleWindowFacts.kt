@@ -17,6 +17,7 @@ data class BusinessCommandStyleWindowFacts(
     val `pendingUsageTotal`: Long,
     val `presentationAccess`: Any?,
     val `processingReady`: Boolean,
+    val `products`: List<BusinessCommandProductWindow>,
     val `profileFresh`: Boolean,
     val `readyCredits`: Long,
     val `recoveryInFlight`: Boolean,

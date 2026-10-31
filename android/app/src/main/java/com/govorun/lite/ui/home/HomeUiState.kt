@@ -149,6 +149,8 @@ sealed interface HomeEvent {
     data object KeepAccountDataLocal : HomeEvent
     data object OpenReview : HomeEvent
     data object OpenProducts : HomeEvent
+    /** A server announcement's button: a release page or our site in the browser. */
+    data class OpenLink(val url: String) : HomeEvent
     data class SetOffline(val enabled: Boolean) : HomeEvent
     data object OpenAccessibility : HomeEvent
     data object OpenAutostart : HomeEvent

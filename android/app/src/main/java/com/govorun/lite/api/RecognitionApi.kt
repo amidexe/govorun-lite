@@ -60,4 +60,18 @@ object RecognitionApi {
     const val MAX_FINAL_RESULT_CHARS = 400_000
     const val MAX_INFERENCE_MILLIS = 45_000L
     const val SCOPE_LOCAL_RECOGNITION = 1
+    // Говорун.Эхо smart functions through the person's account. Granted only by the person in
+    // Govorun (its own dialog or the switch in API для приложений), never with recognition.
+    const val SCOPE_SMART_FUNCTIONS = 1 shl 1
+    // The volume key on the lock screen: Govorun, the only app with accessibility, hands a held volume-down to the one app the
+    // person allowed it, which records while it is held. Granted only in Govorun, never with recognition.
+    const val SCOPE_VOLUME_KEY = 1 shl 2
+    /** The activity an app offers for the lock-screen volume key; it must require [volumeKeyPermission]. */
+    const val VOLUME_KEY_RECORD_ACTION = "com.govorun.api.VOLUME_KEY_RECORD"
+    const val VOLUME_KEY_START = "start"
+    const val VOLUME_KEY_STOP = "stop"
+    const val EXTRA_VOLUME_KEY_EVENT = "com.govorun.api.extra.VOLUME_KEY_EVENT"
+
+    /** Govorun's own signature permission: only Govorun can open an app's volume-key activity. */
+    fun volumeKeyPermission(packageName: String) = "$packageName.permission.VOLUME_KEY"
 }

@@ -43,5 +43,6 @@ internal fun JSONObject.toProfileSession(accessToken: String): GovorunSession =
             deviceLimit = it.deviceLimit, styleAccess = it.styleAccess, starterGrant = it.starterGrant,
             promoProgram = it.promoProgram, freeAccessAvailable = it.clientFreeAccessAvailable,
             onlineConsent = it.onlineConsent, onlineService = OnlineService(OnlineServiceState.fromWire(it.onlineServiceState)),
-            styleUsageAccountingAvailable = it.styleUsageAccountingAvailable, hasSyncedData = it.hasSyncedData)
+            styleUsageAccountingAvailable = it.styleUsageAccountingAvailable, hasSyncedData = it.hasSyncedData,
+            announcements = it.announcements)
     }

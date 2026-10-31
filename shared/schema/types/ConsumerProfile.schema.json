@@ -1,6 +1,39 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
+    "ConsumerAnnouncement": {
+      "description": "One Android home-screen message from the server, shown below [below_version_code] (0: any); closing it is remembered on the device by [id].",
+      "properties": {
+        "action": {
+          "default": "",
+          "type": "string"
+        },
+        "belowVersionCode": {
+          "default": 0,
+          "format": "int32",
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "default": "",
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "type": "object"
+    },
     "ConsumerBillingTrialOffer": {
       "properties": {
         "checkoutOpenGrantsAccess": {
@@ -49,6 +82,84 @@
       },
       "type": "object"
     },
+    "ConsumerProductAccess": {
+      "properties": {
+        "consumedToday": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "consumedTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "dailyLimit": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "day": {
+          "type": "string"
+        },
+        "deviceDays": {
+          "additionalProperties": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "default": {},
+          "description": "This device's credits per UTC day under the line, as the server counted them.",
+          "type": "object"
+        },
+        "product": {
+          "type": "string"
+        },
+        "remainingToday": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "remainingTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "scopeId": {
+          "type": "string"
+        },
+        "totalLimit": {
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "consumedToday",
+        "consumedTotal",
+        "dailyLimit",
+        "day",
+        "product",
+        "remainingToday",
+        "remainingTotal",
+        "scopeId",
+        "totalLimit"
+      ],
+      "type": "object"
+    },
+    "ConsumerPromoFeature": {
+      "description": "One «что входит» line from the server: an icon key from the app's short list, a name and a short detail.",
+      "properties": {
+        "detail": {
+          "default": "",
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "icon",
+        "title"
+      ],
+      "type": "object"
+    },
     "ConsumerPromoProgram": {
       "properties": {
         "accessDays": {
@@ -94,6 +205,14 @@
         "enrollmentOpen": {
           "default": false,
           "type": "boolean"
+        },
+        "features": {
+          "default": [],
+          "description": "What the access gives, line by line, from the server (program control); empty shows no lines.",
+          "items": {
+            "$ref": "#/definitions/ConsumerPromoFeature"
+          },
+          "type": "array"
         },
         "message": {
           "default": "",
@@ -236,6 +355,14 @@
         "planCode": {
           "default": "",
           "type": "string"
+        },
+        "products": {
+          "default": [],
+          "description": "The lines of Govorun's products besides dictation (Говорун.Эхо, later others), each with its own limits (server 31.10); absent from older servers.",
+          "items": {
+            "$ref": "#/definitions/ConsumerProductAccess"
+          },
+          "type": "array"
         },
         "quotaUnit": {
           "default": null,
@@ -396,6 +523,14 @@
     }
   },
   "properties": {
+    "announcements": {
+      "default": [],
+      "description": "Messages for the home screen of a signed-in person (a new version, news); the app picks what is for it.",
+      "items": {
+        "$ref": "#/definitions/ConsumerAnnouncement"
+      },
+      "type": "array"
+    },
     "clientFreeAccessAvailable": {
       "default": false,
       "type": "boolean"
@@ -447,6 +582,7 @@
         "dailyLimit": 0,
         "endsAt": null,
         "enrollmentOpen": false,
+        "features": [],
         "message": "",
         "participated": false,
         "periodDays": 0,
@@ -505,7 +641,8 @@
     "promoProgram",
     "clientFreeAccessAvailable",
     "styleUsageAccountingAvailable",
-    "hasSyncedData"
+    "hasSyncedData",
+    "announcements"
   ],
   "x-consumer-view": true,
   "x-kotlin-defaults": {}

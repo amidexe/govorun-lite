@@ -60,7 +60,7 @@ internal fun StylePickerCard(
     onlineServicePaused: Boolean = false,
 ) {
     val servicePaused = onlineServicePaused && offer.enabled && !offer.selfHosted && offer.pauseMessage == null
-    var expanded by rememberSaveable { mutableStateOf(justEnabled || !offer.enabled) }
+    var expanded by rememberSaveable { mutableStateOf(justEnabled || !offer.enabled || offer.pauseMessage != null) }
     LaunchedEffect(justEnabled) { if (justEnabled) expanded = true }
     var editedPreset by remember { mutableStateOf<CustomStylePreset?>(null) }
     var editorVisible by rememberSaveable { mutableStateOf(false) }
@@ -97,8 +97,11 @@ internal fun StylePickerCard(
             }
             offer.pauseMessage?.let { message ->
                 Column(modifier = Modifier.padding(ProductTokens.Spacing.Lg)) {
-                    Text(message, style = MaterialTheme.typography.bodyMedium)
-                    Text("Диктовка работает без стилизации.", style = MaterialTheme.typography.bodySmall)
+                    // The pause in a headline, then a calm second line: dictation itself keeps working.
+                    val lines = message.split('\n', limit = 2)
+                    Text(lines[0], style = MaterialTheme.typography.bodyMedium)
+                    Text(lines.getOrNull(1) ?: "Диктовка работает как обычно.", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                     TextButton(onClick = { onEvent(HomeEvent.OpenSubscription) }) {
                         Text("Подписка и лимиты")
                     }

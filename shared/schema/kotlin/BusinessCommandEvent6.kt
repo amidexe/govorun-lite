@@ -4,6 +4,8 @@ package com.govorun.core.generated
 sealed interface BusinessCommandEvent6 { val `kind`: String }
 data class BusinessCommandEvent6_begin(
     val `bypass`: Boolean,
+    val `digest`: Boolean,
+    val `product`: Boolean,
     val `streaming`: Boolean
 ) : BusinessCommandEvent6 { override val `kind`: String = "begin" }
 data class BusinessCommandEvent6_draft(

@@ -97,7 +97,8 @@ export interface DictationFields {
   voiceMarker: 'off' | 'microphone' | 'text';
   launchAtLogin: boolean;
   pushToTalk: boolean;
-  keepModelLoaded: boolean;
+  modelUnloadMinutes: number;
+  pause: 'auto' | 'short' | 'medium' | 'long';
   alwaysOnMicrophone: boolean;
   inputChannel: number | null;
 }

@@ -58,6 +58,8 @@ internal fun HomeScreen(
     state: HomeUiState,
     paymentAlert: SubscriptionPaymentAlert? = null,
     notificationInvitation: (@Composable () -> Unit)? = null,
+    announcement: com.govorun.lite.account.Announcement? = null,
+    onCloseAnnouncement: (String) -> Unit = {},
     styleJustEnabled: Boolean = false,
     onlineServicePaused: Boolean = false,
     network: NetworkPolicy.Choice = NetworkPolicy.Choice(),
@@ -81,6 +83,10 @@ internal fun HomeScreen(
                 contentPadding = productScreenPadding(),
                 verticalArrangement = Arrangement.spacedBy(ProductTokens.Spacing.Md),
             ) {
+                // The server's message for signed-in people goes first: a new version, news.
+                announcement?.let { item -> item(key = "announcement-" + item.id) {
+                    HomeAnnouncementCard(item, onOpen = { onEvent(HomeEvent.OpenLink(it)) }, onClose = { onCloseAnnouncement(item.id) })
+                } }
                 item { ReadinessCard(state, onEvent) }
                 state.lastDictation?.let { text -> item { LastDictationCard(text, state.lastDictationOriginal) } }
                 paymentAlert?.let { alert ->

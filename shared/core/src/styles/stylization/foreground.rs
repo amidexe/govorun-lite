@@ -19,10 +19,15 @@ pub struct Foreground {
     pub(super) clock: Arc<dyn Fn() -> u64 + Send + Sync>,
     pub(super) admission: Mutex<()>,
     pub(super) active: Semaphore,
+    /// Говорун.Эхо's notes run on their own places, so a slow note never takes a dictation's.
+    pub(super) notes: Semaphore,
     outage: Arc<super::outage::Outage>,
     reporting: Arc<super::reporting::Reporting>,
     timing: OnceLock<super::timing::Sink>,
+    /// Dictation goes only while the person chose Govorun's improvement ([super::reporting::Settings::official_selected]).
     selection: tokio::sync::watch::Sender<bool>,
+    /// Echo's notes go while the current terms stand ([super::reporting::Settings::notes_allowed]).
+    consent: tokio::sync::watch::Sender<bool>,
     on_demand_issues: AtomicU64,
 }
 /// Private result for the caller that requested processing, never diagnostics.
@@ -59,9 +64,11 @@ impl Foreground {
             clock,
             admission: Mutex::new(()),
             active: Semaphore::new(2),
+            notes: Semaphore::new(2),
             outage: Arc::new(super::outage::Outage::new(Arc::new(move || entropy() as f64/u64::MAX as f64))),
             timing: OnceLock::new(),
             selection: tokio::sync::watch::channel(true).0,
+            consent: tokio::sync::watch::channel(true).0,
             on_demand_issues: AtomicU64::new(0),
         }
     }
@@ -74,11 +81,11 @@ impl Foreground {
     pub(crate) fn close_connection(&self, request_id: Option<&str>) {
         self.gateway.close_connection(request_id);
     }
-    pub(crate) fn configure_selection(&self, selected: bool) {
+    pub(crate) fn configure_selection(&self, selected: bool, consented: bool) {
         if !selected { self.close_connection(None); }
-        self.selection.send_if_modified(|current| {
-            if *current == selected { false } else { *current = selected; true }
-        });
+        for (gate, value) in [(&self.selection, selected), (&self.consent, consented)] {
+            gate.send_if_modified(|current| if *current == value { false } else { *current = value; true });
+        }
     }
     /// Validate current processing authority before a host starts any effects.
     pub fn allowed(&self, epoch: u64) -> Result<()> {
@@ -95,7 +102,6 @@ impl Foreground {
         let snapshot = self.account.snapshot();
         if !snapshot.storage_available { return Err(Error::StorageUnavailable); }
         if !snapshot.signed_in || snapshot.logout_pending { return Err(Error::SessionChanged); }
-        if !*self.selection.borrow() { return Err(Error::ConsentUnconfirmed); }
         Ok(())
     }
     pub(super) async fn mutate(
@@ -148,11 +154,27 @@ impl Foreground {
         timing: Option<super::timing::Sink>,
     ) -> Result<Output> {
         self.allowed(epoch)?;
+        // Each request goes only while its own gate stays open, and stops the moment it closes: dictation's choice for a
+        // dictation, the terms for another product's request.
+        let product = crate::style_text::product(&payload)? != crate::style_text::DICTATION;
+        let gate = if product { &self.consent } else { &self.selection };
+        if !*gate.borrow() { return Err(Error::ConsentUnconfirmed); }
         let text = payload["text"].as_str().ok_or(Error::InvalidRequest)?;
-        let admission = crate::style_text::admit(text.encode_utf16().collect())?;
-        let (ticket, cap) = self.outage.begin(number(&admission, "deadlineMillis")?)?;
+        // Another product's request (Говорун.Эхо's note and its итоги) runs in its own window and stays outside the
+        // dictation pause: it neither waits for it nor opens or closes it.
+        let digest = payload["echoNote"] == crate::style_text::DIGEST;
+        let admission = crate::style_text::admit_class(text.encode_utf16().collect(),
+            digest.then_some(crate::style_text::DIGEST))?;
+        let mut payload = payload;
+        let (ticket, cap) = if product {
+            payload["requestClass"] = json!(if digest { crate::style_text::DIGEST } else { "note" });
+            (None, crate::dictation_timing::NOTE_MILLIS)
+        } else {
+            let (ticket, cap) = self.outage.begin(number(&admission, "deadlineMillis")?)?;
+            (Some(ticket), cap)
+        };
         let notes = super::outage::AttemptNotes::new(cap);
-        let mut selection = self.selection.subscribe();
+        let mut selection = gate.subscribe();
         let result = tokio::select! {
             biased;
             _ = async {
@@ -171,7 +193,12 @@ impl Foreground {
         ) {
             sink(record);
         }
-        self.outage.finish(ticket, result.as_ref().err().copied(), notes.delay())?;
+        if let Some(ticket) = ticket {
+            if let Some(profile) = self.account.profile() {
+                self.outage.adopt(super::outage::Policy::from_card(profile.wire()));
+            }
+            self.outage.finish(ticket, result.as_ref().err().copied(), notes.delay())?;
+        }
         result
     }
     pub(crate) fn record_on_demand_issue(&self) {
@@ -291,13 +318,15 @@ impl Foreground {
         epoch: u64,
         token: String,
         end: Instant,
+        note: bool,
         notes: &super::outage::AttemptNotes,
     ) -> Result<Value> {
         let mut state = None;
+        let transition = if note { crate::style_poll::transition_note } else { crate::style_poll::transition };
         notes.1.phase("wait");
         loop {
             self.attempt_current(epoch)?;
-            let begin = crate::style_poll::transition(
+            let begin = transition(
                 state,
                 crate::style_poll::Event::Begin {
                     remaining_millis: remaining(end),
@@ -330,7 +359,7 @@ impl Foreground {
                 notes.observe(response, (self.clock)());
             }
             let next = match response {
-                Ok(ref response) => crate::style_poll::transition(
+                Ok(ref response) => transition(
                     state,
                     crate::style_poll::Event::Response {
                         status: response.status,
@@ -339,7 +368,7 @@ impl Foreground {
                         remaining_millis: remaining(end),
                     },
                 )?,
-                Err(failure) => crate::style_poll::transition(
+                Err(failure) => transition(
                     state,
                     crate::style_poll::Event::Transport {
                         failure: failure.start(),
@@ -366,7 +395,7 @@ impl Foreground {
             if job["kind"] != "processing" {
                 return Ok(job);
             }
-            let next = crate::style_poll::transition(
+            let next = transition(
                 state,
                 crate::style_poll::Event::Processing {
                     elapsed_millis: started.elapsed().as_millis().min(u64::MAX as u128) as u64,

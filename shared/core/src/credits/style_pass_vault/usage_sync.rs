@@ -44,15 +44,27 @@ impl UsageSync {
             .await
             .map(|v| v.candidate)
     }
+    /// Dictation's balance and each product's line (Говорун.Эхо, later others): each observation keeps the other
+    /// lines' scopes, so none loses what this device spent and reported under it.
     pub async fn observe(&self, epoch: u64) -> Result<Envelope> {
         self.allowed(epoch)?;
         let profile = self.account.profile().ok_or(Error::SignedOut)?;
-        let balance = &profile.wire()["styleAccess"]["usageBalance"];
-        let event = match observe(balance)? {
+        let access = &profile.wire()["styleAccess"];
+        let lines: Vec<&Value> = std::iter::once(&access["usageBalance"])
+            .chain(access["products"].as_array().into_iter().flatten()).collect();
+        let others = |index: usize| lines.iter().enumerate().filter(|(other, _)| *other != index)
+            .filter_map(|(_, line)| line["scopeId"].as_str().map(str::to_owned)).collect::<Vec<_>>();
+        let event = match observe(lines[0], others(0))? {
             Some(event) => event,
             None => usage::Event::Validate,
         };
-        self.apply(epoch, event).await
+        let mut observed = self.apply(epoch, event).await?;
+        for index in 1..lines.len() {
+            if let Some(event) = observe(lines[index], others(index))? {
+                observed = self.apply(epoch, event).await?;
+            }
+        }
+        Ok(observed)
     }
     /// Single coalesced pass; failures retain cumulative debt for a later trigger.
     pub async fn flush(&self, epoch: u64) -> Result<usize> {
@@ -91,7 +103,7 @@ impl UsageSync {
         Ok(acknowledged)
     }
 }
-fn observe(balance: &Value) -> Result<Option<usage::Event>> {
+fn observe(balance: &Value, protected_scopes: Vec<String>) -> Result<Option<usage::Event>> {
     if balance.is_null() {
         return Ok(None);
     }
@@ -117,6 +129,6 @@ fn observe(balance: &Value) -> Result<Option<usage::Event>> {
         scope,
         device_days,
         device_requests,
-        protected_scopes: vec![],
+        protected_scopes,
     }))
 }

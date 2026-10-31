@@ -264,11 +264,9 @@ impl Envelope {
         };
         let previous = state.clone();
         let decision = inventory::transition(state, event, now, retirement_available)?;
-        if decision.state == previous
-            && additions.passes.is_empty()
-            && additions.receipts.is_empty()
-            && additions.journal.is_none()
-        {
+        // A late duplicate issuance reply is a no-op. Rebuilding from its original pass metadata would overwrite
+        // a pending lease's admitted product with the issuance scope (dictation), even though no transition applied.
+        if decision.state == previous {
             return Ok(InventoryChange {
                 candidate: self.clone(),
                 selected: index.tokens(&decision.selected)?,

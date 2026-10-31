@@ -77,7 +77,7 @@ class RecognitionAuthorizationActivity : ComponentActivity() {
             current.uid == original.pending.uid &&
             current.currentSigners == original.pending.currentSigners
         ) {
-            store.approve(current)
+            store.approve(current, consumed.scopes)
         }
         finish()
     }
@@ -113,9 +113,11 @@ private fun AuthorizationDialog(
     onDismiss: () -> Unit,
     onApprove: () -> Unit,
 ) {
+    val smart = request.pending.scopes and RecognitionApi.SCOPE_SMART_FUNCTIONS != 0
+    val volumeKey = request.pending.scopes and RecognitionApi.SCOPE_VOLUME_KEY != 0
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Разрешить распознавание?") },
+        title = { Text(if (volumeKey) "Отдать кнопку громкости?" else if (smart) "Разрешить умные функции?" else "Разрешить распознавание?") },
         text = {
             Column {
                 Row(
@@ -141,16 +143,32 @@ private fun AuthorizationDialog(
                     }
                 }
                 Text(
-                    text = "${request.identity.label} передаст голос в «Говорун» и получит " +
-                        "распознанный текст. Аудио обрабатывается на устройстве, не сохраняется " +
-                        "и не отправляется в интернет.",
+                    text = if (volumeKey) {
+                        "На заблокированном экране удержание «−» будет записывать заметку в ${request.identity.label}, " +
+                            "пока вы держите кнопку. Короткое нажатие — обычная громкость; во время звонка и музыки кнопка не перехватывается."
+                    } else if (smart) {
+                        "${request.identity.label} сможет отправлять тексты заметок на улучшение текста Говоруна " +
+                            "через ваш аккаунт. Звук не отправляется."
+                    } else {
+                        "${request.identity.label} передаст голос в «Говорун» и получит " +
+                            "распознанный текст. Аудио обрабатывается на устройстве, не сохраняется " +
+                            "и не отправляется в интернет."
+                    },
                     modifier = Modifier.padding(top = ProductTokens.Spacing.Screen),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "Разрешение относится только к локальному распознаванию. Оно не даёт " +
-                        "доступ к вашему аккаунту, подписке или онлайн-стилизации.",
+                    text = if (volumeKey) {
+                        "Это эксперимент. Кнопку слушает только Говорун; приложение получает лишь «начать» и «закончить». " +
+                            "Выключить — в настройках Говоруна или в «API для приложений»."
+                    } else if (smart) {
+                        "Улучшения расходуют те же лимиты, что и диктовка со стилем. " +
+                            "Отключить можно в «API для приложений»."
+                    } else {
+                        "Разрешение относится только к локальному распознаванию. Оно не даёт " +
+                            "доступ к вашему аккаунту, подписке или онлайн-стилизации."
+                    },
                     modifier = Modifier.padding(top = ProductTokens.Spacing.Md),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

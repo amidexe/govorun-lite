@@ -12,7 +12,7 @@
         {"document": "bird.document", "exact": ["haptics_enabled"], "prefix": ["bubble_"]},
         {"document": "dictionary.document", "exact": ["dictionary_text", "dictionary_enabled"]},
         {"document": "statistics.document", "prefix": ["stats_"]},
-        {"document": "recording.document", "exact": ["pause_length", "auto_stop_minutes", "keep_screen_on", "recording_interaction_mode_v2", "voice_marker_mode", "voice_suffix_enabled"]},
+        {"document": "recording.document", "exact": ["pause_length", "pause_choice", "auto_stop_minutes", "keep_screen_on", "recording_interaction_mode_v2", "voice_marker_mode", "voice_suffix_enabled"]},
         {"document": "clipboard.document", "exact": ["remember_last_dictation"]}
       ],
       "default": "app.document"

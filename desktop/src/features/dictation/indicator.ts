@@ -23,7 +23,9 @@ export function indicatorFrame(value: unknown): IndicatorFrame {
     typeof frame.warning !== 'boolean' ||
     !(
       frame.issue === null ||
-      ['captureUnavailable', 'processingFailed', 'timerUnavailable'].includes(frame.issue ?? '')
+      ['captureUnavailable', 'processingFailed', 'timerUnavailable', 'targetElevated', 'hotkeyBlocked'].includes(
+        frame.issue ?? '',
+      )
     )
   ) {
     throw new Error('Invalid indicator frame');
@@ -38,6 +40,8 @@ export function indicatorLabel(frame: IndicatorFrame): string {
   if (frame.issue === 'captureUnavailable') return 'Не удалось начать запись';
   if (frame.issue === 'processingFailed') return 'Не удалось обработать запись';
   if (frame.issue === 'timerUnavailable') return 'Не удалось проверить ограничение записи';
+  if (frame.issue === 'targetElevated') return 'Окно администратора: вставьте Ctrl+V';
+  if (frame.issue === 'hotkeyBlocked') return 'Окно администратора: Говорун не слышит клавишу';
   if (frame.warning) return 'Запись скоро завершится';
   if (frame.phase === 'starting') return 'Подготовка микрофона';
   if (frame.phase === 'recording') return 'Идёт запись';

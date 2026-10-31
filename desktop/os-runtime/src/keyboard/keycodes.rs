@@ -20,9 +20,26 @@ pub(super) fn modifier(platform: Platform, key: u16) -> Option<Modifiers> {
 pub(super) fn key(platform: Platform, key: u16) -> Option<Key> {
     use Key::*;
     if platform == Platform::Windows {
+        // Every key Handy's own table knows (handy-keys, platform/windows/keycode.rs), by the same virtual-key codes.
         return match key {
+            0x08 => Some(Delete), // Backspace, in Handy's name
+            0x09 => Some(Tab),
+            0x0D => Some(Return),
+            0x13 => Some(Pause),
+            0x14 => Some(CapsLock),
             0x1B => Some(Escape),
             0x20 => Some(Space),
+            0x21 => Some(PageUp),
+            0x22 => Some(PageDown),
+            0x23 => Some(End),
+            0x24 => Some(Home),
+            0x25 => Some(LeftArrow),
+            0x26 => Some(UpArrow),
+            0x27 => Some(RightArrow),
+            0x28 => Some(DownArrow),
+            0x2C => Some(PrintScreen),
+            0x2D => Some(Insert),
+            0x2E => Some(ForwardDelete),
             0x41..=0x5A => Some(
                 [
                     A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
@@ -31,9 +48,40 @@ pub(super) fn key(platform: Platform, key: u16) -> Option<Key> {
             0x30..=0x39 => Some(
                 [Num0, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9][(key - 0x30) as usize],
             ),
-            0x70..=0x7B => {
-                Some([F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12][(key - 0x70) as usize])
-            }
+            0x5D => Some(ContextMenu),
+            0x60..=0x69 => Some(
+                [Keypad0, Keypad1, Keypad2, Keypad3, Keypad4, Keypad5, Keypad6, Keypad7, Keypad8, Keypad9]
+                    [(key - 0x60) as usize],
+            ),
+            0x6A => Some(KeypadMultiply),
+            0x6B => Some(KeypadPlus),
+            0x6D => Some(KeypadMinus),
+            0x6E => Some(KeypadDecimal),
+            0x6F => Some(KeypadDivide),
+            0x70..=0x87 => Some(
+                [
+                    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20,
+                    F21, F22, F23, F24,
+                ][(key - 0x70) as usize],
+            ),
+            0x90 => Some(NumLock),
+            0x91 => Some(ScrollLock),
+            0xB0 => Some(NextTrack),
+            0xB1 => Some(PrevTrack),
+            0xB2 => Some(Stop),
+            0xB3 => Some(PlayPause),
+            0xBA => Some(Semicolon),
+            0xBB => Some(Equal),
+            0xBC => Some(Comma),
+            0xBD => Some(Minus),
+            0xBE => Some(Period),
+            0xBF => Some(Slash),
+            0xC0 => Some(Grave),
+            0xDB => Some(LeftBracket),
+            0xDC => Some(Backslash),
+            0xDD => Some(RightBracket),
+            0xDE => Some(Quote),
+            0xE2 => Some(Section),
             _ => None,
         };
     }

@@ -13,10 +13,11 @@ internal object StyleProcessingFeedback {
     data class Ticket(val frame: Frame, val previousFailure: String?)
     private val mutable = MutableStateFlow(Frame())
     val state = mutable.asStateFlow()
-    @Synchronized fun begin(generation: Long, selfHosted: Boolean): Ticket {
+    @Synchronized fun begin(generation: Long, selfHosted: Boolean, product: Boolean = false): Ticket {
         val previous = mutable.value
         val frame = Frame(previous.revision + 1, generation, selfHosted, Phase.PROCESSING)
-        mutable.value = frame
+        // Other products use the same processing ports, but never own the last-dictation card.
+        if (!product) mutable.value = frame
         return Ticket(frame, previous.failureMessage.takeIf {
             previous.generation == generation && previous.selfHosted == selfHosted
         })
@@ -28,12 +29,13 @@ internal object StyleProcessingFeedback {
         StylizationFallbackReason.SERVER_TIMEOUT -> "Сервис не ответил вовремя"
         StylizationFallbackReason.SERVER_UNAVAILABLE -> "Сервис был временно недоступен"
         StylizationFallbackReason.STYLE_PASS_ISSUE_FAILED -> "Не удалось подготовить улучшение"
+        StylizationFallbackReason.TEXT_TOO_LONG -> "Превышен лимит размера запроса на улучшение"
         StylizationFallbackReason.REQUEST_FAILED,
         StylizationFallbackReason.INVALID_RESPONSE -> "Не удалось обработать запрос"
         else -> null
     })
     @Synchronized private fun complete(ticket: Ticket, message: String?) {
-        if (mutable.value == ticket.frame) mutable.value = ticket.frame.copy(
+        if (mutable.value === ticket.frame) mutable.value = ticket.frame.copy(
             phase = if (message == null) Phase.IDLE else Phase.FAILED, failureMessage = message)
     }
     fun cancel(ticket: Ticket) = complete(ticket, ticket.previousFailure)

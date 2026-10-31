@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Only Govorun holds this: an app's lock-screen volume-key activity requires it, so only Govorun can open it. -->
+    <permission
+        android:name="${applicationId}.permission.VOLUME_KEY"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="${applicationId}.permission.VOLUME_KEY" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
@@ -243,6 +248,19 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="com.govorun.api.RECOGNITION_SERVICE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".api.smart.SmartJobsWake"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <service
+            android:name=".api.smart.SmartService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.govorun.api.smart.v1.BIND" />
             </intent-filter>
         </service>
 

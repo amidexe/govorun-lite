@@ -25,13 +25,10 @@ internal class BubbleGestureHandler(
         visualParams: WindowManager.LayoutParams,
     ) {
         val dragThresholdPx = DRAG_THRESHOLD_DP * service.resources.displayMetrics.density
-        val holdMovementSlopPx = HOLD_MOVEMENT_SLOP_DP * service.resources.displayMetrics.density
         input.setOnTouchListener(object : View.OnTouchListener {
             private var initialY = 0
             private var initialTouchY = 0f
             private var initialTouchX = 0f
-            private var lastTouchX = 0f
-            private var lastTouchY = 0f
             private var dragged = false
             private var holdStarted = false
             private var pressedAction = BubbleView.Action.NONE
@@ -42,12 +39,8 @@ internal class BubbleGestureHandler(
                     callbacks.onPointerCancel()
                     return@Runnable
                 }
-                val movedX = abs(lastTouchX - initialTouchX)
-                val movedY = abs(lastTouchY - initialTouchY)
-                if (movedX > holdMovementSlopPx || movedY > holdMovementSlopPx) {
-                    callbacks.onPointerCancel()
-                    return@Runnable
-                }
+                // A finger trembles a few dp while it holds: only a drag (past DRAG_THRESHOLD_DP, cancelled in
+                // ACTION_MOVE) is not a hold. A 5 dp limit here turned every other hold into a tap.
                 holdStarted = true
                 callbacks.onHoldStart()
             }
@@ -61,16 +54,12 @@ internal class BubbleGestureHandler(
                         initialY = inputParams.y
                         initialTouchY = event.rawY
                         initialTouchX = event.rawX
-                        lastTouchX = event.rawX
-                        lastTouchY = event.rawY
                         dragged = false
                         holdStarted = false
                         callbacks.onPointerDown()
                         holdHandler.postDelayed(holdRunnable, HOLD_DELAY_MS)
                     }
                     MotionEvent.ACTION_MOVE -> {
-                        lastTouchX = event.rawX
-                        lastTouchY = event.rawY
                         if (holdStarted) return true
                         val dy = event.rawY - initialTouchY
                         val dx = event.rawX - initialTouchX
@@ -146,6 +135,5 @@ internal class BubbleGestureHandler(
     private companion object {
         const val DRAG_THRESHOLD_DP = 10f
         const val HOLD_DELAY_MS = 250L
-        const val HOLD_MOVEMENT_SLOP_DP = 5f
     }
 }

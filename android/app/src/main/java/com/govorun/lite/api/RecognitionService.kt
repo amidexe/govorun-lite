@@ -126,7 +126,6 @@ class RecognitionService : Service() {
             }
 
             override fun supportsContinuousRecognition(): Boolean = true
-
             override fun recognizeContinuous(
                 clientPackage: String?,
                 sessionId: String?,
@@ -386,7 +385,15 @@ class RecognitionService : Service() {
             } else {
                 null
             }
-        override val onPrimaryChange: (() -> Unit)? = hold?.let { it::sync }
+        // A recording waits between phrases while the bird dictates and goes on from there (stopping it made an hour-long
+        // file start anew after every dictation, 29 Oct 2026); a live stream that did not ask to ride it out is stopped.
+        private val recordingWait = DictationHold({ _, _ -> })
+        @Volatile private var pipeline: ContinuousRecognitionPipeline? = null
+        override val onPrimaryChange: () -> Unit = {
+            hold?.sync()
+            recordingWait.sync()
+            if (hold == null && pipeline?.isRecording != true && RecognitionSessionCoordinator.process.primaryActive()) preempt()
+        }
 
         fun start() {
             if (terminal.get()) return
@@ -406,7 +413,8 @@ class RecognitionService : Service() {
                             },
                             onTimedResult = if (wordTimestamps) ::deliverTimed else null,
                             hold = hold,
-                        ).run()
+                            yieldToDictation = recordingWait,
+                        ).also { pipeline = it }.run()
                         finishStopped()
                     } catch (_: CancellationException) {
                         finishError(RecognitionApi.ERROR_CANCELED, "Запрос отменён")

@@ -364,7 +364,8 @@ internal fun SubscriptionScreen(
             item(key = "tariffs") {
                 Column(Modifier.bringIntoViewRequester(tariffFocus)) {
                 if (state.catalog.storefront.unavailable || state.catalog.plans.isEmpty()) {
-                    CompactMessageCard("Тарифы временно недоступны")
+                    // During Promo there is nothing to sell yet: no card about tariffs at all.
+                    if (!(program.participated && program.state == "active")) CompactMessageCard("Тарифы временно недоступны")
                 } else {
                     SubscriptionPlanSelector(
                         plans = state.catalog.plans,

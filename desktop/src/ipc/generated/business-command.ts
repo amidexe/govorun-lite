@@ -102,6 +102,7 @@ export type { BusinessCommandPhase8 } from './business-command/BusinessCommandPh
 export type { BusinessCommandPhase9 } from './business-command/BusinessCommandPhase9';
 export type { BusinessCommandPlan } from './business-command/BusinessCommandPlan';
 export type { BusinessCommandPreparation } from './business-command/BusinessCommandPreparation';
+export type { BusinessCommandProductWindow } from './business-command/BusinessCommandProductWindow';
 export type { BusinessCommandProfileActivity } from './business-command/BusinessCommandProfileActivity';
 export type { BusinessCommandProfileActivityEvent } from './business-command/BusinessCommandProfileActivityEvent';
 export type { BusinessCommandProfileRefreshCadence } from './business-command/BusinessCommandProfileRefreshCadence';

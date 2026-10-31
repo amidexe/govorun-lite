@@ -153,7 +153,8 @@ class HomeSnapshotReader(context: Context) {
                     else connectionProblem != null || termsRequired || accountState.available || styleSelected,
                 retryConnection = connectionProblem != null,
                 accessActive = selfHosted || access.active,
-                enabled = styleSelected && !termsRequired && pauseMessage == null,
+                // A day's limit pauses the improvement, not the person's choice: the chosen style stays chosen.
+                enabled = styleSelected && !termsRequired,
                 processingReady = selfHostedEnabled || processing.ready && connectionProblem == null,
                 processingMessage = if (styleSelected && !termsRequired && pauseMessage == null)
                     feedbackMessage ?: processing.message.takeIf { !selfHosted } else null,

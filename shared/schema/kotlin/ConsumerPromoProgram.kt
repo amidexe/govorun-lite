@@ -17,7 +17,8 @@ data class ConsumerPromoProgram(
     val `periodDays`: Int = 0,
     val `message`: String = "",
     val `visible`: Boolean = false,
-    val `canActivate`: Boolean = false
+    val `canActivate`: Boolean = false,
+    val `features`: List<ConsumerPromoFeature> = listOf()
 ) {
     fun toJson(): org.json.JSONObject = org.json.JSONObject()
         .put("accessDays", `accessDays`)
@@ -29,6 +30,7 @@ data class ConsumerPromoProgram(
         .put("dailyLimit", `dailyLimit`)
         .put("endsAt", `endsAt`?.let { item -> item } ?: org.json.JSONObject.NULL)
         .put("enrollmentOpen", `enrollmentOpen`)
+        .put("features", org.json.JSONArray(`features`.map { item -> item.toJson() }))
         .put("message", `message`)
         .put("participated", `participated`)
         .put("periodDays", `periodDays`)
@@ -47,6 +49,7 @@ data class ConsumerPromoProgram(
             `dailyLimit` = value.getInt("dailyLimit"),
             `endsAt` = if (value.isNull("endsAt")) null else value.getString("endsAt"),
             `enrollmentOpen` = value.getBoolean("enrollmentOpen"),
+            `features` = value.getJSONArray("features").let { values -> List(values.length()) { index -> ConsumerPromoFeature.fromJson(values.getJSONObject(index)) } },
             `message` = value.getString("message"),
             `participated` = value.getBoolean("participated"),
             `periodDays` = value.getInt("periodDays"),

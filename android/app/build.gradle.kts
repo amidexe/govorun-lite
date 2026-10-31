@@ -76,8 +76,8 @@ android {
         applicationId = "com.govorun.lite"
         minSdk = 31
         targetSdk = 35
-        versionCode = 207
-        versionName = "2.0.34"
+        versionCode = 228
+        versionName = "2.0.55"
         buildConfigField("String", "BUILD_ID", "\"$buildId\"")
         buildConfigField("String", "ACCOUNT_API_URL", "\"$accountApiUrl\"")
         buildConfigField("String", "NOTIFICATIONS_API_URL", "\"$notificationsApiUrl\"")

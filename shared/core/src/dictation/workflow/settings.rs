@@ -14,7 +14,9 @@ pub struct Settings {
     pub local_timer_enabled: bool,
     pub configured_minutes: u32,
     pub compute: Compute,
-    pub keep_model: bool,
+    pub model_unload_minutes: u32,
+    /// Silence that ends a piece; the computer inserts the text at the end.
+    pub pause_seconds: f32,
     pub play_sounds: bool,
     pub mute_audio: bool,
 }
@@ -52,9 +54,8 @@ impl Settings {
                 Acceleration::Cpu => Compute::Cpu,
                 Acceleration::Gpu => Compute::Gpu,
             },
-            // macOS preserves its existing 15-minute idle release. Windows
-            // preserves the existing keep-model choice and the same idle budget.
-            keep_model: snapshot.keep_model_loaded.unwrap_or(false),
+            model_unload_minutes: snapshot.model_unload_minutes,
+            pause_seconds: snapshot.pause.seconds(true),
             play_sounds: snapshot.play_sounds,
             mute_audio: snapshot.mute_audio,
         })
@@ -67,7 +68,7 @@ impl Settings {
         resources::Config {
             input: self.input.clone(),
             compute: self.compute,
-            keep_model: self.keep_model,
+            model_unload_minutes: self.model_unload_minutes,
         }
     }
 }

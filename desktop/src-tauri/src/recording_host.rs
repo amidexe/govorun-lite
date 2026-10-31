@@ -13,7 +13,7 @@ use govorun_core::features::ports::NativeEvent;
 use govorun_os_runtime::{
     inference_model::{Files, Model},
     insertion::Inserter,
-    model_cache::Readiness,
+    model_cache::{idle_timeout, Readiness},
 };
 use serde_json::{json, Value};
 use std::{
@@ -78,7 +78,7 @@ impl Host {
                 },
             }
         };
-        let model = Arc::new(Model::new(files, settings.compute, settings.keep_model));
+        let model = Arc::new(Model::new(files, settings.compute, idle_timeout(settings.model_unload_minutes)));
         // The indicator exists in background launches too. Clipboard ownership
         // must not depend on a settings/home window having been opened.
         crate::recording_indicator::ensure(app).await?;
@@ -119,6 +119,14 @@ impl Host {
                     json!({"event":"insertion_failed","code":code}), std::time::Duration::from_secs(2)).await;
             });
         }))?;
+        // Windows hides an administrator window's keys from the hook: say so once per run.
+        #[cfg(target_os = "windows")]
+        {
+            let adapter = indicator.clone();
+            let _ = govorun_os_runtime::insertion::watch_foreground(Box::new(move || {
+                adapter.notice(crate::features::dictation::presentation::Issue::HotkeyBlocked, 4000)
+            }));
+        }
         let diagnostics = account.clone();
         let feedback = crate::recording_feedback::Adapter::new(
             indicator.clone(),

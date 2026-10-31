@@ -1,20 +1,22 @@
 //! Existing local recording preference documents; the host owns CAS and OS
 //! application. No migration, account/sync mutation or new persistent store.
 use super::{
-    snapshot::{Acceleration, Duration, Marker},
+    snapshot::{Acceleration, Duration, Marker, Pause, DEFAULT_MODEL_UNLOAD_MINUTES, MODEL_UNLOAD_MINUTES},
     Field, Snapshot,
 };
 use serde_json::{json, Map, Value};
 pub const KEY: &str = "recording.document";
-pub const MAC_KEYS: [&str; 6] = [
+pub const MAC_KEYS: [&str; 8] = [
     "audioInputDeviceUID",
     "playRecordingSounds",
     "muteAudioDuringRecording",
     "maxRecordingMinutes",
     "asrAccelerationMode",
     "voiceInputMarkerMode",
+    "modelUnloadMinutes",
+    "pauseChoice",
 ];
-pub const WINDOWS_KEYS: [&str; 10] = [
+pub const WINDOWS_KEYS: [&str; 12] = [
     "audioInputDevice",
     "audioInputChannel",
     "playSounds",
@@ -25,6 +27,8 @@ pub const WINDOWS_KEYS: [&str; 10] = [
     "pushToTalk",
     "keepRecognitionModelLoaded",
     "alwaysOnMicrophone",
+    "modelUnloadMinutes",
+    "pauseChoice",
 ];
 fn invalid<T>() -> Result<T, &'static str> {
     Err("dictation_invalid_setting")
@@ -91,7 +95,20 @@ pub fn assign(
                 Some(bool_value()?),
             )
         }
-        Field::KeepModelLoaded if !mac => ("keepRecognitionModelLoaded", Some(bool_value()?)),
+        Field::ModelUnloadMinutes => {
+            let minutes = value
+                .as_u64()
+                .and_then(|minutes| u32::try_from(minutes).ok())
+                .filter(|minutes| MODEL_UNLOAD_MINUTES.contains(minutes))
+                .ok_or("dictation_invalid_setting")?;
+            // The choice replaces the older Windows on/off switch.
+            put(&mut values, "keepRecognitionModelLoaded", None);
+            ("modelUnloadMinutes", Some(json!(minutes)))
+        }
+        Field::Pause => {
+            let pause = value.as_str().and_then(Pause::parse).ok_or("dictation_invalid_setting")?;
+            ("pauseChoice", Some(json!(pause.name())))
+        }
         Field::MaxMinutes => {
             if matches!(facts.duration_mode, Duration::Unlimited) {
                 return invalid();
@@ -272,9 +289,27 @@ pub fn overlay_noted(document: &Value, mut facts: Snapshot) -> Result<(Snapshot,
             _ => Marker::Off,
         }
     };
+    // Windows kept an on/off switch before this choice: on keeps the model,
+    // off releases it after the default idle time. Remove this fallback in the
+    // first release after 31 Dec 2026, when every stored switch has been rewritten.
+    facts.model_unload_minutes = read("modelUnloadMinutes", |v| {
+        v.as_u64().and_then(|minutes| u32::try_from(minutes).ok()).is_some_and(|minutes| MODEL_UNLOAD_MINUTES.contains(&minutes))
+    })
+    .and_then(Value::as_u64)
+    .map(|minutes| minutes as u32)
+    .or_else(|| {
+        read("keepRecognitionModelLoaded", Value::is_boolean)
+            .and_then(Value::as_bool)
+            .filter(|_| !mac)
+            .map(|keep| if keep { 0 } else { DEFAULT_MODEL_UNLOAD_MINUTES })
+    })
+    .unwrap_or(DEFAULT_MODEL_UNLOAD_MINUTES);
+    facts.pause = read("pauseChoice", |v| v.as_str().and_then(Pause::parse).is_some())
+        .and_then(Value::as_str)
+        .and_then(Pause::parse)
+        .unwrap_or_default();
     if !mac {
         facts.push_to_talk = Some(flag("pushToTalk", false));
-        facts.keep_model_loaded = Some(flag("keepRecognitionModelLoaded", true));
         facts.always_on_microphone = Some(flag("alwaysOnMicrophone", false));
         facts.input_channel = Some(
             read("audioInputChannel", |v| v.as_u64().is_some_and(|channel| channel < 32))

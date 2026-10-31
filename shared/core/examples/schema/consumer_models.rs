@@ -10,11 +10,11 @@ pub fn constructor_defaults() -> serde_json::Value { serde_json::json!({
 
 #[cfg(feature = "schema")]
 pub fn field_order() -> serde_json::Value { serde_json::json!({
-    "ConsumerStyleAccess": ["type", "state", "startsAt", "endsAt", "dailyResetsAt", "periodResetsAt", "dailyLimit", "totalLimit", "issuedToday", "issuedTotal", "remainingToday", "remainingTotal", "quotaUnit", "charactersPerCredit", "maximumCreditsPerRequest", "stylizationProtocol", "planCode", "balanceKind", "usageBalance", "reserveReturnProtocol", "nextPeriodAt", "periodResetCondition", "accessEndsAt", "issuanceCountersObserved"],
+    "ConsumerStyleAccess": ["type", "state", "startsAt", "endsAt", "dailyResetsAt", "periodResetsAt", "dailyLimit", "totalLimit", "issuedToday", "issuedTotal", "remainingToday", "remainingTotal", "quotaUnit", "charactersPerCredit", "maximumCreditsPerRequest", "stylizationProtocol", "planCode", "balanceKind", "usageBalance", "reserveReturnProtocol", "nextPeriodAt", "periodResetCondition", "accessEndsAt", "issuanceCountersObserved", "products"],
     "ConsumerOnlineConsent": ["acceptedVersion", "acceptedAt", "active"],
     "ConsumerAccountDevice": ["id", "platform", "displayName", "activatedAt", "lastSeenAt", "current"],
     "ConsumerStarterGrant": ["state", "creditLimit", "remainingToIssue", "activationAvailable", "expires", "balanceKind", "trialOffer", "eligible"],
-    "ConsumerPromoProgram": ["campaignId", "programVersion", "state", "enrollmentOpen", "activationAvailable", "participated", "accessMode", "accessDays", "accessEndsAt", "endsAt", "dailyLimit", "periodLimit", "periodDays", "message", "visible", "canActivate"],
+    "ConsumerPromoProgram": ["campaignId", "programVersion", "state", "enrollmentOpen", "activationAvailable", "participated", "accessMode", "accessDays", "accessEndsAt", "endsAt", "dailyLimit", "periodLimit", "periodDays", "message", "visible", "canActivate", "features"],
     "ConsumerBillingStorefront": ["state", "message"],
     "ConsumerBillingPaymentMethod": ["state", "lastFour", "canRemove", "kind", "available"],
     "ConsumerPromoAccessDays": ["days", "planCode", "planName", "startsAt", "endsAt"],
@@ -41,7 +41,10 @@ pub fn field_order() -> serde_json::Value { serde_json::json!({
     "ConsumerCheckoutPresentation": ["disposition", "canCancel", "resumeUrl", "expiresInSeconds", "message", "accessRefreshPending", "launchAction"],
     "ConsumerCheckoutMessageUpdate": ["replace", "message", "refreshStatus", "refreshAccess"],
     "ConsumerBillingCheckoutPresentation": ["settled", "scheduled"],
-    "ConsumerProfile": ["id", "displayName", "currentDeviceId", "deviceLimit", "onlineTermsVersion", "styleAccess", "onlineConsent", "onlineServiceState", "starterGrant", "promoProgram", "clientFreeAccessAvailable", "styleUsageAccountingAvailable", "hasSyncedData"],
+    "ConsumerProfile": ["id", "displayName", "currentDeviceId", "deviceLimit", "onlineTermsVersion", "styleAccess", "onlineConsent", "onlineServiceState", "starterGrant", "promoProgram", "clientFreeAccessAvailable", "styleUsageAccountingAvailable", "hasSyncedData", "announcements"],
     "ConsumerStyleUsageBalance": ["scopeId", "revision", "day", "serverTime", "consumedToday", "consumedTotal", "remainingToday", "remainingTotal", "deviceDays", "settlementScopeIds", "dailySettlementScopeIds", "deviceRequests", "version"],
-    "ConsumerStyleRequestCount": ["count", "credits"]
+    "ConsumerStyleRequestCount": ["count", "credits"],
+    "ConsumerProductAccess": ["product", "scopeId", "day", "dailyLimit", "totalLimit", "consumedToday", "consumedTotal", "remainingToday", "remainingTotal", "deviceDays"],
+    "ConsumerPromoFeature": ["icon", "title", "detail"],
+    "ConsumerAnnouncement": ["id", "title", "text", "action", "url", "belowVersionCode"]
 }) }

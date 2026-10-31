@@ -86,6 +86,9 @@ pub(crate) struct Settings {
     pub application_enabled: bool,
     pub accepted_terms: u32,
     pub current_terms: u32,
+    /// Говорун.Эхо's итоги of a long note: their own length and price (style_text::digest_price).
+    #[serde(default)]
+    pub digest: bool,
 }
 
 #[derive(Deserialize)]
@@ -175,11 +178,17 @@ pub(crate) fn evaluate(command: Command) -> Result<Value> {
 pub(crate) fn plan(units: &[u16], settings: Settings) -> Plan {
     let count = style_text::count(units);
     let characters = count.as_ref().copied().unwrap_or(0);
+    let (minimum, maximum, per_credit) = if settings.digest {
+        use crate::credit_limits::*;
+        (DIGEST_MINIMUM_CHARACTERS, DIGEST_MAXIMUM_CHARACTERS, DIGEST_CHARACTERS_PER_CREDIT)
+    } else {
+        (MINIMUM, MAXIMUM, crate::credit_limits::CHARACTERS_PER_CREDIT)
+    };
     let length = if count.is_err() {
         Length::Invalid
-    } else if characters < MINIMUM {
+    } else if characters < minimum {
         Length::TooShort
-    } else if characters > MAXIMUM {
+    } else if characters > maximum {
         Length::TooLong
     } else {
         Length::Eligible
@@ -207,11 +216,15 @@ pub(crate) fn plan(units: &[u16], settings: Settings) -> Plan {
     let prepare =
         route == Route::Official && settings.official_enabled && length == Length::Eligible;
     let required_credits = if length == Length::Eligible {
-        characters.div_ceil(crate::credit_limits::CHARACTERS_PER_CREDIT)
+        characters.div_ceil(per_credit)
     } else {
         0
     };
-    let deadline_millis = crate::dictation_timing::deadline(characters);
+    let deadline_millis = if settings.digest {
+        crate::dictation_timing::NOTE_MILLIS
+    } else {
+        crate::dictation_timing::deadline(characters)
+    };
     Plan {
         route,
         reason: reason.into(),

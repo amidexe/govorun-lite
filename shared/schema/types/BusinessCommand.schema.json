@@ -2048,6 +2048,38 @@
         },
         {
           "additionalProperties": false,
+          "description": "Android pause after speech: `choice` is the stored value (`null` when never chosen), `legacy` the pre-2.0.48 value, `atEnd` whether the text is inserted after the recording.",
+          "properties": {
+            "at_end": {
+              "type": "boolean"
+            },
+            "choice": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kind": {
+              "enum": [
+                "pause"
+              ],
+              "type": "string"
+            },
+            "legacy": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "at_end",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
           "properties": {
             "enabled": {
               "type": "boolean"
@@ -4522,6 +4554,7 @@
       ]
     },
     "Event4": {
+      "description": "Probe events (Demand, Recording, NextProbe, FinishProbe, AbandonProbe) stay accepted from the canary era's callers; this policy has no probes and ignores them.",
       "oneOf": [
         {
           "additionalProperties": false,
@@ -4788,11 +4821,19 @@
             "bypass": {
               "type": "boolean"
             },
+            "digest": {
+              "default": false,
+              "type": "boolean"
+            },
             "kind": {
               "enum": [
                 "begin"
               ],
               "type": "string"
+            },
+            "product": {
+              "default": false,
+              "type": "boolean"
             },
             "streaming": {
               "type": "boolean"
@@ -6653,6 +6694,43 @@
       ],
       "type": "object"
     },
+    "ProductWindow": {
+      "additionalProperties": false,
+      "description": "What is left of a product's own limit today and in the period: the card's numbers, less this device's requests the card does not count yet (the usage ledger knows them at once; the card only after the next profile read).",
+      "properties": {
+        "limitToday": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "limitTotal": {
+          "default": 0,
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "product": {
+          "type": "string"
+        },
+        "remainingToday": {
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        },
+        "remainingTotal": {
+          "default": 0,
+          "format": "uint64",
+          "minimum": 0.0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "limitToday",
+        "product",
+        "remainingToday"
+      ],
+      "type": "object"
+    },
     "ProfileActivity": {
       "additionalProperties": false,
       "description": "One admission owner for profile work. Task handles remain runtime ports; neither Kotlin nor the desktop host chooses coalescing or follow-up work.",
@@ -7288,6 +7366,11 @@
           "minimum": 0.0,
           "type": "integer"
         },
+        "digest": {
+          "default": false,
+          "description": "Говорун.Эхо's итоги of a long note: their own length and price (style_text::digest_price).",
+          "type": "boolean"
+        },
         "draft": {
           "type": "boolean"
         },
@@ -7687,32 +7770,24 @@
     },
     "State4": {
       "additionalProperties": false,
-      "description": "Process-local availability only. No account, credit, text, or wall clock.",
+      "description": "Process-local availability only. No account, credit, text, or wall clock. While paused, dictation is inserted at once; after the pause the next real dictation is the trial: its success closes the pause, its failure pauses again for longer. No availability probes, no shortened deadline.",
       "properties": {
         "backoff": {
           "format": "uint8",
           "minimum": 0.0,
           "type": "integer"
         },
-        "freshDemand": {
-          "type": "boolean"
+        "failures": {
+          "format": "uint8",
+          "minimum": 0.0,
+          "type": "integer"
         },
         "generation": {
           "format": "uint64",
           "minimum": 0.0,
           "type": "integer"
         },
-        "hasOpened": {
-          "type": "boolean"
-        },
         "lastFailure": {
-          "format": "int64",
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "lastRecordingProbe": {
           "format": "int64",
           "type": [
             "integer",
@@ -7722,33 +7797,21 @@
         "paused": {
           "type": "boolean"
         },
-        "probeActive": {
+        "trialActive": {
           "type": "boolean"
         },
-        "probeAt": {
+        "trialAt": {
           "format": "int64",
-          "type": "integer"
-        },
-        "protectedUntil": {
-          "format": "int64",
-          "type": "integer"
-        },
-        "remaining": {
-          "format": "uint8",
-          "minimum": 0.0,
           "type": "integer"
         }
       },
       "required": [
         "backoff",
-        "freshDemand",
+        "failures",
         "generation",
-        "hasOpened",
         "paused",
-        "probeActive",
-        "probeAt",
-        "protectedUntil",
-        "remaining"
+        "trialActive",
+        "trialAt"
       ],
       "type": "object"
     },
@@ -7773,6 +7836,11 @@
     "State6": {
       "additionalProperties": false,
       "properties": {
+        "digest": {
+          "default": false,
+          "description": "Говорун.Эхо's итоги: no draft or own-server route, no app rule, their own length and price.",
+          "type": "boolean"
+        },
         "phase": {
           "$ref": "#/definitions/Phase2"
         },
@@ -7785,6 +7853,11 @@
               "type": "null"
             }
           ]
+        },
+        "product": {
+          "default": false,
+          "description": "Another product's request (Говорун.Эхо's improvement or итоги): Govorun's own server only, and the person's dictation choices — the improvement switch, its style, «Стили для приложений» — do not apply; the terms still do.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -8195,6 +8268,14 @@
         },
         "processingReady": {
           "type": "boolean"
+        },
+        "products": {
+          "default": [],
+          "description": "The own limits of Govorun's products besides dictation (Говорун.Эхо, later others), from the bound server profile only.",
+          "items": {
+            "$ref": "#/definitions/ProductWindow"
+          },
+          "type": "array"
         },
         "profileFresh": {
           "default": true,
@@ -9015,6 +9096,14 @@
             "styleTextAdmission"
           ],
           "type": "string"
+        },
+        "request_class": {
+          "default": null,
+          "description": "\"digest\": the price of Говорун.Эхо's итоги, answered even for a text they refuse.",
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "units": {
           "items": {

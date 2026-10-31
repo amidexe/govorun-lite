@@ -1,5 +1,5 @@
 //! Local settings intentions. These never grant server access or confirm a purchase.
-use crate::{Error, Result};
+use crate::{permission_setup::Pause, Error, Result};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -13,6 +13,10 @@ pub(crate) enum RecordingAction { Read, Onboarding, Select }
 #[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase", deny_unknown_fields)]
 pub(crate) enum Command {
     Recording { action: RecordingAction, mode: Option<String>, enabled: bool },
+    /// Android pause after speech: `choice` is the stored value (`null` when never
+    /// chosen), `legacy` the pre-2.0.48 value, `atEnd` whether the text is inserted
+    /// after the recording.
+    Pause { choice: Option<String>, legacy: Option<String>, at_end: bool },
     Enable { enabled: bool },
     DismissTerms,
     AcceptTerms { version: u32, accepted_at_millis: u64 },
@@ -37,6 +41,20 @@ pub(crate) fn evaluate(command: Command) -> Result<Value> {
                 }
             };
             Ok(json!({"mode":selected,"stylizationDisabled":disabled,"effects":effects}))
+        }
+        Command::Pause { choice, legacy, at_end } => {
+            // Before 2.0.48 the phone stored «medium» for everyone who never chose:
+            // 1.0.8 wrote it over the old default, and a reset writes it too. Only
+            // short and long were surely chosen, so they stay; the rest becomes auto.
+            let pause = match choice.as_deref().and_then(Pause::parse) {
+                Some(pause) => pause,
+                None => match legacy.as_deref() {
+                    Some("short") => Pause::Short,
+                    Some("long") => Pause::Long,
+                    _ => Pause::Auto,
+                },
+            };
+            Ok(json!({"pause":pause.name(),"seconds":pause.seconds(at_end)}))
         }
         Command::Enable { enabled } => Ok(json!({"effects":[
             {"kind":"setEnabled","enabled":enabled}, {"kind":"preferenceChanged"}

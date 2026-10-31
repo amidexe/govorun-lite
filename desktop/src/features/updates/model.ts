@@ -54,6 +54,14 @@ export function updateSnapshot(value: unknown): UpdateSnapshot {
   };
 }
 
+/** One line of the feed description per change; bullet marks are dropped, empty text shows nothing. */
+export function releaseNotes(notes: string): string[] {
+  return notes
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(?:[-*•]\s+)?/, '').trim())
+    .filter(Boolean);
+}
+
 export function updateMessage(status: UpdateStatus): string {
   switch (status) {
     case 'checking':

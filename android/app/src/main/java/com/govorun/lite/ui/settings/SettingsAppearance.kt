@@ -122,10 +122,22 @@ internal fun AppearanceSettings(
         }
         SettingsDivider()
         SettingsSwitchRow(
+            title = "Удержание — без улучшения текста",
+            summary = "Диктовка удержанием птички или кнопки «−» вставляет текст как есть, без стиля — чтобы быстро отправить сообщение",
+            checked = state.holdPlain,
+            onCheckedChange = { onEvent(SettingsEvent.Change(SettingsChange.SetHoldPlain(it))) },
+        )
+        SettingsDivider()
+        SettingsSwitchRow(
             title = "Вибрация при нажатии",
             summary = "Отклик при записи и двойной сигнал при ошибке",
             checked = state.haptics,
             onCheckedChange = { onEvent(SettingsEvent.Change(SettingsChange.SetHaptics(it))) },
+        )
+        SettingsDivider()
+        VolumeKeySetting(
+            checked = state.volumeKey,
+            onChange = { onEvent(SettingsEvent.Change(SettingsChange.SetVolumeKey(it))) },
         )
         SettingsDivider()
         SettingsSwitchRow(

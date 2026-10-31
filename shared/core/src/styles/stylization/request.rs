@@ -38,14 +38,23 @@ struct Payload {
     profanity_filter_enabled: bool,
     client_reliability: Option<Batch>,
     style_passes: Vec<String>,
+    /// Говорун.Эхо's note, set only by Android's Echo entry: "note" (light laid out as a note) or "header" (name and
+    /// description over any style). Every other client leaves it out.
+    echo_note: Option<String>,
+    /// "note" with an Echo note only: the server's note window instead of the length table. "digest" with the mark
+    /// "digest" only: Echo's итоги of a long note, their own length and price.
+    request_class: Option<String>,
+    /// The product the request is for, as Govorun's entry labelled it ("echo"); absent for a dictation. A note mark
+    /// always comes with its product (crate::style_text::product).
+    product: Option<String>,
 }
 impl Request {
     fn new(kind: Kind, body: Option<Value>, timeout: Duration) -> Result<Self> {
-        if timeout.is_zero()
-            || timeout > Duration::from_secs(120)
-            || body.as_ref().is_some_and(|v| v.to_string().len() > 196_608)
-        {
+        if timeout.is_zero() || timeout > Duration::from_secs(120) {
             return Err(Error::InvalidRequest);
+        }
+        if body.as_ref().is_some_and(|v| v.to_string().len() > 196_608) {
+            return Err(Error::StyleRequestTooLarge);
         }
         Ok(Self {
             kind,
@@ -57,9 +66,12 @@ impl Request {
         })
     }
     pub fn start(body: Value, request_id: String, timeout: Duration) -> Result<Self> {
+        crate::style_text::product(&body)?;
         let payload: Payload =
             serde_json::from_value(body.clone()).map_err(|_| Error::InvalidRequest)?;
-        let admission = crate::style_text::admit(payload.text.encode_utf16().collect())?;
+        let _ = &payload.product;
+        let admission = crate::style_text::admit_class(payload.text.encode_utf16().collect(),
+            payload.request_class.as_deref())?;
         if !crate::request::uuid(&request_id)
             || !["formal", "light", "concise", "custom"].contains(&payload.style.as_str())
             || !["hold", "confirm"].contains(&payload.input_mode.as_str())
@@ -81,6 +93,15 @@ impl Request {
             })
             || payload.style != "custom" && payload.instruction.is_some()
         {
+            return Err(Error::InvalidRequest);
+        }
+        let digest = Some(crate::style_text::DIGEST);
+        if payload.echo_note.as_deref().is_some_and(|mark| {
+            !(mark == "header" || (mark == "note" || Some(mark) == digest) && payload.style == "light")
+        }) || payload.request_class.as_deref().is_some_and(|class| {
+            !(class == "note" && payload.echo_note.is_some() && payload.echo_note.as_deref() != digest
+                || Some(class) == digest && payload.echo_note.as_deref() == digest)
+        }) || payload.echo_note.as_deref() == digest && payload.request_class.as_deref() != digest {
             return Err(Error::InvalidRequest);
         }
         if let Some(batch) = payload.client_reliability {

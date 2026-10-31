@@ -20,6 +20,7 @@ internal fun publishedAccountState(
     freeAccessAvailable = session.freeAccessAvailable,
     onlineConsent = session.onlineConsent,
     onlineService = session.onlineService,
+    announcements = session.announcements,
 )
 
 /** Ancillary sync cannot replace a live profile with a persisted, untrusted clock. */

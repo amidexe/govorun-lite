@@ -5,6 +5,7 @@ import com.govorun.lite.shared.SharedDictationDelivery
 import com.govorun.lite.model.stylization.StylizationFallbackReason
 import com.govorun.lite.model.stylization.StylizationInputMode
 import com.govorun.lite.model.stylization.StylizationResult
+import com.govorun.lite.model.stylization.StylizationSkipReason
 import com.govorun.lite.model.stylization.StylizationClientOutcome
 import java.util.concurrent.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
@@ -25,8 +26,10 @@ internal class StylizedTextDelivery(
         inputMode: StylizationInputMode,
         appendVoiceMarker: Boolean = false,
         packageName: String? = null,
+        plain: Boolean = false,
     ) = collectAttempt {
-        val result = safelyProcess(text, inputMode, packageName)
+        val result = if (plain) StylizationResult(text, skipReason = StylizationSkipReason.STYLIZATION_DISABLED)
+            else safelyProcess(text, inputMode, packageName)
         val plan = SharedDictationDelivery.prepare(result.text, text,
             if (appendVoiceMarker) voiceMarkerMode() else "off",
             result.usedFallback, result.outcomePass != null, result.latencyBucket != "unknown")

@@ -15,7 +15,7 @@ data class ConsumerBillingCatalog(
     val `plans`: List<ConsumerBillingPlan> = listOf(),
     val `storefront`: ConsumerBillingStorefront = ConsumerBillingStorefront(`message` = "", `state` = "open"),
     val `programControlVersion`: String = "",
-    val `promoProgram`: ConsumerPromoProgram = ConsumerPromoProgram(`accessDays` = 0, `accessEndsAt` = null, `accessMode` = "common_end", `activationAvailable` = false, `campaignId` = "", `canActivate` = false, `dailyLimit` = 0, `endsAt` = null, `enrollmentOpen` = false, `message` = "", `participated` = false, `periodDays` = 0, `periodLimit` = 0, `programVersion` = "", `state` = "disabled", `visible` = false),
+    val `promoProgram`: ConsumerPromoProgram = ConsumerPromoProgram(`accessDays` = 0, `accessEndsAt` = null, `accessMode` = "common_end", `activationAvailable` = false, `campaignId` = "", `canActivate` = false, `dailyLimit` = 0, `endsAt` = null, `enrollmentOpen` = false, `features` = listOf(), `message` = "", `participated` = false, `periodDays` = 0, `periodLimit` = 0, `programVersion` = "", `state` = "disabled", `visible` = false),
     val `clientTrialDays`: Int = 0
 ) {
     fun toJson(): org.json.JSONObject = org.json.JSONObject()

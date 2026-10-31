@@ -6,6 +6,7 @@ data class BusinessCommandSettings(
     val `applicationEnabled`: Boolean,
     val `bypass`: Boolean,
     val `currentTerms`: Int,
+    val `digest`: Boolean,
     val `draft`: Boolean,
     val `officialEnabled`: Boolean,
     val `selfHostedEnabled`: Boolean,

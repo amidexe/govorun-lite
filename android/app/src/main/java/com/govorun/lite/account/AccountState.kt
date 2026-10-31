@@ -1,5 +1,7 @@
 package com.govorun.lite.account
 
+/** A home-screen message from the server for signed-in people ([com.govorun.lite.ui.home.HomeAnnouncements]). */
+typealias Announcement = com.govorun.core.generated.ConsumerAnnouncement
 
 data class GovorunSession(
     val accessToken: String,
@@ -18,6 +20,7 @@ data class GovorunSession(
     val styleUsageAccountingAvailable: Boolean = false,
     // Fresh profile metadata only; never persist an "empty" assumption across sessions.
     val hasSyncedData: Boolean? = null,
+    val announcements: List<Announcement> = emptyList(),
 )
 
 data class OnlineService(
@@ -94,6 +97,7 @@ data class AccountState(
     val freeAccessAvailable: Boolean = false,
     val onlineConsent: OnlineConsent = OnlineConsent(),
     val onlineService: OnlineService = OnlineService(),
+    val announcements: List<Announcement> = emptyList(),
     val pendingStyleUsageToday: Int = 0,
     val pendingStyleUsageTotal: Int = 0,
     val localUnspentStyleCredits: Int = 0,

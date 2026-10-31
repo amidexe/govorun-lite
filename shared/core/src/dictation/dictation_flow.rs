@@ -11,6 +11,13 @@ use serde_json::{json, Value};
 pub(crate) struct State {
     phase: Phase,
     plan: Option<Plan>,
+    /// Говорун.Эхо's итоги: no draft or own-server route, no app rule, their own length and price.
+    #[serde(default)]
+    digest: bool,
+    /// Another product's request (Говорун.Эхо's improvement or итоги): Govorun's own server only, and the person's
+    /// dictation choices — the improvement switch, its style, «Стили для приложений» — do not apply; the terms still do.
+    #[serde(default)]
+    product: bool,
 }
 
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq)]
@@ -42,6 +49,10 @@ pub(crate) enum Event {
     Begin {
         streaming: bool,
         bypass: bool,
+        #[serde(default)]
+        digest: bool,
+        #[serde(default)]
+        product: bool,
     },
     Draft {
         active: bool,
@@ -88,12 +99,18 @@ pub(crate) fn transition(state: Option<State>, event: Event) -> Result<Value> {
     let mut outcome = "";
     let mut reason = String::new();
     let action = match event {
-        Event::Begin { streaming, bypass } => {
+        Event::Begin { streaming, bypass, digest, product } => {
             require(&state, Phase::Begin)?;
+            state.digest = digest;
+            state.product = product || digest;
             if bypass || streaming {
                 outcome = "local";
                 reason = if bypass { "bypassed" } else { "streamingMode" }.into();
                 "complete"
+            } else if state.product {
+                // Another product's requests go to Govorun's own server only; a custom-style draft does not concern them.
+                state.phase = Phase::Official;
+                "readOfficial"
             } else {
                 state.phase = Phase::Draft;
                 "readDraft"
@@ -143,13 +160,14 @@ pub(crate) fn transition(state: Option<State>, event: Event) -> Result<Value> {
                     draft: false,
                     self_hosted_selected: false,
                     self_hosted_enabled: false,
-                    official_enabled: enabled,
+                    official_enabled: enabled || state.product,
                     application_enabled: true,
                     accepted_terms,
                     current_terms,
+                    digest: state.digest,
                 },
             );
-            let decision = dictation_plan::admit(plan.clone(), access);
+            let decision = dictation_plan::admit(plan.clone(), for_request(access, state.product));
             // A temporarily stale ready profile may be repaired by the existing
             // preparation port. Definitive access/consent/length failures stop here.
             let can_prepare = plan.prepare;
@@ -185,7 +203,8 @@ pub(crate) fn transition(state: Option<State>, event: Event) -> Result<Value> {
         }
         Event::Selection { enabled } => {
             require(&state, Phase::Selection)?;
-            if enabled {
+            // «Стили для приложений» chooses how Echo's notes are improved; итоги are no improvement.
+            if enabled || state.product {
                 state.phase = Phase::Preparation;
                 "prepare"
             } else {
@@ -197,7 +216,7 @@ pub(crate) fn transition(state: Option<State>, event: Event) -> Result<Value> {
         Event::Prepared { access } => {
             require(&state, Phase::Preparation)?;
             let plan = state.plan.clone().ok_or(Error::InvalidRequest)?;
-            let decision = dictation_plan::admit(plan, access);
+            let decision = dictation_plan::admit(plan, for_request(access, state.product));
             if decision["action"] == "request" {
                 state.phase = Phase::Network;
                 "readNetwork"
@@ -283,4 +302,12 @@ fn require(state: &State, phase: Phase) -> Result<()> {
     } else {
         Err(Error::InvalidRequest)
     }
+}
+
+/// Another product's request carries its own style, so «a style is chosen for dictation» is not asked of it.
+fn for_request(mut access: dictation_plan::Access, product: bool) -> dictation_plan::Access {
+    if product {
+        access.selected = true;
+    }
+    access
 }

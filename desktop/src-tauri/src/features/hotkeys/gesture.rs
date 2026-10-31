@@ -49,14 +49,9 @@ fn parse_windows(raw: &str) -> Option<Candidate> {
         _ => {
             if last.len() == 1 && last.as_bytes()[0].is_ascii_alphanumeric() {
                 last.to_ascii_uppercase().as_bytes()[0] as u16
-            } else if let Some(f) = last
-                .strip_prefix('f')
-                .and_then(|value| value.parse::<u16>().ok())
-                .filter(|value| (1..=12).contains(value))
-            {
-                0x70 + f - 1
             } else {
-                return None;
+                // Any other key by Handy's name for it: «F24», «ContextMenu» (or «Menu», «Apps»), «Insert».
+                govorun_os_runtime::keyboard::windows_key_code(&last)?
             }
         }
     };

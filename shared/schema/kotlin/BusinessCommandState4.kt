@@ -3,14 +3,10 @@ package com.govorun.core.generated
 
 data class BusinessCommandState4(
     val `backoff`: Int,
-    val `freshDemand`: Boolean,
+    val `failures`: Int,
     val `generation`: Long,
-    val `hasOpened`: Boolean,
     val `lastFailure`: Long?,
-    val `lastRecordingProbe`: Long?,
     val `paused`: Boolean,
-    val `probeActive`: Boolean,
-    val `probeAt`: Long,
-    val `protectedUntil`: Long,
-    val `remaining`: Int
+    val `trialActive`: Boolean,
+    val `trialAt`: Long
 )

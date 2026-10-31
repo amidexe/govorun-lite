@@ -94,11 +94,17 @@ impl NativeDocuments {
         Ok(self.network_observation().await? != Some(false))
     }
     pub async fn stylization_enabled(&self) -> Result<bool> {
+        self.stylization_allowed(false).await
+    }
+    /// Whether a request may go to Govorun's server: a dictation by the person's choice, another product's request
+    /// (Говорун.Эхо's note) by the terms alone.
+    pub async fn stylization_allowed(&self, product: bool) -> Result<bool> {
         let settings = self.style_settings().await;
         if let Some(owner) = self.stylization.get() {
             owner.configure_reporting(settings.as_ref().ok().copied().flatten())?;
         }
-        Ok(settings?.is_some_and(|v| v.official_selected(self.core.snapshot().access.client_terms_version)))
+        let terms = self.core.snapshot().access.client_terms_version;
+        Ok(settings?.is_some_and(|v| v.may_send(terms, product)))
     }
     pub(super) async fn configure_stylization(
         &self,

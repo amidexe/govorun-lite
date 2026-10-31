@@ -1,7 +1,9 @@
 package com.govorun.lite.util
 
 import android.content.Context
+import com.govorun.lite.settings.SettingsRules
 import com.govorun.lite.storage.GovorunPreferences
+import org.json.JSONObject
 
 /**
  * Single place that knows the app's SharedPreferences file name + keys.
@@ -23,28 +25,25 @@ object Prefs {
     private const val KEY_DICTIONARY = StorageKeys.Key.DICTIONARY
     private const val KEY_DICTIONARY_ENABLED = StorageKeys.Key.DICTIONARY_ENABLED
     private const val KEY_PAUSE_LENGTH = StorageKeys.Key.PAUSE_LENGTH
+    private const val KEY_PAUSE_CHOICE = StorageKeys.Key.PAUSE_CHOICE
     private const val KEY_KEEP_SCREEN_ON = StorageKeys.Key.KEEP_SCREEN_ON
     private const val KEY_AUTO_STOP_MINUTES = StorageKeys.Key.AUTO_STOP_MINUTES
 
     const val BUBBLE_SIDE_RIGHT = "right"
     const val BUBBLE_SIDE_LEFT = "left"
 
-    // VAD silence threshold presets — how long the silence must last before
-    // the VAD considers the utterance finished. MEDIUM is the shared default;
-    // explicitly saved choices are preserved in every dictation mode.
-    // LONG gives "thinking pauses" room before the model commits a paragraph
-    // — this is what the RuStore feedback ("she pauses to think and the app
-    // cuts the sentence") asked for.
+    // «Пауза после речи»: how long the silence lasts before the VAD ends a
+    // piece. The seconds and the auto rule live in the shared core, the same
+    // on the computer. LONG gives "thinking pauses" room — what the RuStore
+    // feedback ("she pauses to think and the app cuts the sentence") asked for.
+    const val PAUSE_AUTO = "auto"
     const val PAUSE_SHORT = "short"
     const val PAUSE_MEDIUM = "medium"
     const val PAUSE_LONG = "long"
-    const val PAUSE_DEFAULT = PAUSE_MEDIUM
+    const val PAUSE_DEFAULT = PAUSE_AUTO
 
-    // Seconds, fed verbatim into SileroVadModelConfig.minSilenceDuration.
-    // Doubling per step keeps the difference perceptually obvious.
+    // The word-list capture keeps its own quick cut.
     const val PAUSE_SHORT_SECONDS = 0.5f
-    const val PAUSE_MEDIUM_SECONDS = 1.0f
-    const val PAUSE_LONG_SECONDS = 2.0f
 
     // Online text post-processing. It is deliberately off by default and
     // can only be enabled from the dedicated screen after a disclosure.
@@ -307,30 +306,29 @@ object Prefs {
             .apply()
     }
 
-    fun getPauseLength(context: Context): String {
-        val raw = GovorunPreferences.of(context, FILE_NAME)
-            .getString(KEY_PAUSE_LENGTH, PAUSE_DEFAULT) ?: PAUSE_DEFAULT
-        return when (raw) {
-            PAUSE_SHORT, PAUSE_MEDIUM, PAUSE_LONG -> raw
-            else -> PAUSE_DEFAULT
-        }
+    private fun pause(context: Context, atEnd: Boolean): JSONObject {
+        val prefs = GovorunPreferences.of(context, FILE_NAME)
+        return SettingsRules.evaluate(JSONObject().put("kind", "pause")
+            .put("choice", prefs.getString(KEY_PAUSE_CHOICE, null) ?: JSONObject.NULL)
+            .put("legacy", prefs.getString(KEY_PAUSE_LENGTH, null) ?: JSONObject.NULL)
+            .put("atEnd", atEnd))
     }
 
+    fun getPauseLength(context: Context): String = pause(context, false).getString("pause")
+
     fun setPauseLength(context: Context, value: String) {
-        require(value == PAUSE_SHORT || value == PAUSE_MEDIUM || value == PAUSE_LONG) {
+        require(value == PAUSE_AUTO || value == PAUSE_SHORT || value == PAUSE_MEDIUM || value == PAUSE_LONG) {
             "Invalid pause length: $value"
         }
         GovorunPreferences.of(context, FILE_NAME)
             .edit()
-            .putString(KEY_PAUSE_LENGTH, value)
+            .putString(KEY_PAUSE_CHOICE, value)
             .apply()
     }
 
-    fun getPauseLengthSeconds(context: Context): Float = when (getPauseLength(context)) {
-        PAUSE_MEDIUM -> PAUSE_MEDIUM_SECONDS
-        PAUSE_LONG -> PAUSE_LONG_SECONDS
-        else -> PAUSE_SHORT_SECONDS
-    }
+    /** `atEnd`: the text is inserted after the recording, not piece by piece. */
+    fun getPauseLengthSeconds(context: Context, atEnd: Boolean = false): Float =
+        pause(context, atEnd).getDouble("seconds").toFloat()
 
     // "Keep screen on while listening" — opt-in override of the default
     // hands-off behaviour. OFF (default since 1.0.11): the bubble does not

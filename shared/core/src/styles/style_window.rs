@@ -40,6 +40,25 @@ pub(crate) struct StyleWindowFacts {
     pub recovery_in_flight: bool,
     pub daily_reset_passed: bool,
     pub reserve_return: bool,
+    /// The own limits of Govorun's products besides dictation (Говорун.Эхо, later others), from the bound server
+    /// profile only.
+    #[serde(default)]
+    pub products: Vec<ProductWindow>,
+}
+
+/// What is left of a product's own limit today and in the period: the card's numbers, less this device's requests
+/// the card does not count yet (the usage ledger knows them at once; the card only after the next profile read).
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ProductWindow {
+    pub product: String,
+    pub limit_today: u64,
+    pub remaining_today: u64,
+    #[serde(default)]
+    pub limit_total: u64,
+    #[serde(default)]
+    pub remaining_total: u64,
 }
 
 #[derive(Debug, Serialize)]
@@ -60,6 +79,8 @@ pub(crate) struct StyleWindowPresentation {
     pub fresh_usage_available: bool,
     pub prepare_on_demand: bool,
     pub prepare_in_background: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub products: Vec<ProductWindow>,
 }
 
 /// The bound desktop command obtains prices/allowances and access type only
@@ -85,6 +106,9 @@ pub(crate) fn bind_profile(f: &mut StyleWindowFacts, profile: &Value) -> Result<
     f.remaining_today = count(counters, "remainingToday")?;
     f.remaining_total = count(counters, "remainingTotal")?;
     f.reserve_return = access["reserveReturnProtocol"] == "v1_receipt_deposit";
+    // Before the dictation observation below, which may retire the products' acknowledged days from this display copy.
+    f.products = access["products"].as_array().into_iter().flatten()
+        .filter_map(|line| product_window(line, f.usage_ledger.as_ref())).collect();
     if let Some(ledger) = f.usage_ledger.take() {
         if f.usage_accounting {
             let scope: crate::usage_ledger::Scope = serde_json::from_value(serde_json::json!({
@@ -188,7 +212,20 @@ pub(crate) fn project(mut f: StyleWindowFacts) -> Result<StyleWindowPresentation
     Ok(StyleWindowPresentation { quota, remaining_today, remaining_total, starter_locally_exhausted,
         starter_limit_exhausted, usable_starter: starter && single && !starter_locally_exhausted,
         setup_needs_subscription, availability, processing_readiness, pause_reason, fresh_usage_available,
-        prepare_on_demand, prepare_in_background })
+        prepare_on_demand, prepare_in_background, products: f.products })
+}
+
+fn product_window(line: &Value, ledger: Option<&crate::usage_ledger::Ledger>) -> Option<ProductWindow> {
+    let (product, scope, day) = (line["product"].as_str()?, line["scopeId"].as_str()?, line["day"].as_str()?);
+    let limit_today = line["dailyLimit"].as_u64().filter(|limit| (1..=i32::MAX as u64).contains(limit))?;
+    let remaining = line["remainingToday"].as_u64()?.min(limit_today);
+    let counted = line["deviceDays"][day].as_u64().unwrap_or(0);
+    let spent = ledger.and_then(|ledger| ledger.totals.get(scope)).and_then(|days| days.get(day)).map_or(0, |v| u64::from(*v));
+    let unseen = spent.saturating_sub(counted);
+    let limit_total = line["totalLimit"].as_u64().filter(|limit| *limit <= i32::MAX as u64).unwrap_or(0);
+    let remaining_total = line["remainingTotal"].as_u64().unwrap_or(0).min(limit_total).saturating_sub(unseen);
+    Some(ProductWindow { product: product.to_owned(), limit_today, remaining_today: remaining.saturating_sub(unseen),
+        limit_total, remaining_total })
 }
 
 fn verified_profile() -> bool { true }

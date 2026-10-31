@@ -22,6 +22,16 @@ impl Settings {
     pub fn official_selected(self, terms: u32) -> bool {
         self.official_enabled && !self.self_hosted && self.accepted_terms == terms
     }
+    /// Говорун.Эхо's notes and итоги follow Echo's own rule: Govorun's server only, so dictation's switch and an own
+    /// server do not stop them; the current terms, accepted on this device, still do.
+    pub fn notes_allowed(self, terms: u32) -> bool {
+        self.accepted_terms == terms
+    }
+    /// Whether this request may go to Govorun's server: a dictation by the person's choice, another product's request
+    /// (Говорун.Эхо's note) by the terms.
+    pub fn may_send(self, terms: u32, product: bool) -> bool {
+        if product { self.notes_allowed(terms) } else { self.official_selected(terms) }
+    }
 }
 
 struct State {

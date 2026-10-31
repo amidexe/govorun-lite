@@ -14,7 +14,7 @@
       "$ref": "#/definitions/Preference"
     },
     "rememberLast": {
-      "description": "Off unless the person turns it on: the last dictation stays in memory for the tray copy.",
+      "description": "On unless the person turned it off (until 2.1.11x: off unless turned on; a stored choice either way is kept): the last dictation stays in memory for the tray copy.",
       "type": "boolean"
     }
   },

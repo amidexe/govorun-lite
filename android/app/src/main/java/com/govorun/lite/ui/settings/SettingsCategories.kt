@@ -31,9 +31,10 @@ internal fun DictationSettings(
             summary = "Длинная пауза помогает говорить медленнее, не разрывая фразу",
             selected = state.pause,
             choices = listOf(
-                SettingChoice(Prefs.PAUSE_SHORT, "Короткая"),
-                SettingChoice(Prefs.PAUSE_MEDIUM, "Средняя"),
-                SettingChoice(Prefs.PAUSE_LONG, "Длинная"),
+                SettingChoice(Prefs.PAUSE_AUTO, "Авто"),
+                SettingChoice(Prefs.PAUSE_SHORT, "Короткая · 0,5 с"),
+                SettingChoice(Prefs.PAUSE_MEDIUM, "Средняя · 1 с"),
+                SettingChoice(Prefs.PAUSE_LONG, "Длинная · 2 с"),
             ),
             onSelected = { onEvent(SettingsEvent.Change(SettingsChange.SetPause(it))) },
         )

@@ -28,8 +28,18 @@ pub(crate) enum Event {
 /// Polling a server-accepted job never issues, settles or replays a credit.
 /// Two transient retries belong to the whole job, including processing replies.
 pub(crate) fn transition(state: Option<State>, event: Event) -> Result<Value> {
+    transition_for(state, event, false)
+}
+
+/// An accepted note keeps its server capability through transient status outages, within its original deadline.
+pub(crate) fn transition_note(state: Option<State>, event: Event) -> Result<Value> {
+    transition_for(state, event, true)
+}
+
+fn transition_for(state: Option<State>, event: Event, note: bool) -> Result<Value> {
     let mut state = state.unwrap_or_default();
-    if state.retries > 2 || state.phase == Phase::Done { return Err(Error::InvalidRequest); }
+    let maximum = if note { 5 } else { 2 };
+    if state.retries > maximum || state.phase == Phase::Done { return Err(Error::InvalidRequest); }
     let mut delay = 0;
     let mut timeout = 0;
     let action = match event {
@@ -51,13 +61,13 @@ pub(crate) fn transition(state: Option<State>, event: Event) -> Result<Value> {
                 let retryable = matches!(status, 408 | 429 | 502 | 503 | 504);
                 delay = retry_after_delay(retry_after.as_deref(), now_millis)
                     .map(|v| v.max(200)).unwrap_or(200 << state.retries);
-                retry(&mut state, retryable, &mut delay, remaining_millis)
+                retry(&mut state, retryable, &mut delay, remaining_millis, note)
             }
         }
         Event::Transport { failure, remaining_millis } => {
             if state.phase != Phase::AwaitingResponse { return Err(Error::InvalidRequest); }
             delay = 200 << state.retries;
-            retry(&mut state, matches!(failure, Failure::Network), &mut delay, remaining_millis)
+            retry(&mut state, matches!(failure, Failure::Network), &mut delay, remaining_millis, note)
         }
         Event::Processing { elapsed_millis, remaining_millis } => {
             if state.phase != Phase::Received { return Err(Error::InvalidRequest); }
@@ -69,9 +79,10 @@ pub(crate) fn transition(state: Option<State>, event: Event) -> Result<Value> {
     Ok(json!({"state":state,"action":action,"delayMillis":delay,"timeoutMillis":timeout}))
 }
 
-fn retry(state: &mut State, allowed: bool, delay: &mut u64, remaining: u64) -> &'static str {
-    if allowed && state.retries < 2 && *delay < remaining {
-        state.retries += 1;
+fn retry(state: &mut State, allowed: bool, delay: &mut u64, remaining: u64, note: bool) -> &'static str {
+    if allowed && (note || state.retries < 2) && *delay < remaining {
+        // Notes back off up to 6.4s; ordinary dictation retains its two transient retries.
+        state.retries = (state.retries + 1).min(if note { 5 } else { 2 });
         state.phase = Phase::Ready;
         "retry"
     } else {

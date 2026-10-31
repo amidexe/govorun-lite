@@ -47,7 +47,8 @@ internal fun AccountSubscriptionCard(state: AccountState, onOpen: () -> Unit) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    if (state.hasEntitlement) subscriptionAccessEnd(access.endsAt)?.let {
+                    // Promo renews its 30 days by itself until its access end: that end is the date, not the current period's.
+                    if (state.hasEntitlement) subscriptionAccessEnd(access.accessEndsAt.ifBlank { access.endsAt })?.let {
                         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }

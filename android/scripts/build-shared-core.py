@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build the shared Rust JNI adapter with the existing Rust/Android toolchains."""
 import argparse
+import base64
 from contextlib import contextmanager
 import os
 from pathlib import Path
@@ -45,6 +46,7 @@ def main():
     parser.add_argument('--account-origin', default='')
     parser.add_argument('--auth-scheme', default='govorun')
     parser.add_argument('--styles-origin', default='https://styles.govorun.club')
+    parser.add_argument('--styles-test-ca', type=Path, help="a test server's CA (PEM) the styles client trusts besides the public roots")
     args = parser.parse_args()
     clients = Path(__file__).resolve().parents[2]
     cargo = shutil.which('cargo') or str(Path(os.environ.get('CARGO_HOME', Path.home() / '.cargo')) / 'bin' / ('cargo.exe' if os.name == 'nt' else 'cargo'))
@@ -56,7 +58,13 @@ def main():
     env.pop('GOVORUN_ACCOUNT_ORIGIN', None)
     env.pop('GOVORUN_AUTH_SCHEME', None)
     env.pop('GOVORUN_STYLES_ORIGIN', None)
+    env.pop('GOVORUN_STYLES_TEST_CA_DER_HEX', None)
     if args.styles_origin: env['GOVORUN_STYLES_ORIGIN'] = args.styles_origin
+    # Only a build for a test server with its own CA trusts that CA; the build that asks names it.
+    if args.styles_test_ca:
+        pem = args.styles_test_ca.read_text()
+        body = ''.join(line for line in pem.splitlines() if line and not line.startswith('-----'))
+        env['GOVORUN_STYLES_TEST_CA_DER_HEX'] = base64.b64decode(body).hex()
     env['GOVORUN_APP_VERSION'] = re.search(r'versionName = \"([^\"]+)\"', (clients / 'android/app/build.gradle.kts').read_text()).group(1)
     if args.account_origin and args.account_origin.rstrip('/') != 'https://accounts.govorun.club':
         env['GOVORUN_ACCOUNT_ORIGIN'] = args.account_origin

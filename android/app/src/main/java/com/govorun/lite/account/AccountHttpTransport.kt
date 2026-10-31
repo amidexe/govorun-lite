@@ -136,14 +136,18 @@ internal class AccountHttpTransport(
         }
     }
 
-    private companion object {
+    companion object {
+        /** Android closes cached apps' TCP sockets when freezing them. A new background execution must not reuse
+         * those idle sockets. In-flight requests stay connected; implicit retries remain disabled. */
+        fun beginBackgroundWork() = HTTP.connectionPool.evictAll()
+
         val REQUEST_SCOPE = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         const val CONNECT_TIMEOUT_MS = 4_000
         const val READ_TIMEOUT_MS = 8_000
         const val CALL_TIMEOUT_MS = 10_000
         const val MAX_RESPONSE_BYTES = 1 shl 20
         val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
-        val HTTP = OkHttpClient.Builder()
+        private val HTTP = OkHttpClient.Builder()
             .retryOnConnectionFailure(false)
             .followRedirects(false)
             .followSslRedirects(false)

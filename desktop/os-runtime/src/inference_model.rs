@@ -42,7 +42,7 @@ pub struct Model {
 }
 impl Model {
     /// Construction neither loads a model nor opens a device.
-    pub fn new(files: Files, compute: Compute, keep: bool) -> Self {
+    pub fn new(files: Files, compute: Compute, timeout: Option<Duration>) -> Self {
         Self {
             cache: Mutex::new(Cache::new(
                 ComputeLoader {
@@ -50,7 +50,7 @@ impl Model {
                     runtime: files.runtime,
                 },
                 compute,
-                keep,
+                timeout,
             )),
             vad: files.vad,
             vad_runtime: files.vad_runtime,
@@ -63,19 +63,20 @@ impl Model {
             .session()
             .map(|_| ())
     }
-    pub fn begin(&self) -> Result<Recording, &'static str> {
+    /// `pause`: seconds of silence that end a piece of speech.
+    pub fn begin(&self, pause: f32) -> Result<Recording, &'static str> {
         let session = self
             .cache
             .lock()
             .map_err(|_| "recognition_model_unavailable")?
             .session()?;
-        Recording::begin(&session, &self.vad, &self.vad_runtime)
+        Recording::begin(&session, &self.vad, &self.vad_runtime, pause)
     }
-    pub fn configure(&self, compute: Compute, keep: bool, busy: bool) -> Result<(), &'static str> {
+    pub fn configure(&self, compute: Compute, timeout: Option<Duration>, busy: bool) -> Result<(), &'static str> {
         self.cache
             .lock()
             .map_err(|_| "recognition_model_unavailable")?
-            .configure(compute, keep, busy)
+            .configure(compute, timeout, busy)
     }
     pub fn readiness(&self) -> Readiness {
         match self.cache.try_lock() {

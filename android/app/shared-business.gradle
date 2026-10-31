@@ -15,6 +15,9 @@ android.applicationVariants.all { variant ->
     def origin = field('ACCOUNT_API_URL')
     def scheme = field('ACCOUNT_RETURN_SCHEME')
     def stylesOrigin = field('OFFICIAL_STYLES_API_URL')
+    // A build type for a test server with its own CA names it in `govorunStylesTestCa` (build type → PEM path).
+    def testCa = ((project.findProperty('govorunStylesTestCa') ?: [:]) as Map)[variant.buildType.name] as String
+    def caArgs = testCa ? ['--styles-test-ca', testCa] : []
     def official = (!origin || origin.replaceAll('/$', '') == 'https://accounts.govorun.club') && scheme == 'govorun'
     def id = official ? '' : java.security.MessageDigest.getInstance('SHA-256')
         .digest((origin + '\n' + scheme).getBytes('UTF-8')).encodeHex().toString().substring(0, 12)
@@ -25,17 +28,17 @@ android.applicationVariants.all { variant ->
         def hostOutput = layout.buildDirectory.dir(root + 'jvm')
         def buildAndroid = tasks.register('buildSharedBusinessAndroid' + id, Exec) {
             inputs.files(sharedInputs)
-            inputs.properties(accountOrigin: origin, authScheme: scheme, appVersion: android.defaultConfig.versionName, stylesOrigin: stylesOrigin)
+            inputs.properties(accountOrigin: origin, authScheme: scheme, appVersion: android.defaultConfig.versionName, stylesOrigin: stylesOrigin, testCa: testCa ?: '')
             outputs.file(jniOutput.map { it.file('arm64-v8a/libgovorun_jvm_bridge.so') })
-            commandLine 'python3', builder.absolutePath, '--account-origin', origin,
-                '--auth-scheme', scheme, '--styles-origin', stylesOrigin, '--output', jniOutput.get().asFile.absolutePath
+            commandLine(['python3', builder.absolutePath, '--account-origin', origin,
+                '--auth-scheme', scheme, '--styles-origin', stylesOrigin, '--output', jniOutput.get().asFile.absolutePath] + caArgs)
         }
         def buildHost = tasks.register('buildSharedBusinessJvm' + id, Exec) {
             inputs.files(sharedInputs)
-            inputs.properties(accountOrigin: origin, authScheme: scheme, appVersion: android.defaultConfig.versionName, stylesOrigin: stylesOrigin)
+            inputs.properties(accountOrigin: origin, authScheme: scheme, appVersion: android.defaultConfig.versionName, stylesOrigin: stylesOrigin, testCa: testCa ?: '')
             outputs.dir(hostOutput)
-            commandLine 'python3', builder.absolutePath, '--host', '--account-origin', origin,
-                '--auth-scheme', scheme, '--styles-origin', stylesOrigin, '--output', hostOutput.get().asFile.absolutePath
+            commandLine(['python3', builder.absolutePath, '--host', '--account-origin', origin,
+                '--auth-scheme', scheme, '--styles-origin', stylesOrigin, '--output', hostOutput.get().asFile.absolutePath] + caArgs)
         }
         binding = [android: buildAndroid, host: buildHost, jni: jniOutput, jvm: hostOutput]
         configurations[id] = binding

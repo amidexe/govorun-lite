@@ -65,9 +65,23 @@ pub struct ConsumerPromoProgram {
     #[serde(default)]
     #[serde(alias = "clientCanActivate")]
     pub can_activate: bool,
+    /// What the access gives, line by line, from the server (program control); empty shows no lines.
+    #[serde(default)]
+    pub features: Vec<ConsumerPromoFeature>,
 }
 impl Default for ConsumerPromoProgram {
-    fn default() -> Self { Self { campaign_id: "".into(), program_version: "".into(), state: "disabled".into(), enrollment_open: false, activation_available: false, participated: false, access_mode: "common_end".into(), access_days: 0, access_ends_at: None, ends_at: None, daily_limit: 0, period_limit: 0, period_days: 0, message: "".into(), visible: false, can_activate: false } }
+    fn default() -> Self { Self { campaign_id: "".into(), program_version: "".into(), state: "disabled".into(), enrollment_open: false, activation_available: false, participated: false, access_mode: "common_end".into(), access_days: 0, access_ends_at: None, ends_at: None, daily_limit: 0, period_limit: 0, period_days: 0, message: "".into(), visible: false, can_activate: false, features: Vec::new() } }
+}
+
+/// One «что входит» line from the server: an icon key from the app's short list, a name and a short detail.
+#[derive(Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct ConsumerPromoFeature {
+    pub icon: String,
+    pub title: String,
+    #[serde(default)]
+    pub detail: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

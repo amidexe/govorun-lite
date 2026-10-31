@@ -176,7 +176,7 @@ pub struct Vad {
     last_end: usize,
 }
 impl Vad {
-    pub fn new(model: &Path, runtime: &Path) -> Result<Self, Box<dyn Error>> {
+    pub fn new(model: &Path, runtime: &Path, pause: f32) -> Result<Self, Box<dyn Error>> {
         let path = model_path(model)?;
         let provider = CString::new("cpu")?;
         let config = Config {
@@ -186,9 +186,9 @@ impl Vad {
                 // lost fewer quiet phrases in long synthetic dictations and produced no
                 // text on 132 noise clips (bench of 23 Oct 2026).
                 threshold: 0.3,
-                // Cut only at pauses of 2 s: shorter cuts split sentences and lost
-                // boundary words on the dictation-pauses corpus (24 Oct 2026).
-                min_silence: 2.0,
+                // «Пауза после речи», 2 s unless chosen otherwise: shorter cuts split
+                // sentences and lost boundary words on the dictation-pauses corpus (24 Oct 2026).
+                min_silence: pause,
                 min_speech: 0.25,
                 window: 512,
                 // Soft cap: past 15 s the detector cuts at a shorter pause, so the

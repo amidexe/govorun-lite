@@ -76,8 +76,9 @@ impl Recording {
         recognizer: &Recognizer,
         model: &Path,
         runtime: &Path,
+        pause: f32,
     ) -> Result<Self, &'static str> {
-        let vad = Vad::new(model, runtime).map_err(|_| "recognition_vad_unavailable")?;
+        let vad = Vad::new(model, runtime, pause).map_err(|_| "recognition_vad_unavailable")?;
         Ok(Self {
             vad,
             queue: recognizer.queue(),

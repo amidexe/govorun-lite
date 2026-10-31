@@ -16,6 +16,17 @@ pub use hook::Hook;
 pub use pairing::{Packet, Pairing};
 pub use tracker::{Action, Event, Target, Tracker};
 
+/// A Windows key's name as Handy writes it («ContextMenu», «F13», «PageUp»), for settings documents.
+pub fn windows_key_name(code: u16) -> Option<String> {
+    keycodes::key(Platform::Windows, code).map(|key| key.to_string())
+}
+
+/// The Windows key a name stands for, read the way Handy reads it («menu», «apps», «f24»).
+pub fn windows_key_code(name: &str) -> Option<u16> {
+    let key = name.parse::<Key>().ok()?;
+    (0..=0xFEu16).find(|&code| keycodes::key(Platform::Windows, code) == Some(key))
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Platform {
     MacOS,

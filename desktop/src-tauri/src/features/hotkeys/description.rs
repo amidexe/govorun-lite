@@ -14,12 +14,14 @@ fn windows_key(code: u16) -> Option<String> {
         0xA5 => "RightAlt".into(),
         0x5B => "LeftWin".into(),
         0x5C => "RightWin".into(),
-        0x1B => "Escape".into(),
-        0x20 => "Space".into(),
-        0x41..=0x5A | 0x30..=0x39 => char::from_u32(code as u32)?.to_string(),
-        0x70..=0x7B => format!("F{}", code - 0x70 + 1),
-        _ => return None,
+        // Every other key under Handy's own name: «A», «5», «F13», «Space», «ContextMenu», «PageUp».
+        _ => govorun_os_runtime::keyboard::windows_key_name(code)?,
     })
+}
+/// Keys that type nothing, so they may start dictation alone, as in Handy: F1–F24, Menu, Insert, Pause, ScrollLock,
+/// PrintScreen. Letters, digits, signs, Space and the navigation keys still need a modifier.
+fn windows_alone(code: u16) -> bool {
+    matches!(code, 0x70..=0x87 | 0x5D | 0x2D | 0x13 | 0x91 | 0x2C)
 }
 fn mac_key(code: u16) -> String {
     let name = match code {
@@ -243,7 +245,7 @@ pub fn describe(platform: Platform, mut candidate: Candidate) -> Gesture {
             } else {
                 is_modifier.is_none()
                     && (candidate.modifiers != 0
-                        || matches!(candidate.key, 0x70..=0x7B)
+                        || windows_alone(candidate.key)
                         || candidate.key == 0x1B && candidate.modifiers == 0)
             };
         if candidate.modifier_only {

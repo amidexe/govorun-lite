@@ -1833,7 +1833,7 @@ dependencies = [
 
 [[package]]
 name = "govorun-desktop-host"
-version = "2.1.112"
+version = "2.1.116"
 dependencies = [
  "base64 0.22.1",
  "chrono",

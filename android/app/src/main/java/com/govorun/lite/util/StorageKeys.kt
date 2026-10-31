@@ -6,6 +6,9 @@ internal object StorageKeys {
 
     object Key {
         const val HAPTICS_ENABLED = "haptics_enabled"
+        const val VOLUME_KEY_ENABLED = "volume_key_enabled"
+        /** «Удержание — без улучшения текста»; named in 2.0.41, when it covered the volume key alone. */
+        const val HOLD_PLAIN = "volume_key_plain"
         const val HIDE_IN_SEARCH = "hide_in_search"
         const val BUBBLE_ALPHA = "bubble_alpha"
         const val BUBBLE_RECORDING_ALPHA = "bubble_recording_alpha"
@@ -20,7 +23,9 @@ internal object StorageKeys {
         const val BUBBLE_POSITION_LOCKED = "bubble_position_locked"
         const val DICTIONARY = "dictionary_text"
         const val DICTIONARY_ENABLED = "dictionary_enabled"
+        /** Read only: the choice before 2.0.48, when «medium» was stored for everyone. */
         const val PAUSE_LENGTH = "pause_length"
+        const val PAUSE_CHOICE = "pause_choice"
         const val KEEP_SCREEN_ON = "keep_screen_on"
         const val REMEMBER_LAST_DICTATION = "remember_last_dictation"
         const val AUTO_STOP_MINUTES = "auto_stop_minutes"
@@ -38,5 +43,7 @@ internal object StorageKeys {
         const val STATS_TODAY_DATE = "stats_today_date"
         const val OFFLINE_MODE = "offline_mode"
         const val NO_NETWORK_IN_ROAMING = "no_network_in_roaming"
+        // Ids of the server's home-screen announcements this person closed; local only, never synced.
+        const val ANNOUNCEMENTS_CLOSED = "announcements_closed"
     }
 }

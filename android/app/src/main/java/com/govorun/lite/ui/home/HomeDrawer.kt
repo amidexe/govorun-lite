@@ -1,41 +1,47 @@
 package com.govorun.lite.ui.home
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.CloudSlash
 import com.adamglin.phosphoricons.regular.GearSix
-import com.adamglin.phosphoricons.regular.ClockClockwise
 import com.adamglin.phosphoricons.regular.Info
 import com.adamglin.phosphoricons.regular.SquaresFour
 import com.adamglin.phosphoricons.regular.Star
 import com.adamglin.phosphoricons.regular.UserCircle
-import com.govorun.lite.BuildConfig
 import com.govorun.lite.R
 import com.govorun.lite.network.NetworkPolicy
-import com.product.ui.SettingsSwitchRow
 import com.product.ui.ProductTokens
 import kotlinx.coroutines.launch
 
@@ -58,53 +64,31 @@ internal fun HomeDrawerLayout(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
+            // The side menu as Echo's: the name in spaced capitals, then plain rows, a section in small capitals, settings
+            // alone at the bottom.
             ModalDrawerSheet(
-                modifier = Modifier.fillMaxHeight().widthIn(max = 320.dp),
+                drawerContainerColor = MaterialTheme.colorScheme.background,
+                modifier = Modifier.width(300.dp).fillMaxHeight(),
             ) {
-                DrawerHeader()
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = ProductTokens.Spacing.Section),
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                )
-                Column(modifier = Modifier.padding(vertical = ProductTokens.Spacing.Lg)) {
-                    DrawerItem(
-                        PhosphorIcons.Regular.UserCircle,
-                        if (account.signedIn) account.displayName else "Войти",
-                    ) { navigate(HomeEvent.OpenAccount) }
-                    DrawerItem(
-                        PhosphorIcons.Regular.GearSix,
-                        "Настройки",
-                    ) { navigate(HomeEvent.OpenSettings) }
-                    DrawerItem(
-                        PhosphorIcons.Regular.Star,
-                        "Оставить отзыв",
-                    ) { navigate(HomeEvent.OpenReview) }
-                    DrawerItem(
-                        PhosphorIcons.Regular.SquaresFour,
-                        "Наши продукты",
-                    ) { navigate(HomeEvent.OpenProducts) }
-                    DrawerItem(
-                        PhosphorIcons.Regular.Info,
-                        "О программе",
-                    ) { navigate(HomeEvent.OpenAbout) }
+                Column(Modifier.fillMaxHeight()) {
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                        DrawerHeader()
+                        DrawerItem(
+                            PhosphorIcons.Regular.UserCircle,
+                            if (account.signedIn) account.displayName else "Войти",
+                        ) { navigate(HomeEvent.OpenAccount) }
+                        DrawerItem(PhosphorIcons.Regular.Star, "Оставить отзыв") { navigate(HomeEvent.OpenReview) }
+                        DrawerItem(PhosphorIcons.Regular.SquaresFour, "Наши продукты") { navigate(HomeEvent.OpenProducts) }
+                        DrawerItem(PhosphorIcons.Regular.Info, "О программе") { navigate(HomeEvent.OpenAbout) }
+                        DrawerSection("Сеть")
+                        DrawerItem(
+                            PhosphorIcons.Regular.CloudSlash, "Офлайн",
+                            trailing = { Switch(checked = network.offline, onCheckedChange = { onEvent(HomeEvent.SetOffline(it)) }) },
+                        ) { onEvent(HomeEvent.SetOffline(!network.offline)) }
+                    }
+                    DrawerItem(PhosphorIcons.Regular.GearSix, "Настройки") { navigate(HomeEvent.OpenSettings) }
+                    Spacer(Modifier.height(16.dp))
                 }
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = ProductTokens.Spacing.Section),
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                )
-                SettingsSwitchRow(
-                    title = "Офлайн",
-                    summary = "Говорун не выходит в интернет",
-                    checked = network.offline,
-                    onCheckedChange = { onEvent(HomeEvent.SetOffline(it)) },
-                )
-                Spacer(Modifier.weight(1f))
-                Text(
-                    "Говорун · ${BuildConfig.VERSION_NAME}",
-                    modifier = Modifier.padding(ProductTokens.Spacing.Section),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         },
     ) {
@@ -112,50 +96,57 @@ internal fun HomeDrawerLayout(
     }
 }
 
+/** The name in spaced capitals beside the bird, as Echo's menu starts. */
 @Composable
 private fun DrawerHeader() {
     Row(
-        modifier = Modifier.padding(
-            horizontal = ProductTokens.Spacing.Section,
-            vertical = ProductTokens.Spacing.Screen,
-        ),
+        Modifier.padding(start = 20.dp, top = 20.dp, bottom = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(
             ImageVector.vectorResource(R.drawable.logo_bird),
             contentDescription = null,
-            modifier = Modifier.size(40.dp),
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(24.dp),
         )
-        Column(modifier = Modifier.padding(start = ProductTokens.Spacing.Xl)) {
-            Text(
-                "Говорун",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Text(
-                "Голосовой ввод без интернета",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Text("ГОВОРУН", style = MaterialTheme.typography.labelLarge, letterSpacing = 2.5.sp)
     }
 }
 
+/** A section's name in small spaced capitals, as Echo's «СТАТИСТИКА». */
+@Composable
+private fun DrawerSection(title: String) {
+    Text(
+        title.uppercase(),
+        style = MaterialTheme.typography.labelSmall,
+        letterSpacing = 1.8.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 20.dp, end = 16.dp, top = 24.dp, bottom = 8.dp),
+    )
+}
+
+/** One row of the menu, as Echo's: a quiet outline icon, an ordinary label and, for a switch, the switch at the end. */
 @Composable
 private fun DrawerItem(
     icon: ImageVector,
     title: String,
+    trailing: (@Composable () -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    NavigationDrawerItem(
-        icon = {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-        },
-        label = { Text(title, style = MaterialTheme.typography.bodyMedium) },
-        selected = false,
-        onClick = onClick,
-        modifier = Modifier
-            .padding(horizontal = ProductTokens.Spacing.Lg)
-            .heightIn(min = ProductTokens.Size.Row),
-    )
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .clip(RoundedCornerShape(ProductTokens.Radius.Sm))
+            .clickable(onClick = onClick)
+            .height(if (trailing == null) 44.dp else 52.dp)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        Text(title, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        trailing?.invoke()
+    }
 }

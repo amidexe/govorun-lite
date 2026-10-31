@@ -140,6 +140,9 @@ class LiteAccessibilityService : AccessibilityService() {
         }
     }
 
+    private val volumeKey by lazy { volumeKeyForBubble(this, bubbleCallbacks, ::isBubbleVisible) }
+    override fun onKeyEvent(event: android.view.KeyEvent): Boolean = volumeKey.onKeyEvent(event)
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event?.let(visibilityController::onAccessibilityEvent)
     }
@@ -177,12 +180,13 @@ class LiteAccessibilityService : AccessibilityService() {
         text: String,
         uiMode: BubbleOverlayController.RecordingUiMode,
         appendVoiceMarker: Boolean = false,
+        plain: Boolean = false,
     ) {
         stylizedTextDelivery.deliver(
             text,
             uiMode.stylizationInputMode(),
             appendVoiceMarker,
-            visibilityController.currentForegroundPackage,
+            visibilityController.currentForegroundPackage, plain,
         )
     }
 
@@ -228,9 +232,7 @@ class LiteAccessibilityService : AccessibilityService() {
             preparedCapture = pendingMicrophone.take(),
             transcriberProvider = { OfflineTranscriber.getInstance(this@LiteAccessibilityService, timing::model) },
             onRecordingDuration = timing::audio,
-            minSilenceSeconds = deliverySession.minimumSilenceSeconds {
-                Prefs.getPauseLengthSeconds(this)
-            },
+            minSilenceSeconds = Prefs.getPauseLengthSeconds(this, atEnd = deliverySession.deferred),
             onSegment = { text ->
                 deliverySession.accept(text)?.let { releasedText ->
                     streamingMarker.accept(releasedText)?.let { chunk ->
@@ -256,7 +258,7 @@ class LiteAccessibilityService : AccessibilityService() {
                                 pasteRecognizedText(
                                     contextualText,
                                     sessionUiMode,
-                                    appendVoiceMarker = true,
+                                    appendVoiceMarker = true, plain = deliverySession.plain,
                                 )
                             }
                         }
@@ -408,10 +410,10 @@ class LiteAccessibilityService : AccessibilityService() {
         },
         onHoldStart = {
             startVadRecording(uiMode = BubbleOverlayController.RecordingUiMode.HOLD)
+            // «Удержание — без улучшения текста», on the bubble and on «−» alike; a rejected start marks nothing.
+            if (isVadActive && RecordingModePrefs.isHoldPlain(this@LiteAccessibilityService)) contextualTranscript?.markPlain()
         },
-        onHoldStop = { silent ->
-            if (silent) cancelVadRecording() else stopVadRecording()
-        },
+        onHoldStop = { silent -> if (silent) cancelVadRecording() else stopVadRecording() },
         onConfirm = {
             if (recordingUiMode == BubbleOverlayController.RecordingUiMode.CONFIRM) {
                 stopVadRecording()
@@ -467,13 +469,9 @@ class LiteAccessibilityService : AccessibilityService() {
 
     fun toggleSilence() = visibilityController.toggleSilence()
 
-    fun applyBubbleSideFromPrefs() {
-        bubbleOverlay?.applySide()
-    }
+    fun applyBubbleSideFromPrefs() { bubbleOverlay?.applySide() }
 
-    fun applyBubbleEdgeMarginFromPrefs() {
-        bubbleOverlay?.applyEdgeMargin()
-    }
+    fun applyBubbleEdgeMarginFromPrefs() { bubbleOverlay?.applyEdgeMargin() }
 
     fun applyBubbleThemeFromPrefs() =
         bubbleOverlay?.rebuild(initiallyVisible = visibilityController.isImeVisible)

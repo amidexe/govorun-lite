@@ -60,8 +60,8 @@ pub(crate) fn project(f: &Facts) -> Result<Presentation> {
         }};
     let availability = match reason {
         "ready" => None,
-        "periodLimit" => Some("Стилизация приостановлена: общий лимит закончился"),
-        "dailyLimit" => Some("Стилизация приостановлена: лимит на сегодня закончился"),
+        "periodLimit" => Some("Улучшение за 30 дней закончилось. Диктовка работает как обычно"),
+        "dailyLimit" => Some("Улучшение на сегодня закончилось. Диктовка работает как обычно"),
         "unavailable" => Some("Стилизация временно недоступна"),
         _ => Some(CHECKING_AVAILABILITY),
     };

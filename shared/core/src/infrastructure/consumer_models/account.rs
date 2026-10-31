@@ -53,9 +53,31 @@ pub struct ConsumerStyleAccess {
     pub access_ends_at: String,
     #[serde(default)]
     pub issuance_counters_observed: bool,
+    /// The lines of Govorun's products besides dictation (Говорун.Эхо, later others), each with its own limits
+    /// (server 31.10); absent from older servers.
+    #[serde(default)]
+    pub products: Vec<ConsumerProductAccess>,
 }
 impl Default for ConsumerStyleAccess {
-    fn default() -> Self { Self { r#type: "none".into(), state: "none".into(), starts_at: "".into(), ends_at: "".into(), daily_resets_at: "".into(), period_resets_at: "".into(), daily_limit: 0, total_limit: 0, issued_today: 0, issued_total: 0, remaining_today: 0, remaining_total: 0, quota_unit: None, characters_per_credit: 0, maximum_credits_per_request: 0, stylization_protocol: None, plan_code: "".into(), balance_kind: "".into(), usage_balance: None, reserve_return_protocol: None, next_period_at: "".into(), period_reset_condition: "".into(), access_ends_at: "".into(), issuance_counters_observed: false } }
+    fn default() -> Self { Self { r#type: "none".into(), state: "none".into(), starts_at: "".into(), ends_at: "".into(), daily_resets_at: "".into(), period_resets_at: "".into(), daily_limit: 0, total_limit: 0, issued_today: 0, issued_total: 0, remaining_today: 0, remaining_total: 0, quota_unit: None, characters_per_credit: 0, maximum_credits_per_request: 0, stylization_protocol: None, plan_code: "".into(), balance_kind: "".into(), usage_balance: None, reserve_return_protocol: None, next_period_at: "".into(), period_reset_condition: "".into(), access_ends_at: "".into(), issuance_counters_observed: false, products: Vec::new() } }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct ConsumerProductAccess {
+    pub product: String,
+    pub scope_id: String,
+    pub day: String,
+    pub daily_limit: i32,
+    pub total_limit: i32,
+    pub consumed_today: i32,
+    pub consumed_total: i32,
+    pub remaining_today: i32,
+    pub remaining_total: i32,
+    /// This device's credits per UTC day under the line, as the server counted them.
+    #[serde(default)]
+    pub device_days: std::collections::BTreeMap<String, i32>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -109,6 +131,27 @@ pub struct ConsumerProfile {
     pub style_usage_accounting_available: bool,
     #[serde(default)]
     pub has_synced_data: Option<bool>,
+    /// Messages for the home screen of a signed-in person (a new version, news); the app picks what is for it.
+    #[serde(default)]
+    pub announcements: Vec<ConsumerAnnouncement>,
+}
+
+/// One Android home-screen message from the server, shown below [below_version_code] (0: any); closing it is
+/// remembered on the device by [id].
+#[derive(Clone, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "camelCase")]
+pub struct ConsumerAnnouncement {
+    pub id: String,
+    pub title: String,
+    #[serde(default)]
+    pub text: String,
+    #[serde(default)]
+    pub action: String,
+    #[serde(default)]
+    pub url: String,
+    #[serde(default)]
+    pub below_version_code: i32,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

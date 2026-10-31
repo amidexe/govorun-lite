@@ -34,11 +34,17 @@ internal class StylizationCoordinator(
         recognizedText: String,
         inputMode: StylizationInputMode,
         packageName: String? = null,
+        /** A style chosen for this one text (Echo's «Улучшить через Говорун»): «light», «custom:<id>»; null — the app's rule. */
+        styleValue: String? = null,
+        /** Another product's request ([ProductLabel.ECHO] for Echo's): Govorun's server only, whatever the person chose for
+         *  dictation, counted under that product's own line. */
+        product: String? = null,
     ): StylizationResult = DiagnosticAttempt.collect(appContext) {
-        val ports = AndroidPorts()
-        val ticket = StyleProcessingFeedback.begin(ports.sessionGeneration(), ports.selfHostedSelected())
+        val ports = AndroidPorts(styleValue, product)
+        val ticket = StyleProcessingFeedback.begin(ports.sessionGeneration(), ports.selfHostedSelected(), product = product != null)
         try {
-            SharedStylizationExecutor(ports).process(recognizedText, inputMode, packageName).also {
+            SharedStylizationExecutor(ports).process(recognizedText, inputMode, packageName,
+                digest = styleValue == EchoNoteMark.DIGEST_STYLE, product = product != null).also {
                 if (it.skipReason != null) StyleProcessingFeedback.cancel(ticket)
                 else StyleProcessingFeedback.finish(ticket,
                     if (it.usedFallback) it.fallbackReason ?: StylizationFallbackReason.REQUEST_FAILED else null)
@@ -59,7 +65,7 @@ internal class StylizationCoordinator(
         }
     }
 
-    private inner class AndroidPorts : SharedStylizationPorts {
+    private inner class AndroidPorts(private val styleValue: String? = null, private val product: String? = null) : SharedStylizationPorts {
         private var preparationMilliseconds = 0L
         override fun selfHostedEnabled() = StylizationServerPreferences.stylizationEnabled(appContext)
         override fun storageAvailable() = GovorunAccountRepository.state.value.secureStorageProblem == null
@@ -88,7 +94,9 @@ internal class StylizationCoordinator(
         override fun officialConfigured() = BuildConfig.OFFICIAL_STYLES_API_URL.isNotBlank()
         override fun hasInternet() = hasInternet(appContext)
         override fun resolveStyle(packageName: String?): StylizationSelection {
-            val resolved = StylizationStylePreferences.resolve(appContext, packageName)
+            // Echo's «Заметка» and итоги are Govorun's light; the server tells them apart by the note mark.
+            val resolved = StylizationStylePreferences.resolve(appContext, packageName,
+                styleValue?.let { if (EchoNoteMark.light(it)) com.govorun.lite.model.stylization.TextStyle.LIGHT.apiId else it })
             return StylizationSelection(resolved.enabled, resolved.style,
                 resolved.customPreset?.instruction ?: if (resolved.style == TextStyle.CUSTOM) {
                     Prefs.getStylizationCustomInstruction(appContext)
@@ -98,10 +106,15 @@ internal class StylizationCoordinator(
         override suspend fun request(text: String, mode: StylizationInputMode,
                                      selection: StylizationSelection, characters: Int): StylizationResponse = try {
             DiagnosticAttempt.current?.recordRequestCharacters(text.length)
-            client.stylize(text, selection.style, mode, selection.instruction,
-                selection.options.punctuation, selection.options.emojiEnabled,
-                selection.options.profanityFilterEnabled, selection.options.resolvedEmojiMode,
-                preparationMillis = preparationMilliseconds)
+            // Another product's request carries its label, and Echo's note its mark, to the core and the server; a
+            // dictation (no product, no styleValue) sends nothing new.
+            kotlinx.coroutines.withContext((styleValue?.let(EchoNoteMark::of) ?: kotlin.coroutines.EmptyCoroutineContext) +
+                (product?.let(::ProductLabel) ?: kotlin.coroutines.EmptyCoroutineContext)) {
+                client.stylize(text, selection.style, mode, selection.instruction,
+                    selection.options.punctuation, selection.options.emojiEnabled,
+                    selection.options.profanityFilterEnabled, selection.options.resolvedEmojiMode,
+                    preparationMillis = preparationMilliseconds)
+            }
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {

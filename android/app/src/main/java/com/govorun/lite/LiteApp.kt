@@ -14,6 +14,8 @@ class LiteApp : Application() {
         com.govorun.lite.diagnostics.AppLifecycleDiagnostics.collectPreviousExits(this)
         GovorunAccountRepository.initialize(this)
         com.govorun.lite.notifications.NotificationRepository.initialize(this)
+        // Apps' smart tasks kept from before this start are tried at once.
+        com.govorun.lite.api.smart.SmartRuntime.resume(this)
 
         // Extract the bundled GigaAM model from APK assets to filesDir on a
         // background thread. sherpa-onnx needs filesystem paths; assets are

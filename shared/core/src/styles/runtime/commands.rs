@@ -74,6 +74,13 @@ impl Command {
     pub fn decode(value: Value) -> Result<Self> {
         serde_json::from_value(value).map_err(|_| Error::InvalidRequest)
     }
+    /// Another product's request (Говорун.Эхо's note or итоги, by the label Govorun's entry put on it): it passes
+    /// the terms alone, not dictation's choice. A request whose label cannot be read keeps dictation's stricter gate
+    /// and is refused before anything is sent.
+    pub fn for_product(&self) -> bool {
+        matches!(self, Command::Process { payload, .. }
+            if crate::style_text::product(payload).is_ok_and(|label| label != crate::style_text::DICTATION))
+    }
     pub fn recognizes(operation: &str) -> bool {
         matches!(
             operation,

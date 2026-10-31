@@ -108,6 +108,10 @@ class MainActivity : ComponentActivity() {
                 val onlinePaused by com.govorun.lite.stylization.OfficialServiceAvailability
                     .get(this@MainActivity).paused.collectAsStateWithLifecycle()
                 val network by NetworkPolicy.choice(this@MainActivity).collectAsStateWithLifecycle()
+                var closedAnnouncements by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+                val announcement = androidx.compose.runtime.remember(account.announcements, account.signedIn, closedAnnouncements) {
+                    if (account.signedIn) com.govorun.lite.ui.home.HomeAnnouncements.pick(this@MainActivity, account.announcements) else null
+                }
                 HomeScreen(
                     state = uiState,
                     onlineServicePaused = onlinePaused,
@@ -126,6 +130,11 @@ class MainActivity : ComponentActivity() {
                             onLater = NotificationRepository::later,
                         ) }
                     } else null,
+                    announcement = announcement,
+                    onCloseAnnouncement = {
+                        com.govorun.lite.ui.home.HomeAnnouncements.close(this@MainActivity, it)
+                        closedAnnouncements++
+                    },
                 )
             }
         }
@@ -271,6 +280,9 @@ class MainActivity : ComponentActivity() {
                 startActivity(Intent(this, FuturePlansActivity::class.java))
             HomeEvent.OpenProducts ->
                 startActivity(Intent(this, OurProductsActivity::class.java))
+            is HomeEvent.OpenLink -> runCatching {
+                startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(event.url)))
+            }
             HomeEvent.OpenAccessibility ->
                 AccessibilityHelper.openAccessibilitySettings(this)
             HomeEvent.OpenAutostart -> com.govorun.lite.util.XiaomiShell.openAutostart(this)

@@ -61,6 +61,16 @@
       ],
       "type": "object"
     },
+    "Pause": {
+      "description": "The pause after speech: how long the silence lasts before a piece of speech is cut. One set for the phone and the computer. Auto is 1 s where every piece is inserted as it is recognized and 2 s where the text is inserted at the end: a thinking pause then no longer ends a sentence (stray sentence ends 22 to 12 on the dictation-pauses corpus, 29 Oct 2026).",
+      "enum": [
+        "auto",
+        "short",
+        "medium",
+        "long"
+      ],
+      "type": "string"
+    },
     "Permissions": {
       "additionalProperties": false,
       "properties": {
@@ -104,10 +114,6 @@
       "type": "integer",
       "x-serde-omitted": true
     },
-    "keepModelLoaded": {
-      "type": "boolean",
-      "x-serde-omitted": true
-    },
     "launchAtLogin": {
       "$ref": "#/definitions/Login"
     },
@@ -133,8 +139,22 @@
       },
       "type": "array"
     },
+    "modelUnloadMinutes": {
+      "description": "Idle minutes before the recognition model is released; 0 keeps it loaded.",
+      "format": "uint32",
+      "minimum": 0.0,
+      "type": "integer"
+    },
     "muteAudio": {
       "type": "boolean"
+    },
+    "pause": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Pause"
+        }
+      ],
+      "default": "auto"
     },
     "permissions": {
       "$ref": "#/definitions/Permissions"
@@ -157,6 +177,7 @@
     "markerMinimum",
     "maxMinutes",
     "microphones",
+    "modelUnloadMinutes",
     "muteAudio",
     "permissions",
     "playSounds",

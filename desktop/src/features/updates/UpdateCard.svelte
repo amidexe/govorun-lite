@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '../../shared/ui/Icon.svelte';
   import { useUpdates } from './state.svelte';
-  import { updateMessage, downloadProgress } from './model';
+  import { updateMessage, downloadProgress, releaseNotes } from './model';
   import { fade } from 'svelte/transition';
   import { motionDuration } from '../../motion';
   let { compact = false }: { compact?: boolean } = $props();
@@ -9,6 +9,7 @@
   let release = $derived(updates.snapshot?.release);
   let visible = $derived(!compact || (release && !updates.snapshot?.dismissed));
   let status = $derived(updates.snapshot?.status);
+  let notes = $derived(release ? releaseNotes(release.notes) : []);
   function update() { void updates.act(status === 'ready' ? 'install' : 'download'); }
   let active = $derived(status === 'downloading' || status === 'installing');
 </script>
@@ -27,6 +28,16 @@
     {#if !compact}<p>
         {updateMessage(updates.busy ? 'checking' : (updates.snapshot?.status ?? 'idle'))}
       </p>{/if}
+    {#if notes.length}
+      {#if compact}<details class="notes">
+          <summary>Что нового</summary>
+          <ul>{#each notes as line}<li>{line}</li>{/each}</ul>
+        </details>
+      {:else}<div class="notes">
+          <p class="notes-title">Что нового</p>
+          <ul>{#each notes as line}<li>{line}</li>{/each}</ul>
+        </div>{/if}
+    {/if}
     {#if !compact && release && updates.snapshot?.status === 'unavailable'}<p role="status">
         {updateMessage('unavailable')}
       </p>{/if}
@@ -162,6 +173,32 @@
     font-size: 12px;
     line-height: 16px;
     margin-top: 0;
+  }
+  .notes {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+    color: var(--secondary);
+    line-height: 1.5;
+  }
+  .notes-title {
+    margin: 0;
+    color: var(--text);
+  }
+  .notes summary {
+    cursor: pointer;
+  }
+  .notes ul {
+    margin: 4px 0 0;
+    padding-left: 18px;
+    max-height: 14em;
+    overflow-y: auto;
+  }
+  .compact .notes {
+    font-size: 12px;
+    line-height: 18px;
+  }
+  .compact .notes + .restart-note {
+    margin-top: 6px;
   }
   .channel {
     margin-top: 16px;

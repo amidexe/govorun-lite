@@ -251,8 +251,8 @@
     <string name="about_row_offline_body">Звук остаётся на телефоне; для стилей нужен интернет</string>
     <string name="about_row_source_title">Исходный код</string>
     <string name="about_row_source_body">Код версии 2.0 будет размещён позднее после проверки</string>
-    <string name="about_row_updates_title">Обновления через RuStore</string>
-    <string name="about_row_updates_body">Говорун сам предложит обновиться, когда выйдет новая версия</string>
+    <string name="about_row_updates_title">Обновления</string>
+    <string name="about_row_updates_body">Новые версии выходят в RuStore и на GitHub. Если вы вошли в аккаунт, Говорун сам сообщит о новой версии</string>
 
     <!-- About: GitHub action row -->
     <string name="about_action_github_title">Исходный код версии 1 на GitHub</string>
@@ -427,4 +427,5 @@
     <string name="benchmark_rating_excellent">Превосходный результат</string>
     <string name="benchmark_rtf_hint">×10 означает что 10 сек аудио обрабатывается за 1 сек. Чем больше число — тем быстрее устройство.</string>
     <string name="benchmark_running_hint">Идёт тест — не выходите из приложения</string>
+    <string name="echo_note_style">Заметка</string>
 </resources>

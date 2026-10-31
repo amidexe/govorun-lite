@@ -1,5 +1,27 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ConsumerPromoFeature": {
+      "description": "One «что входит» line from the server: an icon key from the app's short list, a name and a short detail.",
+      "properties": {
+        "detail": {
+          "default": "",
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "icon",
+        "title"
+      ],
+      "type": "object"
+    }
+  },
   "properties": {
     "accessDays": {
       "default": 0,
@@ -44,6 +66,14 @@
     "enrollmentOpen": {
       "default": false,
       "type": "boolean"
+    },
+    "features": {
+      "default": [],
+      "description": "What the access gives, line by line, from the server (program control); empty shows no lines.",
+      "items": {
+        "$ref": "#/definitions/ConsumerPromoFeature"
+      },
+      "type": "array"
     },
     "message": {
       "default": "",
@@ -94,7 +124,8 @@
     "periodDays",
     "message",
     "visible",
-    "canActivate"
+    "canActivate",
+    "features"
   ],
   "x-consumer-view": true,
   "x-kotlin-defaults": {}

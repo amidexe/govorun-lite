@@ -11,9 +11,21 @@ export type DictationField =
   | 'voiceMarker'
   | 'launchAtLogin'
   | 'pushToTalk'
-  | 'keepModelLoaded'
+  | 'modelUnloadMinutes'
+  | 'pause'
   | 'alwaysOnMicrophone'
   | 'inputChannel';
+
+/** Idle minutes before the recognition model is released; 0 keeps it loaded. */
+export const unloadChoices = [0, 2, 5, 10, 15, 60];
+
+/** «Пауза после речи», the same choices as on the phone; auto is 2 s on the computer. */
+export const pauseChoices = [
+  ['auto', 'Авто'],
+  ['short', 'Короткая · 0,5 с'],
+  ['medium', 'Средняя · 1 с'],
+  ['long', 'Длинная · 2 с'],
+] as const;
 
 function record(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -45,6 +57,8 @@ export function dictationSnapshot(value: unknown): DictationSnapshot {
     !stringEnum(item.durationMode, ['local', 'styles', 'unlimited']) ||
     !stringEnum(item.acceleration, ['automatic', 'cpu', 'gpu']) ||
     !stringEnum(item.voiceMarker, ['off', 'microphone', 'text']) ||
+    !unloadChoices.includes(item.modelUnloadMinutes as number) ||
+    !stringEnum(item.pause, ['auto', 'short', 'medium', 'long']) ||
     !Number.isSafeInteger(item.markerMinimum) ||
     Number(item.markerMinimum) < 0 ||
     !stringEnum(permissions.microphone, [
@@ -58,9 +72,8 @@ export function dictationSnapshot(value: unknown): DictationSnapshot {
   )
     throw new Error('invalid_dictation');
   if (
-    ['pushToTalk', 'keepModelLoaded', 'inputChannel', 'inputChannels'].some((key) => key in item) &&
+    ['pushToTalk', 'inputChannel', 'inputChannels'].some((key) => key in item) &&
     (typeof item.pushToTalk !== 'boolean' ||
-      typeof item.keepModelLoaded !== 'boolean' ||
       !Number.isSafeInteger(item.inputChannels) ||
       Number(item.inputChannels) < 1 ||
       Number(item.inputChannels) > 32 ||

@@ -6,6 +6,7 @@ import com.govorun.lite.model.settings.SettingsChange
 import com.govorun.lite.settings.SettingsPreferences
 import com.govorun.lite.util.HomePreferences
 import com.govorun.lite.util.Prefs
+import com.govorun.lite.util.VolumeKeyPrefs
 import com.govorun.lite.util.RecordingModePrefs
 import com.govorun.lite.util.UiAppearancePrefs
 import com.govorun.lite.util.VoiceMarkerPrefs
@@ -30,6 +31,8 @@ internal class AndroidSettingsPreferences(context: Context) : SettingsPreference
             is SettingsChange.SetEdgeMargin -> Prefs.setBubbleEdgeMargin(context, change.value)
             is SettingsChange.SetRecordingMode -> RecordingModePrefs.write(context, change.value)
             is SettingsChange.SetHaptics -> Prefs.setHapticsEnabled(context, change.enabled)
+            is SettingsChange.SetVolumeKey -> VolumeKeyPrefs.setEnabled(context, change.enabled)
+            is SettingsChange.SetHoldPlain -> RecordingModePrefs.setHoldPlain(context, change.plain)
             is SettingsChange.SetPositionLocked -> Prefs.setBubblePositionLocked(context, change.enabled)
             is SettingsChange.SetPause -> Prefs.setPauseLength(context, change.value)
             is SettingsChange.SetVoiceMarkerMode -> VoiceMarkerPrefs.write(context, change.mode)

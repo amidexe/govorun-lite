@@ -30,6 +30,10 @@ pub enum Issue {
     CaptureUnavailable,
     ProcessingFailed,
     TimerUnavailable,
+    /// The window runs as administrator and Govorun does not: the text waits on the clipboard.
+    TargetElevated,
+    /// A window run as administrator came to the front: Govorun cannot hear its key there.
+    HotkeyBlocked,
 }
 #[derive(Clone, Serialize, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
@@ -62,6 +66,8 @@ pub struct State {
     fallback: Option<u64>,
     last_style_failure: Option<u64>,
     issue: Option<(u64, Issue)>,
+    /// Shown while nothing is recorded or processed; any dictation replaces it.
+    notice: Option<Issue>,
     revision: u64,
     published: Option<Snapshot>,
 }
@@ -87,6 +93,7 @@ impl State {
         });
         self.fallback = None;
         self.issue = None;
+        self.notice = None;
     }
     pub fn ready(&mut self, id: u64) {
         if let Some(capture) = self.capture.as_mut().filter(|c| c.id == id) {
@@ -116,6 +123,17 @@ impl State {
         if id == self.last_admitted && id > self.cancelled_through {
             self.fallback = Some(id);
         }
+    }
+    /// A notice in the idle capsule; a recording, a job or a failure keeps the capsule its own.
+    pub fn show_notice(&mut self, issue: Issue) -> bool {
+        if self.capture.is_some() || !self.jobs.is_empty() || self.fallback.is_some() {
+            return false;
+        }
+        self.notice = Some(issue);
+        true
+    }
+    pub fn clear_notice(&mut self) {
+        self.notice = None;
     }
     pub fn failed_capture(&mut self, id: u64) {
         // Permission/startup can fail before the audio worker admits this attempt.
@@ -188,15 +206,16 @@ impl State {
                 issue: self.issue.map(|(_, issue)| issue),
             }
         } else {
+            let notice = self.notice.filter(|_| self.fallback.is_none());
             Snapshot {
-                phase: if self.fallback.is_some() {
+                phase: if self.fallback.is_some() || notice.is_some() {
                     Phase::Fallback
                 } else {
                     Phase::Idle
                 },
                 stage: Stage::Recording,
                 warning: false,
-                issue: self.issue.map(|(_, issue)| issue),
+                issue: notice.or(self.issue.map(|(_, issue)| issue)),
             }
         }
     }

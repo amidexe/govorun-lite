@@ -8,6 +8,7 @@ const CODES: &[&str] = &[
     "clipboard_allocation_failed", "clipboard_allocation_inaccessible", "clipboard_copy_failed", "clipboard_changed_capture",
     "clipboard_changed", "clipboard_clear_failed", "clipboard_write_failed", "clipboard_recovery_failed",
     "clipboard_changed_finalisation", "clipboard_restore_failed", "clipboard_restore_unavailable", "paste_keys_unavailable",
+    "insertion_elevated_target",
 ];
 pub fn code(value: &str) -> Option<&'static str> { CODES.iter().copied().find(|code| *code == value) }
 pub fn stored(value: &str) -> Option<String> { code(value).map(|code| format!("insertion_failure {code}")) }

@@ -35,8 +35,8 @@ impl StylesBridge {
             let weak = weak.clone();
             Box::pin(async move {
                 let bridge = weak.upgrade().ok_or(Error::SessionChanged)?;
-                let (selected,online) = bridge.facts().await?;
-                Ok(selected && online)
+                let (settings,online) = bridge.facts().await?;
+                Ok(settings.official_selected(bridge.terms()) && online)
             }) as govorun_core::Future<'static,Result<bool>>
         });
         let weak = Arc::downgrade(&bridge);
@@ -80,7 +80,8 @@ impl StylesBridge {
         let host = self.host.clone();
         tasks.push(tokio::spawn(async move {let _ = host.effect(value,false).await;}));
     }
-    async fn facts(&self) -> Result<(bool,bool)> {
+    fn terms(&self) -> u32 { self.account.snapshot().access.client_terms_version }
+    async fn facts(&self) -> Result<(Settings,bool)> {
         let value = self.host.effect(json!({"operation":"styleFacts"}),false).await?;
         let settings = Settings {
             official_enabled:value["enabled"].as_bool().ok_or(Error::InvalidResponse)?,
@@ -89,7 +90,7 @@ impl StylesBridge {
         };
         self.owner.configure_reporting(Some(settings))?;
         let online = value["networkAvailable"].as_bool().ok_or(Error::InvalidResponse)?;
-        Ok((settings.official_selected(self.account.snapshot().access.client_terms_version),online))
+        Ok((settings,online))
     }
     pub async fn dispatch(&self, command: Value, guard: &Guard, id: u64) -> Result<Value> {
         if command["operation"] == "stylizationStart" {
@@ -107,7 +108,9 @@ impl StylesBridge {
         });
         let result = if matches!(command,Command::BeginRecording {..}|Command::Process {..}|Command::Prepare {..}|Command::PreparationPlan {..}|Command::JoinPreparation {..}|Command::SettingsChanged {..}) {
             if let Command::PreparationPlan {session_generation,..} | Command::JoinPreparation {session_generation,..} = &command {self.account.current(*session_generation)?;}
-            let (selected,online) = self.facts().await?;
+            // Echo's note passes its own gate (the terms), a dictation the person's choice: one rule, the core's.
+            let (settings,online) = self.facts().await?;
+            let selected = settings.may_send(self.terms(),command.for_product());
             guard.run_configured(&self.owner,command,deliver,selected,online).await
         } else {guard.run(&self.owner,command,deliver).await};
         // The existing change subscriber publishes processing updates; never

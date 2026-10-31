@@ -35,7 +35,12 @@ function Assert-GovorunAppLocalCrt {
 function Copy-GovorunAppLocalCrt {
     param([string]$Directory,[string]$RedistDirectory=$env:VCToolsRedistDir)
     if(!$RedistDirectory){throw 'Visual Studio redistributable source is required'}
-    $source=Join-Path $RedistDirectory 'x64\Microsoft.VC143.CRT'
+    # The toolset folder changes with Visual Studio (VC143, VC145, ...).
+    # Resolve it within the initialized toolchain, retaining all checks below.
+    $architecture=Join-Path $RedistDirectory 'x64'
+    $sources=@(Get-ChildItem -LiteralPath $architecture -Directory -Filter 'Microsoft.VC*.CRT')
+    if($sources.Count -ne 1){throw 'Expected one x64 Visual Studio CRT redistributable directory'}
+    $source=$sources[0].FullName
     Assert-GovorunAppLocalCrt -Directory $source
     foreach($name in $GovorunCrtNames) {
         $destination=Join-Path $Directory $name

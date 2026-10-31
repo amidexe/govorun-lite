@@ -8,6 +8,7 @@ export interface DictationMicrophoneDevice {
   id: string;
   name: string;
 }
+export type DictationPause = "auto" | "short" | "medium" | "long";
 export interface DictationPermissions {
   accessibility: boolean;
   microphone: DictationMicrophone;
@@ -18,13 +19,14 @@ export interface DictationSnapshot {
   durationMode: DictationDuration;
   inputChannel?: number | null;
   inputChannels?: number;
-  keepModelLoaded?: boolean;
   launchAtLogin: DictationLogin;
   markerMinimum: number;
   maxMinutes: number;
   microphoneId: string | null;
   microphones: Array<DictationMicrophoneDevice>;
+  modelUnloadMinutes: number;
   muteAudio: boolean;
+  pause: DictationPause;
   permissions: DictationPermissions;
   playSounds: boolean;
   pushToTalk?: boolean;

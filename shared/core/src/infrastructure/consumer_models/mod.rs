@@ -72,6 +72,8 @@ pub(crate) fn evaluate(kind: Kind, mut value: Value, version: String) -> Result<
     match kind {
         Profile => {
             value["styleAccess"] = evaluate(StyleAccess, value["styleAccess"].clone(), String::new())?;
+            readable_only::<ConsumerAnnouncement>(&mut value, "announcements");
+            readable_only::<ConsumerPromoFeature>(&mut value["promoProgram"], "features");
             value["onlineServiceState"] = json!(match value["onlineService"]["state"].as_str() {
                 Some("available") => "available", Some("closed") => "closed", _ => "unknown",
             });
@@ -93,6 +95,18 @@ pub(crate) fn evaluate(kind: Kind, mut value: Value, version: String) -> Result<
             if let Some(balance) = value.get("usageBalance").filter(|v| !v.is_null()) {
                 crate::usage_ledger::balance_binding::evaluate(json!({"kind":"decode","balance":balance}))?;
             }
+            // A product's line is optional: one this client cannot read is left out, never the whole access. Dictation
+            // is never a product line (its numbers are the access's own), and a label appears once.
+            let mut seen = std::collections::BTreeSet::new();
+            let lines: Vec<Value> = value.get("products").and_then(Value::as_array).into_iter().flatten()
+                .filter(|line| serde_json::from_value::<ConsumerProductAccess>((*line).clone()).is_ok())
+                .filter(|line| line["product"].as_str().is_some_and(|label|
+                    crate::style_text::valid_product(label) && label != crate::style_text::DICTATION && seen.insert(label.to_owned())))
+                .cloned().collect();
+            if let Some(fields) = value.as_object_mut() {
+                fields.remove("echo");
+                fields.insert("products".into(), Value::Array(lines));
+            }
             view::<ConsumerStyleAccess>(value)
         }
         BillingCatalog => {
@@ -104,6 +118,7 @@ pub(crate) fn evaluate(kind: Kind, mut value: Value, version: String) -> Result<
             let tbank = value["channels"]["tbank"].as_bool().unwrap_or(false);
             value["tBankEnabled"] = json!(tbank);
             value["tBankPreviewEnabled"] = json!(value["channels"]["tbankPreview"].as_bool().unwrap_or(tbank));
+            readable_only::<ConsumerPromoFeature>(&mut value["promoProgram"], "features");
             if value["promoProgram"]["programVersion"].is_null() && value["promoProgram"].is_object() {
                 value["promoProgram"]["programVersion"] = json!(value["programControlVersion"].as_str().unwrap_or(""));
             }
@@ -111,6 +126,7 @@ pub(crate) fn evaluate(kind: Kind, mut value: Value, version: String) -> Result<
         }
         PromoProgram => {
             program_flags(&mut value);
+            readable_only::<ConsumerPromoFeature>(&mut value, "features");
             if value["programVersion"].is_null() { value["programVersion"] = json!(version); }
             view::<ConsumerPromoProgram>(value)
         }
@@ -160,4 +176,14 @@ pub(crate) fn evaluate(kind: Kind, mut value: Value, version: String) -> Result<
         PromoOfferPreview => view::<ConsumerPromoOfferPreview>(value),
         PromoRedemption => view::<ConsumerPromoRedemption>(value),
     }
+}
+
+/// Server lines and messages are optional extras: an entry this client cannot read is left out, never the profile or
+/// the Promo around it. A field that is not a list becomes an empty one.
+fn readable_only<T: serde::de::DeserializeOwned>(value: &mut Value, key: &str) {
+    let Some(fields) = value.as_object_mut() else { return };
+    let Some(found) = fields.get(key) else { return };
+    let kept: Vec<Value> = found.as_array().map(|items| items.iter()
+        .filter(|item| serde_json::from_value::<T>((*item).clone()).is_ok()).cloned().collect()).unwrap_or_default();
+    fields.insert(key.to_string(), Value::Array(kept));
 }

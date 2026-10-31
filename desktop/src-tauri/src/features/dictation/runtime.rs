@@ -50,7 +50,7 @@ struct Context {
 }
 struct Physical {
     clock: Instant,
-    executor: Arc<Executor<()>>,
+    executor: Arc<Executor<f32>>,
     processor: Arc<Processor>,
     settings: Arc<RwLock<Settings>>,
     view: Arc<dyn View>,
@@ -100,7 +100,7 @@ impl capture::Ports for Physical {
             presentation: self.view.presentation(lease),
         };
         self.executor
-            .begin(lease.generation, admission, settings.input, ())?;
+            .begin(lease.generation, admission, settings.input, settings.pause_seconds)?;
         self.view.admitted(lease);
         if !lease.without_styling {
             context.connection = Some(self.processor.prepare_capture());
@@ -203,7 +203,7 @@ type Command = actor::Command<Job>;
 
 pub struct Runtime {
     send: mpsc::UnboundedSender<Command>,
-    executor: Arc<Executor<()>>,
+    executor: Arc<Executor<f32>>,
     hook: Mutex<hook_registration::Registration<Vec<(Target, Binding)>, Hook>>,
     busy: AtomicBool,
     settings: Arc<RwLock<Settings>>,
@@ -239,7 +239,7 @@ impl Runtime {
         let executor = Arc::new(Executor::spawn(
             clock,
             move || RecorderDriver,
-            move |_: &()| capture_model.begin(),
+            move |pause: &f32| capture_model.begin(*pause),
             Arc::new(move |event| {
                 let _ = audio.send(Command::Audio(event));
             }),

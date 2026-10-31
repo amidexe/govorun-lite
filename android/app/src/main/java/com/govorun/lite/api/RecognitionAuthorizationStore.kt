@@ -22,6 +22,7 @@ internal data class PendingApproval(
     val packageName: String,
     val currentSigners: Set<String>,
     val expiresAt: Long,
+    val scopes: Int = RecognitionApi.SCOPE_LOCAL_RECOGNITION,
 )
 
 internal class RecognitionAuthorizationStore(context: Context) {
@@ -41,7 +42,23 @@ internal class RecognitionAuthorizationStore(context: Context) {
         return true
     }
 
-    fun createPending(identity: CallerIdentity): PendingApproval {
+    /** Read-only check for answers from memory: no last-use write, no revocation. */
+    fun hasScope(identity: CallerIdentity, scope: Int): Boolean {
+        val record = approval(identity.packageName) ?: return false
+        return record.scopes and scope == scope &&
+            AuthorizationPolicy.signersMatch(record.currentSigners, identity.currentSigners, identity.signingLineage)
+    }
+
+    fun scopes(packageName: String): Int = approval(packageName)?.scopes ?: 0
+
+    /** Adds or removes a scope of an existing approval; the approval itself stays. */
+    fun setScope(packageName: String, scope: Int, enabled: Boolean) {
+        val record = approval(packageName) ?: return
+        val scopes = if (enabled) record.scopes or scope else record.scopes and scope.inv()
+        prefs.edit().putString(approvalKey(packageName), record.copy(scopes = scopes).json()).apply()
+    }
+
+    fun createPending(identity: CallerIdentity, scopes: Int = RecognitionApi.SCOPE_LOCAL_RECOGNITION): PendingApproval {
         cleanupExpiredPending()
         val previousForUid =
             prefs.all
@@ -59,6 +76,7 @@ internal class RecognitionAuthorizationStore(context: Context) {
                 packageName = identity.packageName,
                 currentSigners = identity.currentSigners,
                 expiresAt = System.currentTimeMillis() + PENDING_TTL_MILLIS,
+                scopes = scopes,
             )
         prefs.edit().putString(pendingKey(request.nonce), request.json()).apply()
         return request
@@ -81,16 +99,21 @@ internal class RecognitionAuthorizationStore(context: Context) {
         return request
     }
 
-    fun approve(identity: CallerIdentity) {
+    fun approve(identity: CallerIdentity, scopes: Int = RecognitionApi.SCOPE_LOCAL_RECOGNITION) {
         val now = System.currentTimeMillis()
+        // A further scope joins the app's existing approval; recognition alone starts a new one.
+        val kept = approval(identity.packageName)?.takeIf {
+            scopes != RecognitionApi.SCOPE_LOCAL_RECOGNITION &&
+                AuthorizationPolicy.signersMatch(it.currentSigners, identity.currentSigners, identity.signingLineage)
+        }
         val record =
             ApprovalRecord(
                 identity.packageName,
                 identity.currentSigners,
                 identity.signingLineage,
+                kept?.approvedAt ?: now,
                 now,
-                now,
-                RecognitionApi.SCOPE_LOCAL_RECOGNITION,
+                (kept?.scopes ?: 0) or scopes,
             )
         prefs.edit().putString(approvalKey(identity.packageName), record.json()).apply()
     }
@@ -137,6 +160,7 @@ internal class RecognitionAuthorizationStore(context: Context) {
             .put("package", packageName)
             .put("current", currentSigners.jsonArray())
             .put("expiresAt", expiresAt)
+            .put("scopes", scopes)
             .toString()
 
     private fun approvalFromJson(raw: String): ApprovalRecord? =
@@ -165,6 +189,7 @@ internal class RecognitionAuthorizationStore(context: Context) {
                     packageName = it.getString("package"),
                     currentSigners = it.getJSONArray("current").strings(),
                     expiresAt = it.getLong("expiresAt"),
+                    scopes = it.optInt("scopes", RecognitionApi.SCOPE_LOCAL_RECOGNITION),
                 )
             }
         }.getOrNull()

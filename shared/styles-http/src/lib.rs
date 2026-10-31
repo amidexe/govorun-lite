@@ -22,6 +22,15 @@ pub struct Client {
     tls: Arc<ClientConfig>,
     prepared: Mutex<Option<(String, JoinHandle<std::result::Result<Connection, Failure>>)>>,
 }
+fn decode_hex(value: &str) -> Result<Vec<u8>> {
+    if value.len() % 2 != 0 || !value.is_ascii() {
+        return Err(Error::InvalidRequest);
+    }
+    (0..value.len())
+        .step_by(2)
+        .map(|at| u8::from_str_radix(&value[at..at + 2], 16).map_err(|_| Error::InvalidRequest))
+        .collect()
+}
 fn tls(roots: RootCertStore) -> Arc<ClientConfig> {
     let mut config =
         ClientConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
@@ -38,7 +47,14 @@ impl Client {
         if !["Govorun-macOS/2", "Govorun-Windows/2", "Govorun-Android/2"].contains(&user_agent) {
             return Err(Error::InvalidRequest);
         }
-        let roots = RootCertStore::from_iter(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+        let mut roots = RootCertStore::from_iter(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+        // Only a build for the local test stand (scripts/stand in the private repository) is compiled with the
+        // stand's own CA; every other build trusts the public roots alone.
+        if let Some(hex) = option_env!("GOVORUN_STYLES_TEST_CA_DER_HEX") {
+            roots
+                .add(rustls::pki_types::CertificateDer::from(decode_hex(hex)?))
+                .map_err(|_| Error::InvalidRequest)?;
+        }
         Ok(Self {
             origin,
             user_agent: user_agent.into(),

@@ -7,6 +7,7 @@
   import { gpuLabel } from '../benchmark/model';
   import type { DictationFields } from '../../ipc/actions';
   import { choice } from '../../shared/forms/choice';
+  import { pauseChoices, unloadChoices } from './model';
   let {
     platform,
     recordingBusy = false,
@@ -22,6 +23,8 @@
       ]),
     ].sort((a, b) => a - b),
   );
+  const unloadLabel = (minutes: number) =>
+    minutes === 0 ? 'Не выгружать' : minutes === 60 ? 'Через 1 час' : `Через ${minutes} мин`;
   async function change<Field extends keyof DictationFields>(
     control: HTMLInputElement | HTMLSelectElement,
     field: Field,
@@ -43,6 +46,26 @@
   <HotkeysPanel />
   <section class="surface">
     <h2>Распознавание</h2>
+    <label class="setting-row"
+      ><span
+        >Пауза после речи<small>Длинная пауза помогает говорить медленнее, не разрывая фразу</small
+        ></span
+      >
+      <select
+        class="setting-control"
+        aria-label="Пауза после речи"
+        value={settings.pause}
+        disabled={state.busy}
+        onchange={(event) =>
+          change(
+            event.currentTarget,
+            'pause',
+            choice(event.currentTarget.value, ['auto', 'short', 'medium', 'long'] as const),
+          )}
+      >
+        {#each pauseChoices as [value, label]}<option {value}>{label}</option>{/each}
+      </select>
+    </label>
     <label class="setting-row"
       ><span
         >Максимальная длительность<small
@@ -85,6 +108,24 @@
             >GPU · Vulkan (принудительно)</option
           >{/if}</select
       >
+    </label>
+    <label class="setting-row"
+      ><span
+        >Освобождать память<small
+          >Распознавание выгружается после простоя, следующая диктовка начнётся чуть позже</small
+        ></span
+      >
+      <select
+        class="setting-control"
+        aria-label="Освобождать память"
+        value={settings.modelUnloadMinutes}
+        disabled={state.busy}
+        onchange={(event) =>
+          change(event.currentTarget, 'modelUnloadMinutes', Number(event.currentTarget.value))}
+      >
+        {#each unloadChoices as minutes}<option value={minutes}>{unloadLabel(minutes)}</option
+          >{/each}
+      </select>
     </label>
   </section>
   <section class="surface">
@@ -170,20 +211,6 @@
           disabled={state.busy}
           onchange={(event) =>
             change(event.currentTarget, 'pushToTalk', event.currentTarget.checked)}
-        /></label
-      >
-      <label class="setting-row"
-        ><span
-          >Держать распознавание готовым<small
-            >Выключите, чтобы освобождать память после 15 минут без диктовки</small
-          ></span
-        ><input
-          type="checkbox"
-          role="switch"
-          checked={settings.keepModelLoaded}
-          disabled={state.busy}
-          onchange={(event) =>
-            change(event.currentTarget, 'keepModelLoaded', event.currentTarget.checked)}
         /></label
       >
       <label class="setting-row"

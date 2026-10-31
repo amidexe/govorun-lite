@@ -7,6 +7,11 @@ data class BusinessCommandCommand5_recording(
     val `enabled`: Boolean,
     val `mode`: String?
 ) : BusinessCommandCommand5 { override val `kind`: String = "recording" }
+data class BusinessCommandCommand5_pause(
+    val `at_end`: Boolean,
+    val `choice`: String?,
+    val `legacy`: String?
+) : BusinessCommandCommand5 { override val `kind`: String = "pause" }
 data class BusinessCommandCommand5_enable(
     val `enabled`: Boolean
 ) : BusinessCommandCommand5 { override val `kind`: String = "enable" }

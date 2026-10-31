@@ -20,8 +20,8 @@ impl resources::Ports for Runtime {
             let model = self.model.clone();
             let busy = self.busy();
             let compute = config.compute;
-            let keep = config.keep_model;
-            tokio::task::spawn_blocking(move || model.configure(compute, keep, busy))
+            let timeout = govorun_os_runtime::model_cache::idle_timeout(config.model_unload_minutes);
+            tokio::task::spawn_blocking(move || model.configure(compute, timeout, busy))
                 .await
                 .map_err(|_| "recognition_model_unavailable")?
         })

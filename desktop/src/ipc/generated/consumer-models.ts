@@ -7,6 +7,14 @@ export interface ConsumerAccountDevice {
   lastSeenAt: string;
   platform: string;
 }
+export interface ConsumerAnnouncement {
+  action: string;
+  belowVersionCode: number;
+  id: string;
+  text: string;
+  title: string;
+  url: string;
+}
 export interface ConsumerBillingCatalog {
   catalogVersion: string;
   clientTrialDays: number;
@@ -149,7 +157,20 @@ export interface ConsumerOnlineConsent {
   acceptedVersion: number;
   active: boolean;
 }
+export interface ConsumerProductAccess {
+  consumedToday: number;
+  consumedTotal: number;
+  dailyLimit: number;
+  day: string;
+  deviceDays: Record<string, number>;
+  product: string;
+  remainingToday: number;
+  remainingTotal: number;
+  scopeId: string;
+  totalLimit: number;
+}
 export interface ConsumerProfile {
+  announcements: Array<ConsumerAnnouncement>;
   clientFreeAccessAvailable: boolean;
   currentDeviceId: string;
   deviceLimit: number;
@@ -180,6 +201,11 @@ export interface ConsumerPromoBillingPeriod {
 export interface ConsumerPromoBonus {
   credits: number;
   validDays: number;
+}
+export interface ConsumerPromoFeature {
+  detail: string;
+  icon: string;
+  title: string;
 }
 export interface ConsumerPromoOffer {
   accessDays: ConsumerPromoAccessDays | null;
@@ -213,6 +239,7 @@ export interface ConsumerPromoProgram {
   dailyLimit: number;
   endsAt: string | null;
   enrollmentOpen: boolean;
+  features: Array<ConsumerPromoFeature>;
   message: string;
   participated: boolean;
   periodDays: number;
@@ -260,6 +287,7 @@ export interface ConsumerStyleAccess {
   periodResetCondition: string;
   periodResetsAt: string;
   planCode: string;
+  products: Array<ConsumerProductAccess>;
   quotaUnit: string | null;
   remainingToday: number;
   remainingTotal: number;

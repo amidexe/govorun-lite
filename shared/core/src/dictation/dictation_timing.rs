@@ -3,6 +3,9 @@
 pub(crate) const ADMISSION_MILLIS: u64 = 7_000;
 pub(crate) const START_ATTEMPT_MILLIS: u64 = 4_000;
 pub(crate) const STATUS_REQUEST_MILLIS: u64 = 3_000;
+/// Говорун.Эхо's note (request class "note"): nobody waits at a cursor, so it
+/// keeps the server's 120 s window plus admission and delivery.
+pub(crate) const NOTE_MILLIS: u64 = 130_000;
 
 pub(crate) fn deadline(characters: usize) -> u64 {
     match characters {

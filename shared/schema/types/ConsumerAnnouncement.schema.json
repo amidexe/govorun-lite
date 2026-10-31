@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "One Android home-screen message from the server, shown below [below_version_code] (0: any); closing it is remembered on the device by [id].",
+  "properties": {
+    "action": {
+      "default": "",
+      "type": "string"
+    },
+    "belowVersionCode": {
+      "default": 0,
+      "format": "int32",
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "text": {
+      "default": "",
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "url": {
+      "default": "",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "title"
+  ],
+  "title": "ConsumerAnnouncement",
+  "type": "object",
+  "x-consumer-field-order": [
+    "id",
+    "title",
+    "text",
+    "action",
+    "url",
+    "belowVersionCode"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

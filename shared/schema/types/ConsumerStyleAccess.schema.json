@@ -1,6 +1,64 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
+    "ConsumerProductAccess": {
+      "properties": {
+        "consumedToday": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "consumedTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "dailyLimit": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "day": {
+          "type": "string"
+        },
+        "deviceDays": {
+          "additionalProperties": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "default": {},
+          "description": "This device's credits per UTC day under the line, as the server counted them.",
+          "type": "object"
+        },
+        "product": {
+          "type": "string"
+        },
+        "remainingToday": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "remainingTotal": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "scopeId": {
+          "type": "string"
+        },
+        "totalLimit": {
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "consumedToday",
+        "consumedTotal",
+        "dailyLimit",
+        "day",
+        "product",
+        "remainingToday",
+        "remainingTotal",
+        "scopeId",
+        "totalLimit"
+      ],
+      "type": "object"
+    },
     "ConsumerStyleRequestCount": {
       "properties": {
         "count": {
@@ -159,6 +217,14 @@
       "default": "",
       "type": "string"
     },
+    "products": {
+      "default": [],
+      "description": "The lines of Govorun's products besides dictation (Говорун.Эхо, later others), each with its own limits (server 31.10); absent from older servers.",
+      "items": {
+        "$ref": "#/definitions/ConsumerProductAccess"
+      },
+      "type": "array"
+    },
     "quotaUnit": {
       "default": null,
       "type": [
@@ -245,7 +311,8 @@
     "nextPeriodAt",
     "periodResetCondition",
     "accessEndsAt",
-    "issuanceCountersObserved"
+    "issuanceCountersObserved",
+    "products"
   ],
   "x-consumer-view": true,
   "x-kotlin-defaults": {}

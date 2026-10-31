@@ -37,6 +37,21 @@ internal class StyleQuotaPresentation(private val wire: JSONObject) {
             ?.let { prefix + it }
     }
 
+    /** The one quiet line under the limits: «Обновится в 03:00». */
+    fun resetLine(zone: ZoneId, locale: Locale): String? = todayResetTime(zone, locale)?.let { "Обновится в $it" }
+
+    /** «03:00»: when today's limit renews. */
+    fun todayResetTime(zone: ZoneId, locale: Locale): String? =
+        instant("todayReset")?.atZone(zone)?.let { DateTimeFormatter.ofPattern("HH:mm", locale).format(it) }
+
+    /** «Новый период — с 29 ноября». */
+    fun periodResetLine(zone: ZoneId, locale: Locale): String? =
+        wire.optJSONObject("periodStatus")?.takeUnless { it.isNull("timestamp") }
+            ?.let { runCatching { Instant.parse(it.getString("timestamp")) }.getOrNull() }
+            ?.atZone(zone)?.let { "Новый период — с " + DateTimeFormatter.ofPattern("d MMMM", locale).format(it) }
+
+    private fun instant(name: String): Instant? = if (wire.isNull(name)) null else runCatching { Instant.parse(wire.getString(name)) }.getOrNull()
+
     private fun percent(name: String): Int? = if (wire.isNull(name)) null
         else wire.getInt(name).also { require(it in 0..100) }
 

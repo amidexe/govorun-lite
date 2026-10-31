@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "One «что входит» line from the server: an icon key from the app's short list, a name and a short detail.",
+  "properties": {
+    "detail": {
+      "default": "",
+      "type": "string"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "icon",
+    "title"
+  ],
+  "title": "ConsumerPromoFeature",
+  "type": "object",
+  "x-consumer-field-order": [
+    "icon",
+    "title",
+    "detail"
+  ],
+  "x-consumer-view": true,
+  "x-kotlin-defaults": {}
+}

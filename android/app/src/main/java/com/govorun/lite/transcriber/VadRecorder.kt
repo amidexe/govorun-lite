@@ -15,10 +15,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 /** Buffered microphone → shared VAD → ordered recognition. */
 class VadRecorder(private val context: Context) {
@@ -33,7 +30,6 @@ class VadRecorder(private val context: Context) {
         // Tail buffer is only an emergency flush path. It may retain two
         // maximum segments so trimming cannot race a 30-second VAD boundary.
         private const val MIN_TAIL_BYTES = SAMPLE_RATE * 2 / 4           //  0.25s
-        private const val MAX_TAIL_BYTES = SAMPLE_RATE * 2 * 60          // 60s
 
         // Reuse VAD between sessions; microphone capture never waits for it.
         @Volatile private var sharedVad: Vad? = null
@@ -163,50 +159,25 @@ class VadRecorder(private val context: Context) {
             val segmentChannel = Channel<ByteArray>(capacity = SEGMENT_QUEUE_CAPACITY)
 
             val readerJob = launch {
-                // Raw PCM captured since the last VAD segment boundary. Acts as a
-                // safety-net if the user stops recording mid-utterance and VAD's
-                // internal buffer has already been partially drained by flush().
-                val tailBuffer = ByteArrayOutputStream()
-                var segmentsEmitted = 0
+                // The cutting is shared with Echo's recognition (SpeechSegmenter): this loop only feeds the microphone in
+                // and sends the segments on.
+                val segmenter = SpeechSegmenter(vad)
                 var capturedBytes = 0L
                 // Tracks isSpeechDetected() across windows so we only emit
                 // edge events to onSpeechActive (start of speech, end of
                 // speech). Initial false matches VAD's post-reset state.
                 var prevSpeechDetected = false
 
-                fun drainVadQueue() {
-                    while (!vad.empty()) {
-                        val segment = vad.front()
-                        vad.pop()
-
-                        // Speech may begin with the very first captured frame. Keep
-                        // the short opening that VAD omits while detecting speech;
-                        // long leading silence still stays outside recognition.
-                        val openingBytes = if (segmentsEmitted == 0 &&
-                            segment.start in 1..(SAMPLE_RATE / 4)) segment.start * 2 else 0
-                        val segPcm = ByteArray(segment.samples.size * 2 + openingBytes)
-                        if (openingBytes > 0) {
-                            tailBuffer.toByteArray().copyInto(segPcm, 0, 0, openingBytes)
-                        }
-                        val bb = ByteBuffer.wrap(segPcm).order(ByteOrder.LITTLE_ENDIAN)
-                        bb.position(openingBytes)
-                        for (s in segment.samples) {
-                            bb.putShort((s * 32767f).toInt().coerceIn(-32768, 32767).toShort())
-                        }
-
-                        if (!segmentChannel.trySend(segPcm).isSuccess) {
+                fun send(segments: List<SpeechSegmenter.Segment>) {
+                    for (segment in segments) {
+                        if (!segmentChannel.trySend(segment.pcm).isSuccess) {
                             Log.w(TAG, "Segment queue full — dropping segment (transcriber too slow)")
                         }
-                        // A VAD segment = silence confirmed, so whatever we captured up
-                        // to now is safely in the transcriber pipeline. Drop the tail.
-                        tailBuffer.reset()
-                        segmentsEmitted++
-
                         // Report this segment's duration in milliseconds. Short
                         // phrases (~700ms «ага») would round to 0 seconds and
                         // disappear if we converted here — accumulator on the
                         // caller side preserves them.
-                        val millis = segment.samples.size * 1000L / SAMPLE_RATE
+                        val millis = segment.speechSamples * 1000L / SAMPLE_RATE
                         if (millis > 0L) onSpeechMillis(millis)
                     }
                 }
@@ -214,32 +185,9 @@ class VadRecorder(private val context: Context) {
                 try {
                     for (pcmWindow in capture.frames) {
                         capturedBytes += pcmWindow.size
-                        if (tailBuffer.size() + pcmWindow.size > MAX_TAIL_BYTES) {
-                            // Cap memory usage — drop oldest half of tail. In practice
-                            // VAD will cut before this on any natural speech.
-                            val trimmed = tailBuffer.toByteArray().copyOfRange(
-                                tailBuffer.size() / 2, tailBuffer.size()
-                            )
-                            tailBuffer.reset()
-                            tailBuffer.write(trimmed)
-                        }
-                        tailBuffer.write(pcmWindow)
-
-                        val shortBuf = ByteBuffer.wrap(pcmWindow).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
-                        // An interrupted microphone read may return a partial
-                        // window. Feed its sound too, padding only the missing end.
-                        val samples = FloatArray(VAD_WINDOW_SIZE) {
-                            if (shortBuf.hasRemaining()) shortBuf.get().toFloat() / 32768f else 0f
-                        }
-                        // acceptWaveform + drain MUST be in the same critical
-                        // section: drain reads vad.empty/front/pop, and another
-                        // reader could mutate Vad state between them, leaving
-                        // us reading partially-popped segments.
-                        val speechNow = synchronized(vadLock) {
-                            vad.acceptWaveform(samples)
-                            drainVadQueue()
-                            vad.isSpeechDetected()
-                        }
+                        // The shared native VAD: accepting a window and reading its segments stay in one critical section.
+                        val (segments, speechNow) = synchronized(vadLock) { segmenter.accept(pcmWindow) to segmenter.speech() }
+                        send(segments)
                         if (speechNow != prevSpeechDetected) {
                             prevSpeechDetected = speechNow
                             withContext(Dispatchers.Main) { onSpeechActive(speechNow) }
@@ -251,28 +199,27 @@ class VadRecorder(private val context: Context) {
                     RecognitionSessionCoordinator.process.endPrimaryCapture(lease)
                     onRecordingDuration(capturedBytes * 1000L / (SAMPLE_RATE * 2))
                     val stoppedByButton = stopAtMs != Long.MAX_VALUE
-                    val beforeFlush = segmentsEmitted
+                    val beforeFlush = segmenter.emitted
                     if (!stoppedByButton) {
                         try {
-                            synchronized(vadLock) { vad.flush(); drainVadQueue() }
+                            send(synchronized(vadLock) { segmenter.flush() })
                         } catch (e: Exception) { Log.w(TAG, "VAD flush failed: ${e.message}") }
                     }
                     // Button release ends the phrase: send every captured sample
                     // since the last completed segment, without another VAD decision.
-                    if ((stoppedByButton || segmentsEmitted == beforeFlush) &&
-                        !discardOutput && tailBuffer.size() >= if (stoppedByButton) 2 else MIN_TAIL_BYTES) {
-                        val tail = tailBuffer.toByteArray()
+                    if ((stoppedByButton || segmenter.emitted == beforeFlush) &&
+                        !discardOutput && segmenter.restBytes() >= if (stoppedByButton) 2 else MIN_TAIL_BYTES) {
+                        val tail = segmenter.rest()
                         if (!segmentChannel.trySend(tail).isSuccess) {
                             Log.w(TAG, "Tail segment could not be queued")
                         }
                         onSpeechMillis(tail.size * 1000L / (SAMPLE_RATE * 2))
                     }
-                    tailBuffer.reset()
                     segmentChannel.close()
                     if (prevSpeechDetected) {
                         withContext(Dispatchers.Main) { onSpeechActive(false) }
                     }
-                    Log.i(TAG, "VAD reader stopped ($segmentsEmitted segments emitted this session)")
+                    Log.i(TAG, "VAD reader stopped (${segmenter.emitted} segments emitted this session)")
                 }
             }
 

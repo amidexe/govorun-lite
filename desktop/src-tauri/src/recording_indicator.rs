@@ -145,6 +145,9 @@ impl Adapter {
                         let _ = window.hide();
                     } else {
                         let _ = window.show();
+                        if let Ok(hwnd) = window.hwnd() {
+                            raise(hwnd.0);
+                        }
                     }
                 }
             });
@@ -160,10 +163,25 @@ impl Adapter {
         }
     }
     fn fallback(&self, id: u64) {
+        self.fallback_for(id, 1200);
+    }
+    /// A notice in the idle capsule for a few seconds; a dictation in progress keeps the capsule its own.
+    pub fn notice(&self, issue: Issue, millis: u64) {
+        let mut shown = false;
+        self.update(|state| shown = state.show_notice(issue));
+        if shown {
+            let adapter = self.clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(millis)).await;
+                adapter.update(|state| state.clear_notice());
+            });
+        }
+    }
+    fn fallback_for(&self, id: u64, millis: u64) {
         self.update(|state| state.fallback(id));
         let adapter = self.clone();
         tokio::spawn(async move {
-            tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(millis)).await;
             adapter.update(|state| state.clear_fallback(id));
         });
     }
@@ -252,6 +270,13 @@ impl Presentation for Attempt {
     }
     fn insertion_failure(&self, code: &'static str) {
         (self.adapter.failure)(code);
+        if code == "insertion_elevated_target" {
+            // Long enough to read where the text is and what to press.
+            self.adapter
+                .update(|state| state.issue(self.id, Issue::TargetElevated));
+            self.adapter.fallback_for(self.id, 3000);
+            return;
+        }
         self.failure(code);
     }
     fn failure(&self, _: &'static str) {
@@ -259,6 +284,16 @@ impl Presentation for Attempt {
             .update(|state| state.issue(self.id, Issue::ProcessingFailed));
         self.adapter.fallback(self.id);
     }
+}
+/// Windows lets other windows rise above a long-lived topmost window, so the
+/// shown capsule ended up behind them (Djinn66, 25 Oct 2026; Handy #383).
+/// Every show puts it on top of the topmost band again without taking focus.
+#[cfg(target_os = "windows")]
+fn raise(hwnd: *mut std::ffi::c_void) {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
+    };
+    unsafe { SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE) };
 }
 fn local(url: &tauri::Url) -> bool {
     crate::recording_origin::allows("recording", url, cfg!(debug_assertions))

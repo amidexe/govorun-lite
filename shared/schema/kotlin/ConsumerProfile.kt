@@ -11,12 +11,14 @@ data class ConsumerProfile(
     val `onlineConsent`: ConsumerOnlineConsent,
     val `onlineServiceState`: String = "unknown",
     val `starterGrant`: ConsumerStarterGrant = ConsumerStarterGrant(`activationAvailable` = false, `balanceKind` = "", `creditLimit` = 0, `eligible` = false, `expires` = false, `remainingToIssue` = 0, `state` = "disabled", `trialOffer` = null),
-    val `promoProgram`: ConsumerPromoProgram = ConsumerPromoProgram(`accessDays` = 0, `accessEndsAt` = null, `accessMode` = "common_end", `activationAvailable` = false, `campaignId` = "", `canActivate` = false, `dailyLimit` = 0, `endsAt` = null, `enrollmentOpen` = false, `message` = "", `participated` = false, `periodDays` = 0, `periodLimit` = 0, `programVersion` = "", `state` = "disabled", `visible` = false),
+    val `promoProgram`: ConsumerPromoProgram = ConsumerPromoProgram(`accessDays` = 0, `accessEndsAt` = null, `accessMode` = "common_end", `activationAvailable` = false, `campaignId` = "", `canActivate` = false, `dailyLimit` = 0, `endsAt` = null, `enrollmentOpen` = false, `features` = listOf(), `message` = "", `participated` = false, `periodDays` = 0, `periodLimit` = 0, `programVersion` = "", `state` = "disabled", `visible` = false),
     val `clientFreeAccessAvailable`: Boolean = false,
     val `styleUsageAccountingAvailable`: Boolean = false,
-    val `hasSyncedData`: Boolean? = null
+    val `hasSyncedData`: Boolean? = null,
+    val `announcements`: List<ConsumerAnnouncement> = listOf()
 ) {
     fun toJson(): org.json.JSONObject = org.json.JSONObject()
+        .put("announcements", org.json.JSONArray(`announcements`.map { item -> item.toJson() }))
         .put("clientFreeAccessAvailable", `clientFreeAccessAvailable`)
         .put("currentDeviceId", `currentDeviceId`)
         .put("deviceLimit", `deviceLimit`)
@@ -32,6 +34,7 @@ data class ConsumerProfile(
         .put("styleUsageAccountingAvailable", `styleUsageAccountingAvailable`)
     companion object {
         fun fromJson(value: org.json.JSONObject): ConsumerProfile = ConsumerProfile(
+            `announcements` = value.getJSONArray("announcements").let { values -> List(values.length()) { index -> ConsumerAnnouncement.fromJson(values.getJSONObject(index)) } },
             `clientFreeAccessAvailable` = value.getBoolean("clientFreeAccessAvailable"),
             `currentDeviceId` = value.getString("currentDeviceId"),
             `deviceLimit` = value.getInt("deviceLimit"),

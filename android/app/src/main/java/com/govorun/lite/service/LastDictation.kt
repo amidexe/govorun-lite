@@ -5,10 +5,11 @@ import com.govorun.lite.storage.GovorunPreferences
 import com.govorun.lite.util.StorageKeys
 
 /**
- * «Помнить последнюю диктовку»: off by default. When the person turns it on, the last dictated
- * text is kept only in this process's memory — never on disk — so a dictation that could not be
- * inserted can be copied from the home screen. Replaced by the next dictation, dropped when the
- * option is turned off, gone when the process ends. Same rule as the desktop tray item.
+ * «Помнить последнюю диктовку»: on unless the person turned it off (since 2.0.46; before, off until
+ * turned on, and a stored choice either way is kept). The last dictated text is kept only in this
+ * process's memory — never on disk — so a dictation that could not be inserted can be copied from
+ * the home screen. Replaced by the next dictation, dropped when the option is turned off, gone when
+ * the process ends. Same rule as the desktop tray item.
  */
 internal object LastDictation {
     @Volatile private var text: String? = null
@@ -18,7 +19,7 @@ internal object LastDictation {
     // Only the choice is stored; the text never is.
     fun isEnabled(context: Context): Boolean =
         GovorunPreferences.of(context, StorageKeys.PREFS_FILE)
-            .getBoolean(StorageKeys.Key.REMEMBER_LAST_DICTATION, false)
+            .getBoolean(StorageKeys.Key.REMEMBER_LAST_DICTATION, true)
 
     fun setEnabled(context: Context, enabled: Boolean) {
         GovorunPreferences.of(context, StorageKeys.PREFS_FILE)

@@ -1,5 +1,6 @@
 // @generated from shared/core serde JSON Schema; do not edit.
 import type { BusinessCommandLedger } from './BusinessCommandLedger';
+import type { BusinessCommandProductWindow } from './BusinessCommandProductWindow';
 import type { BusinessCommandScope3 } from './BusinessCommandScope3';
 export interface BusinessCommandStyleWindowFacts {
   accessActive: boolean;
@@ -17,6 +18,7 @@ export interface BusinessCommandStyleWindowFacts {
   pendingUsageTotal: number;
   presentationAccess: unknown;
   processingReady: boolean;
+  products: Array<BusinessCommandProductWindow>;
   profileFresh: boolean;
   readyCredits: number;
   recoveryInFlight: boolean;

@@ -17,8 +17,11 @@ internal interface SharedStylizationPorts : StylizationPorts {
 
 /** Executes the local Rust use case; no admission or routing policy lives here. */
 internal class SharedStylizationExecutor(private val ports: SharedStylizationPorts) {
-    suspend fun process(text: String, mode: StylizationInputMode, packageName: String? = null): StylizationResult {
-        return try { execute(text, mode, packageName) }
+    /** [digest]: Echo's итоги — the core's own length, price and route for them. [product]: another product's request (Echo's)
+     *  — Govorun's server only, the person's dictation choices do not apply (the core decides; the terms still count). */
+    suspend fun process(text: String, mode: StylizationInputMode, packageName: String? = null, digest: Boolean = false,
+                        product: Boolean = false): StylizationResult {
+        return try { execute(text, mode, packageName, digest, product) }
         catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) {
             // An unavailable or malformed local bridge must not lose the transcript.
@@ -27,9 +30,10 @@ internal class SharedStylizationExecutor(private val ports: SharedStylizationPor
         }
     }
 
-    private suspend fun execute(text: String, mode: StylizationInputMode, packageName: String?): StylizationResult {
+    private suspend fun execute(text: String, mode: StylizationInputMode, packageName: String?, digest: Boolean, product: Boolean): StylizationResult {
         val flow = Flow()
-        var frame = flow.step(JSONObject().put("kind", "begin").put("streaming", mode == StylizationInputMode.AUTO).put("bypass", false))
+        var frame = flow.step(JSONObject().put("kind", "begin").put("streaming", mode == StylizationInputMode.AUTO).put("bypass", false)
+            .apply { if (digest) put("digest", true); if (product) put("product", true) })
         var account: OfficialStylizationSnapshot? = null
         var generation = 0L
         var selection: StylizationSelection? = null

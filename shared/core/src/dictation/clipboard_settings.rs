@@ -25,7 +25,8 @@ struct Change { clipboard: Option<Preference>, remember_last: Option<bool> }
 #[serde(rename_all = "camelCase")]
 pub struct ClipboardSnapshot {
     pub clipboard: Preference,
-    /// Off unless the person turns it on: the last dictation stays in memory for the tray copy.
+    /// On unless the person turned it off (until 2.1.11x: off unless turned on; a stored choice either way is kept):
+    /// the last dictation stays in memory for the tray copy.
     pub remember_last: bool,
 }
 
@@ -89,7 +90,7 @@ fn snapshot(document: &Value) -> Result<ClipboardSnapshot, &'static str> {
     } else {
         Preference::Preserve
     };
-    Ok(ClipboardSnapshot { clipboard, remember_last: value(REMEMBER) == Some(json!(true)) })
+    Ok(ClipboardSnapshot { clipboard, remember_last: value(REMEMBER) != Some(json!(false)) })
 }
 fn changed(document: &Value, change: &Change) -> Result<Value, &'static str> {
     let mut updates = Vec::new();

@@ -25,7 +25,8 @@ data class ConsumerStyleAccess(
     val `nextPeriodAt`: String = "",
     val `periodResetCondition`: String = "",
     val `accessEndsAt`: String = "",
-    val `issuanceCountersObserved`: Boolean = false
+    val `issuanceCountersObserved`: Boolean = false,
+    val `products`: List<ConsumerProductAccess> = listOf()
 ) {
     fun toJson(): org.json.JSONObject = org.json.JSONObject()
         .put("accessEndsAt", `accessEndsAt`)
@@ -42,6 +43,7 @@ data class ConsumerStyleAccess(
         .put("periodResetCondition", `periodResetCondition`)
         .put("periodResetsAt", `periodResetsAt`)
         .put("planCode", `planCode`)
+        .put("products", org.json.JSONArray(`products`.map { item -> item.toJson() }))
         .put("quotaUnit", `quotaUnit`?.let { item -> item } ?: org.json.JSONObject.NULL)
         .put("remainingToday", `remainingToday`)
         .put("remainingTotal", `remainingTotal`)
@@ -68,6 +70,7 @@ data class ConsumerStyleAccess(
             `periodResetCondition` = value.getString("periodResetCondition"),
             `periodResetsAt` = value.getString("periodResetsAt"),
             `planCode` = value.getString("planCode"),
+            `products` = value.getJSONArray("products").let { values -> List(values.length()) { index -> ConsumerProductAccess.fromJson(values.getJSONObject(index)) } },
             `quotaUnit` = if (value.isNull("quotaUnit")) null else value.getString("quotaUnit"),
             `remainingToday` = value.getInt("remainingToday"),
             `remainingTotal` = value.getInt("remainingTotal"),

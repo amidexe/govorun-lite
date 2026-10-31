@@ -7,6 +7,8 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::watch;
 use tokio::time::Instant;
 
+pub use crate::online_outage::Policy;
+
 pub(super) struct AttemptNotes(Mutex<u64>, pub(super) super::timing::Timing);
 impl AttemptNotes {
     pub(super) fn new(deadline: u64) -> Self {
@@ -31,6 +33,7 @@ impl AttemptNotes {
 
 pub struct Outage {
     state: Mutex<Option<crate::online_outage::State>>,
+    policy: Mutex<Policy>,
     clock: Instant,
     jitter: Arc<dyn Fn() -> f64 + Send + Sync>,
     events: watch::Sender<u64>,
@@ -39,6 +42,7 @@ impl Outage {
     pub fn new(jitter: Arc<dyn Fn() -> f64 + Send + Sync>) -> Self {
         Self {
             state: Mutex::new(None),
+            policy: Mutex::new(Policy::default()),
             clock: Instant::now(),
             jitter,
             events: watch::channel(0).0,
@@ -52,7 +56,8 @@ impl Outage {
         let mut state = self.state.lock().map_err(|_| Error::InvalidResponse)?;
         let before = serde_json::to_value(state.as_ref()).map_err(|_| Error::InvalidResponse)?;
         let generation = before["generation"].as_u64().unwrap_or(0);
-        let mut result = crate::online_outage::transition(state.take(), event, self.now())?;
+        let policy = self.policy.lock().map_err(|_| Error::InvalidResponse)?.clone();
+        let mut result = crate::online_outage::transition_with(state.take(), event, self.now(), &policy)?;
         result["opened"] = json!(
             result["paused"] == true && result["state"]["generation"].as_u64() != Some(generation)
         );
@@ -66,6 +71,12 @@ impl Outage {
                 .send_modify(|revision| *revision = revision.wrapping_add(1));
         }
         Ok(result)
+    }
+    /// The account card's pause numbers, kept until the next card brings others.
+    pub fn adopt(&self, policy: Policy) {
+        if let Ok(mut current) = self.policy.lock() {
+            *current = policy;
+        }
     }
     pub fn subscribe(&self) -> watch::Receiver<u64> {
         self.events.subscribe()

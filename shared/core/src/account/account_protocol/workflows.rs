@@ -167,9 +167,14 @@ pub(super) async fn dispatch(core: &AccountSession, params: Value) -> Result<Val
         Some("styleTextAdmission") => {
             let captured = epoch()?;
             core.current(captured)?;
-            let units = serde_json::from_value(params["units"].clone())
+            let units: Vec<u16> = serde_json::from_value(params["units"].clone())
                 .map_err(|_| Error::InvalidRequest)?;
-            let result = crate::style_text::admit(units)?;
+            // Итоги answer their price even for a text they refuse, so Echo can say why.
+            let result = if params["requestClass"] == crate::style_text::DIGEST {
+                crate::style_text::digest_price(&units)?
+            } else {
+                crate::style_text::admit(units)?
+            };
             core.current(captured)?;
             Ok(result)
         }

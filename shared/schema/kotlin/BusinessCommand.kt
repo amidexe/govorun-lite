@@ -91,6 +91,7 @@ data class BusinessCommand_styleStartAdmission(
     val `state`: BusinessCommandState8?
 ) : BusinessCommand { override val `operation`: String = "styleStartAdmission" }
 data class BusinessCommand_styleTextAdmission(
+    val `request_class`: String?,
     val `units`: List<Int>
 ) : BusinessCommand { override val `operation`: String = "styleTextAdmission" }
 data class BusinessCommand_creditLease(

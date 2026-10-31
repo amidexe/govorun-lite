@@ -4,7 +4,8 @@ mod snapshot;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 pub use snapshot::{
-    Acceleration, Device, Duration, Login, Marker, Microphone, Permissions, Snapshot,
+    Acceleration, Device, Duration, Login, Marker, Microphone, Pause, Permissions, Snapshot,
+    DEFAULT_MODEL_UNLOAD_MINUTES,
 };
 
 #[derive(Debug, Deserialize)]
@@ -35,7 +36,8 @@ pub enum Field {
     VoiceMarker,
     LaunchAtLogin,
     PushToTalk,
-    KeepModelLoaded,
+    ModelUnloadMinutes,
+    Pause,
     AlwaysOnMicrophone,
     InputChannel,
 }

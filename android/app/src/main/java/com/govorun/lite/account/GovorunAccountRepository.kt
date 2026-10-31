@@ -100,6 +100,7 @@ object GovorunAccountRepository {
                 mutableState.value = mutableState.value.copy(networkAvailable = connected, networkRefusal = refusal)
             }
         }) {
+            com.govorun.lite.api.smart.SmartRuntime.networkAvailable(appContext)
             if (account.storageProblem != null) storageRecovery.request()
             if (account.session() != null) {
                 profileRefresh.request()

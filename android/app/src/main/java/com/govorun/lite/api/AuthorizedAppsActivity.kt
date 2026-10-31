@@ -35,6 +35,7 @@ import com.product.ui.ProductScaffold
 import com.product.ui.ProductTokens
 import com.product.ui.SettingsInfoRow
 import com.product.ui.SettingsSection
+import com.product.ui.SettingsSwitchRow
 import com.product.ui.productScreenPadding
 
 class AuthorizedAppsActivity : ComponentActivity() {
@@ -49,6 +50,8 @@ class AuthorizedAppsActivity : ComponentActivity() {
                     apps = apps,
                     onBack = ::finish,
                     onRevoke = ::revoke,
+                    onVolumeKey = ::setVolumeKey,
+                    onSmart = ::setSmart,
                 )
             }
         }
@@ -61,7 +64,8 @@ class AuthorizedAppsActivity : ComponentActivity() {
 
     private fun refresh() {
         val resolver = CallerIdentityResolver(this)
-        apps = RecognitionAuthorizationStore(this).approvedPackages().map { packageName ->
+        val store = RecognitionAuthorizationStore(this)
+        apps = store.approvedPackages().map { packageName ->
             val identity = resolver.resolveInstalled(packageName)
             ApprovedApp(
                 label = identity?.label ?: packageName,
@@ -69,8 +73,22 @@ class AuthorizedAppsActivity : ComponentActivity() {
                 icon = runCatching {
                     packageManager.getApplicationIcon(packageName)
                 }.getOrNull(),
+                recognition = store.scopes(packageName) and RecognitionApi.SCOPE_LOCAL_RECOGNITION != 0,
+                echo = identity?.let(com.govorun.lite.api.smart.EchoApp::matches) == true,
+                volumeKey = store.scopes(packageName) and RecognitionApi.SCOPE_VOLUME_KEY != 0,
+                smart = store.scopes(packageName) and RecognitionApi.SCOPE_SMART_FUNCTIONS != 0,
             )
         }
+    }
+
+    private fun setVolumeKey(packageName: String, enabled: Boolean) {
+        RecognitionApiControl.setVolumeKey(this, packageName, enabled)
+        refresh()
+    }
+
+    private fun setSmart(packageName: String, enabled: Boolean) {
+        RecognitionApiControl.setSmartFunctions(this, packageName, enabled)
+        refresh()
     }
 
     private fun revoke(packageName: String) {
@@ -83,6 +101,12 @@ private data class ApprovedApp(
     val label: String,
     val packageName: String,
     val icon: Drawable?,
+    val recognition: Boolean = true,
+    /** Говорун.Эхо: the one app that may record by the volume key on the lock screen. */
+    val echo: Boolean = false,
+    val volumeKey: Boolean = false,
+    /** The person once pressed a smart function in the app, so its own tasks (итоги of a new note) go by themselves. */
+    val smart: Boolean = false,
 )
 
 @Composable
@@ -90,6 +114,8 @@ private fun AuthorizedAppsScreen(
     apps: List<ApprovedApp>,
     onBack: () -> Unit,
     onRevoke: (String) -> Unit,
+    onVolumeKey: (String, Boolean) -> Unit,
+    onSmart: (String, Boolean) -> Unit,
 ) {
     ProductScaffold(
         title = "API для приложений",
@@ -109,7 +135,7 @@ private fun AuthorizedAppsScreen(
                     ProductDivider()
                     SettingsInfoRow(
                         title = "Только локальное распознавание",
-                        summary = "Доступ не включает аккаунт, подписку или онлайн-стилизацию. Собственная запись Говоруна всегда имеет приоритет.",
+                        summary = "Приложения получают только распознавание на устройстве: без аккаунта, подписки и онлайн-стилизации. Собственная запись Говоруна всегда имеет приоритет.",
                     )
                 }
             }
@@ -124,6 +150,20 @@ private fun AuthorizedAppsScreen(
                         apps.forEachIndexed { index, app ->
                             if (index > 0) ProductDivider()
                             ApprovedAppRow(app) { onRevoke(app.packageName) }
+                            if (app.echo) {
+                                SettingsSwitchRow(
+                                    title = "Запись кнопкой «−» на заблокированном экране",
+                                    summary = "Держите «−», пока экран заблокирован, — Эхо записывает заметку; отпустили — сохранило",
+                                    checked = app.volumeKey,
+                                    onCheckedChange = { onVolumeKey(app.packageName, it) },
+                                )
+                                SettingsSwitchRow(
+                                    title = "Умные функции сами",
+                                    summary = "Итоги новых заметок через аккаунт Говоруна. Включается после первого нажатия «Итоги» или «Улучшить» в Эхе",
+                                    checked = app.smart,
+                                    onCheckedChange = { onSmart(app.packageName, it) },
+                                )
+                            }
                         }
                     }
                 }
@@ -168,7 +208,7 @@ private fun ApprovedAppRow(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
+            if (app.recognition) Text(
                 "Локальное распознавание",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

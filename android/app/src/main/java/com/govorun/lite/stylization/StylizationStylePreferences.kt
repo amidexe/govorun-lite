@@ -35,9 +35,12 @@ internal object StylizationStylePreferences {
             .put("package", packageName).put("profile", profile?.wire() ?: JSONObject.NULL))
         preferences(context).edit().putString(KEY_APP_PROFILES, result.getJSONObject("profiles").toString()).apply()
     }
-    fun resolve(context: Context, packageName: String?): ResolvedStylizationStyle {
+    /** The style for [packageName] by its rule, or by [styleValue] chosen for one text, with that style's own options. */
+    fun resolve(context: Context, packageName: String?, styleValue: String? = null): ResolvedStylizationStyle {
+        val profiles = profileObject(context)
+        if (packageName != null && styleValue != null) profiles.put(packageName, ApplicationStyleProfile(styleValue).wire())
         val result = call(context, JSONObject().put("kind", "resolve").put("package", packageName)
-            .put("profiles", profileObject(context)))
+            .put("profiles", profiles))
         val payload = result.getJSONObject("options")
         return ResolvedStylizationStyle(result.getBoolean("enabled"), TextStyle.fromApiId(payload.getString("style")),
             result.optJSONObject("preset")?.let(CustomStyleBinding::preset), styleOptions(payload))

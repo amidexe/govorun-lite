@@ -8,8 +8,13 @@ internal val AccountState.stylePauseMessage: String?
         return when (styleWindowPresentation().pauseReason) {
             "none" -> null
             "refreshing" -> "Обновляем остаток"
-            "periodLimit" -> if (styleAccess.balanceKind == "single_grant") "Бесплатный лимит закончился" else "Запас за период закончился"
-            "dailyLimit" -> "Лимит на сегодня закончился"
+            // Calm words: dictation keeps working, only the online improvement waits.
+            "periodLimit" -> if (styleAccess.balanceKind == "single_grant") "Бесплатный лимит закончился"
+                else "Улучшение за 30 дней закончилось\nДиктовка работает как обычно"
+            "dailyLimit" -> styleWindowPresentation().quota
+                ?.todayResetTime(java.time.ZoneId.systemDefault(), java.util.Locale.forLanguageTag("ru"))
+                ?.let { "Улучшение на сегодня закончилось\nДиктовка работает как обычно, улучшение вернётся в $it" }
+                ?: "Улучшение на сегодня закончилось\nДиктовка работает как обычно"
             else -> "Стилизация временно недоступна"
         }
     }

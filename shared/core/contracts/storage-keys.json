@@ -354,7 +354,9 @@
           "muteAudioDuringRecording",
           "maxRecordingMinutes",
           "asrAccelerationMode",
-          "voiceInputMarkerMode"
+          "voiceInputMarkerMode",
+          "modelUnloadMinutes",
+          "pauseChoice"
         ]
       },
       "windows": {
@@ -370,7 +372,9 @@
           "voiceMarker",
           "pushToTalk",
           "keepRecognitionModelLoaded",
-          "alwaysOnMicrophone"
+          "alwaysOnMicrophone",
+          "modelUnloadMinutes",
+          "pauseChoice"
         ]
       }
     }

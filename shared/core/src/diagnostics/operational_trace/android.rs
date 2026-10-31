@@ -43,7 +43,7 @@ pub(crate) fn evaluate(c:Value)->Result<Value> {
             "issueFailed"=>"STYLE_PASS_ISSUE_FAILED","recoveryPending"=>"STYLE_PASS_RECOVERY_PENDING",
             "account"=>"ACCOUNT_STATE_CHANGED","ambiguous"|"transport"=>"TRANSPORT_FAILED","deadline"=>"SERVER_TIMEOUT",
             "service"=>match c["code"].as_str().unwrap_or("") {"BUSY"=>"SERVER_BUSY","TIMEOUT"=>"SERVER_TIMEOUT","UNAVAILABLE"=>"SERVER_UNAVAILABLE",_=>"INVALID_RESPONSE"},
-            "http"=>match c["status"].as_u64() {Some(429|503)=>"SERVER_BUSY",Some(408|504)=>"SERVER_TIMEOUT",Some(502)=>"SERVER_UNAVAILABLE",_=>"REQUEST_FAILED"},
+            "http"=>match c["status"].as_u64() {Some(413)=>"TEXT_TOO_LONG",Some(429|503)=>"SERVER_BUSY",Some(408|504)=>"SERVER_TIMEOUT",Some(502)=>"SERVER_UNAVAILABLE",_=>"REQUEST_FAILED"},
             _=>"REQUEST_FAILED"}})),
         Some("support")=>Ok(json!({"code":if c["legacy"]==true {crate::journal_report::support::reason(c["value"].as_str().unwrap_or(""))} else {crate::journal_report::support::result(c["value"].as_str().unwrap_or(""))}})),
         Some("taxonomy")=>Ok(r::Counters::taxonomy()),

@@ -152,11 +152,10 @@ impl Stylization {
         settings: Option<govorun_core::stylization::reporting::Settings>,
     ) -> Result<()> {
         self.foreground.reporting().configure(settings)?;
-        self.foreground.configure_selection(settings.is_some_and(|value|
-            value.official_selected(self.account.snapshot().access.client_terms_version)));
-        if settings.is_some_and(|value| {
-            !value.official_selected(self.account.snapshot().access.client_terms_version)
-        }) {
+        let terms = self.account.snapshot().access.client_terms_version;
+        self.foreground.configure_selection(settings.is_some_and(|value| value.official_selected(terms)),
+            settings.is_some_and(|value| value.notes_allowed(terms)));
+        if settings.is_some_and(|value| !value.official_selected(terms)) {
             if let Some(worker) = self.availability_worker.get() {
                 worker.suspend();
             }
@@ -346,8 +345,9 @@ impl Stylization {
         timing: Option<govorun_core::stylization::timing::Sink>,
     ) -> Result<Output> {
         self.current(epoch)?;
-        let required = crate::style_text::admit(payload["text"].as_str()
-            .ok_or(Error::InvalidRequest)?.encode_utf16().collect())?["requiredCredits"]
+        let required = crate::style_text::admit_class(payload["text"].as_str()
+            .ok_or(Error::InvalidRequest)?.encode_utf16().collect(),
+            (payload["echoNote"] == crate::style_text::DIGEST).then_some(crate::style_text::DIGEST))?["requiredCredits"]
             .as_u64().ok_or(Error::InvalidResponse)? as usize;
         let result = self
             .foreground

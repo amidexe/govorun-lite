@@ -6,7 +6,7 @@ pub type Reply<'a> = Pin<Box<dyn Future<Output = Result<(), &'static str>> + Sen
 pub struct Config {
     pub input: Preferences,
     pub compute: Compute,
-    pub keep_model: bool,
+    pub model_unload_minutes: u32,
 }
 pub trait Ports: Send + Sync {
     fn input<'a>(&'a self, input: &'a Preferences) -> Reply<'a>;
@@ -18,7 +18,7 @@ pub async fn apply(
     next: &Config,
 ) -> Result<(), &'static str> {
     let input = previous.input != next.input;
-    let model = previous.compute != next.compute || previous.keep_model != next.keep_model;
+    let model = previous.compute != next.compute || previous.model_unload_minutes != next.model_unload_minutes;
     let changed = async {
         if input {
             ports.input(&next.input).await?;

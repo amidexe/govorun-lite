@@ -150,6 +150,7 @@ fn field_type(name: &str, value: &Value) -> bool {
         | "theme"
         | "phrasepausemilliseconds"
         | "maxrecordingminutes"
+        | "modelunloadminutes"
         | "customserverminimumcharacters" => integer(value),
         "audioinputchannel" => nullable(value, integer),
         "selectedstyle"
@@ -167,7 +168,8 @@ fn field_type(name: &str, value: &Value) -> bool {
         | "customserveracceptedrecipient"
         | "customserververifiedconfiguration"
         | "customserverproxyurl"
-        | "pasteclipboard" => nullable(value, string),
+        | "pasteclipboard"
+        | "pausechoice" => nullable(value, string),
         "builtinstyleoptions" => dictionary(value, options),
         "customstyles" | "customserverstyles" => list(value, preset),
         "applicationstylerules" => list(value, rule),

@@ -23,7 +23,7 @@ mod windows_clipboard;
 #[cfg(all(feature = "insertion", target_os = "windows"))]
 mod windows_keyboard;
 #[cfg(all(feature = "insertion", target_os = "windows"))]
-pub use windows::{Target, Windows};
+pub use windows::{watch_foreground, Target, Windows};
 
 pub trait Port {
     type Snapshot;
@@ -39,6 +39,12 @@ pub trait Port {
     fn revision(&self) -> Self::Revision;
     fn admissible(&self, _target: &Self::Target) -> bool {
         true
+    }
+    /// The target cannot receive this process's keystrokes (Windows: a window of a
+    /// higher integrity level, an app run as administrator while Govorun is not), so
+    /// a paste would silently do nothing. The text then stays on the clipboard.
+    fn refuses_keys(&self, _target: &Self::Target) -> bool {
+        false
     }
     /// Windows may restore the captured foreground target; macOS validates its
     /// current target. Never discover or read the target's document contents.
@@ -110,10 +116,15 @@ impl<P: Port> Inserter<P> {
         if !port.admissible(target) {
             return Outcome::failed("insertion_target_changed");
         }
+        let refused = port.refuses_keys(target);
         let revision = match port.write(&saved, text) {
             Ok(value) => value,
             Err(code) => return Outcome::failed(code),
         };
+        // Nothing is pressed and nothing restored: the person pastes the text themselves.
+        if refused {
+            return Outcome::failed("insertion_elevated_target");
+        }
         let mut pressed = false;
         let mut touched_keys = false;
         let sent = catch_unwind(AssertUnwindSafe(|| {

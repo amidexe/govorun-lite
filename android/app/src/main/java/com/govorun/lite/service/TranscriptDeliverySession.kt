@@ -4,8 +4,17 @@ import com.govorun.lite.shared.SharedDictationRules
 import org.json.JSONObject
 
 /** Native lifetime and text buffer; release decisions come from the common module. */
-internal class TranscriptDeliverySession(private val deferred: Boolean) {
+internal class TranscriptDeliverySession(val deferred: Boolean) {
     var connection: com.govorun.lite.stylization.PreparedStylesConnection? = null
+    /** Inserted as recognized, without text improvement («Удержание — без улучшения текста»). */
+    var plain = false
+        private set
+
+    fun markPlain() {
+        plain = true
+        connection?.close()
+        connection = null
+    }
     suspend fun deliver(block: suspend () -> Unit) { connection?.deliver(block) ?: block() }
     private var state: JSONObject? = null
     private var closed = false
@@ -13,8 +22,6 @@ internal class TranscriptDeliverySession(private val deferred: Boolean) {
     private val fragments = mutableListOf<String>()
     var fragmentCount = 0
         private set
-
-    fun minimumSilenceSeconds(selectedPause: () -> Float) = selectedPause()
 
     fun accept(text: String): String? {
         if (closed) return null

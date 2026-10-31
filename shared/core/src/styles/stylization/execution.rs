@@ -31,9 +31,16 @@ impl Foreground {
             return Err(Error::InvalidRequest);
         }
         let text = payload["text"].as_str().ok_or(Error::InvalidRequest)?;
-        let admitted = crate::style_text::admit(text.encode_utf16().collect())?;
+        let class = payload["requestClass"].as_str();
+        let product = crate::style_text::product(&payload)?.to_owned();
+        let admitted = crate::style_text::admit_class(text.encode_utf16().collect(), class)?;
         let credits = super::foreground::number(&admitted, "requiredCredits")? as usize;
-        let normal_budget = super::foreground::number(&admitted, "deadlineMillis")?;
+        let note = class.is_some();
+        let normal_budget = if note {
+            crate::dictation_timing::NOTE_MILLIS
+        } else {
+            super::foreground::number(&admitted, "deadlineMillis")?
+        };
         // Read once from the already cached profile: no freshness gate or I/O.
         // Missing/invalid optional metadata preserves the old length budget.
         let slow_percent = self.account.profile().and_then(|p|
@@ -53,7 +60,7 @@ impl Foreground {
         let _active = tokio::select! {
             biased;
             _ = boundary.changed() => return Err(Error::SessionChanged),
-            slot = tokio::time::timeout_at(end, self.active.acquire()) => slot
+            slot = tokio::time::timeout_at(end, if note { &self.notes } else { &self.active }.acquire()) => slot
                 .map_err(|_| {
                     notes.1.timeout("overall", limit);
                     Error::StyleTransport(super::Failure::Deadline)
@@ -105,18 +112,28 @@ impl Foreground {
                 false,
                 false,
             )?;
-            observed.admission(credits)?;
             let profile = self.account.profile().ok_or(Error::SignedOut)?;
+            // Another product's request (Говорун.Эхо's note) spends that product's own allowance, its line in
+            // styleAccess.products, under its scope: a dictation day that ran out does not stop it, and it never spends
+            // dictation's day. Without its line it never falls back to dictation's.
+            let line = if product == crate::style_text::DICTATION { None }
+                else { Some(product_scope(profile.wire(), &product, state.usage()?)?) };
+            match observed.admission(credits) {
+                Err(Error::StyleAccess(super::AccessFailure::DailyLimit | super::AccessFailure::PeriodLimit))
+                    if line.is_some() => {}
+                admitted => {
+                    admitted?;
+                }
+            }
             let usage = &profile.wire()["styleAccess"]["usageBalance"];
+            let (day, admitted_scope) = match line {
+                Some((scope, day)) => (Some(day), Some(scope)),
+                None => (usage["day"].as_str().map(str::to_owned), usage["scopeId"].as_str().map(str::to_owned)),
+            };
             let result = self
                 .mutate(
                     epoch,
-                    Action::Lease {
-                        id: lease_id.clone(),
-                        count: credits,
-                        day: usage["day"].as_str().map(str::to_owned),
-                        admitted_scope: usage["scopeId"].as_str().map(str::to_owned),
-                    },
+                    Action::Lease { id: lease_id.clone(), count: credits, day, admitted_scope },
                 )
                 .await?;
             if !result.applied || result.selected.len() != credits {
@@ -187,6 +204,7 @@ impl Foreground {
                         .ok_or(Error::InvalidResponse)?
                         .into(),
                     end,
+                    note,
                     notes,
                 )
                 .await
@@ -253,4 +271,28 @@ impl Foreground {
                 >= u128::from(normal_budget) * u128::from(slow_percent),
         })
     }
+}
+
+/// A product's scope and day for its request, from its line in the profile. Refused when its day is used up, counting
+/// what this device spent and has not reported yet (the last credit left still funds a whole request): «no credits
+/// now» (ReserveEmpty), which Govorun's bridge tells the app as its day's limit reached. Refused as «usage unknown»
+/// when the profile has no line for the product, as one kept from before the server listed products: the account is
+/// read again, and the request never counts as a dictation.
+fn product_scope(profile: &Value, product: &str, ledger: crate::usage_ledger::Ledger) -> Result<(String, String)> {
+    let line = profile["styleAccess"]["products"].as_array().into_iter().flatten()
+        .find(|line| line["product"] == product).unwrap_or(&Value::Null);
+    let (Some(scope), Some(day)) = (line["scopeId"].as_str(), line["day"].as_str()) else {
+        return Err(Error::StyleAccess(super::AccessFailure::UsageUnavailable));
+    };
+    let unreported = crate::usage_ledger::apply(
+        ledger,
+        crate::usage_ledger::Event::Outstanding { scope_id: scope.into(), day: Some(day.into()) },
+    )?
+    .outstanding_total
+    .unwrap_or(0) as u64;
+    let today = line["remainingToday"].as_u64().unwrap_or(0);
+    if today <= unreported {
+        return Err(Error::StyleAccess(super::AccessFailure::ReserveEmpty));
+    }
+    Ok((scope.into(), day.into()))
 }

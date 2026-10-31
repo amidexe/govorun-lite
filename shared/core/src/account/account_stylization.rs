@@ -181,7 +181,7 @@ impl AccountHost {
                             host.core.get().ok_or(Error::StorageUnavailable)?.current(*session_generation)?;
                             true
                         } else { false };
-                        let selected = ports.stylization_enabled().await?;
+                        let selected = ports.stylization_allowed(command.for_product()).await?;
                         let online = if needs_network { ports.network_available().await? } else { false };
                         guard.run_configured(owner, command, deliver, selected, online).await
                     } else {

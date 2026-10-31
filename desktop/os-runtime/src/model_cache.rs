@@ -1,8 +1,11 @@
 //! Local compute resources; no durable preferences or user data.
 //! Jobs hold session handles independently of this cache.
 use std::time::{Duration, Instant};
-pub const IDLE_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 pub use govorun_core::features::dictation::inputs::Compute;
+/// The idle time of a settings choice in minutes; 0 keeps the resource loaded.
+pub fn idle_timeout(minutes: u32) -> Option<Duration> {
+    (minutes != 0).then(|| Duration::from_secs(u64::from(minutes) * 60))
+}
 pub trait Loader {
     type Key: Clone + PartialEq;
     type Session: Clone;
@@ -19,17 +22,18 @@ pub struct Cache<L: Loader> {
     loader: L,
     desired: L::Key,
     retained: Option<(L::Key, L::Session)>,
-    keep: bool,
+    /// Idle time before the resource is released; `None` keeps it loaded.
+    timeout: Option<Duration>,
     idle_since: Option<Instant>,
     failed: bool,
 }
 impl<L: Loader> Cache<L> {
-    pub fn new(loader: L, desired: L::Key, keep: bool) -> Self {
+    pub fn new(loader: L, desired: L::Key, timeout: Option<Duration>) -> Self {
         Self {
             loader,
             desired,
             retained: None,
-            keep,
+            timeout,
             idle_since: None,
             failed: false,
         }
@@ -70,19 +74,19 @@ impl<L: Loader> Cache<L> {
     pub fn configure(
         &mut self,
         desired: L::Key,
-        keep: bool,
+        timeout: Option<Duration>,
         busy: bool,
     ) -> Result<(), &'static str> {
         if desired == self.desired {
-            if keep != self.keep {
+            if timeout != self.timeout {
                 self.idle_since = None;
             }
-            self.keep = keep;
+            self.timeout = timeout;
             return Ok(());
         }
         if busy {
             self.desired = desired;
-            self.keep = keep;
+            self.timeout = timeout;
             self.failed = false;
             self.idle_since = None;
             return Ok(());
@@ -95,14 +99,18 @@ impl<L: Loader> Cache<L> {
         };
         self.retained = Some((desired.clone(), session));
         self.desired = desired;
-        self.keep = keep;
+        self.timeout = timeout;
         self.failed = false;
         self.idle_since = None;
         Ok(())
     }
     /// The silent host timer cannot unload a capture or queued recognition.
     pub fn idle(&mut self, now: Instant, busy: bool) -> bool {
-        if self.keep || busy {
+        let Some(timeout) = self.timeout else {
+            self.idle_since = None;
+            return false;
+        };
+        if busy {
             self.idle_since = None;
             return false;
         }
@@ -110,7 +118,7 @@ impl<L: Loader> Cache<L> {
             return false;
         }
         let since = *self.idle_since.get_or_insert(now);
-        if now.saturating_duration_since(since) < IDLE_TIMEOUT {
+        if now.saturating_duration_since(since) < timeout {
             return false;
         }
         self.retained = None;
@@ -119,11 +127,10 @@ impl<L: Loader> Cache<L> {
         true
     }
     pub fn idle_deadline(&self) -> Option<Instant> {
-        if self.keep || self.retained.is_none() {
-            None
-        } else {
-            self.idle_since
-                .and_then(|since| since.checked_add(IDLE_TIMEOUT))
+        if self.retained.is_none() {
+            return None;
         }
+        let timeout = self.timeout?;
+        self.idle_since.and_then(|since| since.checked_add(timeout))
     }
 }

@@ -8,6 +8,7 @@ import com.govorun.lite.model.stylization.TextStyle
 import com.govorun.lite.stylization.titleRes
 import com.govorun.lite.util.AccessibilityHelper
 import com.govorun.lite.util.Prefs
+import com.govorun.lite.util.VolumeKeyPrefs
 import com.govorun.lite.util.RecordingModePrefs
 import com.govorun.lite.util.StylizationPrefs
 import com.govorun.lite.util.UiAppearancePrefs
@@ -39,6 +40,8 @@ class SettingsSnapshotReader(context: Context) {
             edgeMarginCustomized = com.govorun.lite.overlay.BubblePlacement.hasCustomMargin(appContext),
             recordingMode = RecordingModePrefs.read(appContext),
             haptics = Prefs.isHapticsEnabled(appContext),
+            volumeKey = VolumeKeyPrefs.isEnabled(appContext),
+            holdPlain = RecordingModePrefs.isHoldPlain(appContext),
             positionLocked = Prefs.isBubblePositionLocked(appContext),
             pause = Prefs.getPauseLength(appContext),
             stylizationSummary = stylizationSummary(),

@@ -4,6 +4,7 @@ export interface BusinessCommandSettings {
   applicationEnabled: boolean;
   bypass: boolean;
   currentTerms: number;
+  digest: boolean;
   draft: boolean;
   officialEnabled: boolean;
   selfHostedEnabled: boolean;

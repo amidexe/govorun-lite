@@ -46,7 +46,11 @@ fn evaluate(command: BusinessCommand) -> Result<Value> {
         BusinessCommand::StyleStartAdmission { state, event } => {
             crate::style_start::transition(state, event)
         }
-        BusinessCommand::StyleTextAdmission { units } => crate::style_text::admit(units),
+        BusinessCommand::StyleTextAdmission { units, request_class } => match request_class.as_deref() {
+            None => crate::style_text::admit(units),
+            Some(crate::style_text::DIGEST) => crate::style_text::digest_price(&units),
+            Some(_) => Err(crate::Error::InvalidRequest),
+        },
         BusinessCommand::CreditLease {
             state,
             observations,

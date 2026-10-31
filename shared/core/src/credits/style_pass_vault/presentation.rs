@@ -81,6 +81,7 @@ pub fn observe(
         recovery_in_flight,
         daily_reset_passed: reset,
         reserve_return: profile["styleAccess"]["reserveReturnProtocol"] == "v1_receipt_deposit",
+        products: Vec::new(),
     };
     crate::style_window::bind_profile(&mut facts, profile)?;
     let mut context = crate::style_refill::Context {

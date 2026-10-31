@@ -16,6 +16,8 @@ data class SettingsUiState(
     val edgeMargin: Int,
     val recordingMode: String,
     val haptics: Boolean,
+    val volumeKey: Boolean = false,
+    val holdPlain: Boolean = false,
     val positionLocked: Boolean,
     val pause: String,
     val stylizationSummary: String,
@@ -33,7 +35,7 @@ data class SettingsUiState(
     val birdColor: String = com.govorun.lite.overlay.BirdColors.DEFAULT,
     val edgeMarginMax: Int = Prefs.BUBBLE_EDGE_MARGIN_MAX,
     val legacyVoiceMarker: Boolean = false,
-    val rememberLastDictation: Boolean = false,
+    val rememberLastDictation: Boolean = true,
     val noNetworkInRoaming: Boolean = true,
     /** The documents base did not open: settings read as defaults and are not kept. */
     val storageUnavailable: Boolean = false,

@@ -1,0 +1,125 @@
+# DRAFT: review and admit this exact file into the public export before enabling.
+# Never run this signing workflow against the private development repository.
+name: Windows SignPath bootstrap (test certificate only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-signpath-test
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'amidexe/govorun-lite' && github.ref == 'refs/heads/main'
+    runs-on: windows-2025
+    timeout-minutes: 60
+    outputs:
+      artifact_id: ${{ steps.unsigned.outputs.artifact-id }}
+      version: ${{ steps.metadata.outputs.version }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Prepare the same Rust and Visual C++ toolchains
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          rustup toolchain install 1.98.1 --profile minimal
+          if ($LASTEXITCODE -ne 0) { throw 'Rust installation failed' }
+          rustup override set 1.98.1
+          if ($LASTEXITCODE -ne 0) { throw 'Rust selection failed' }
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $install = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if ($LASTEXITCODE -ne 0 -or !$install) { throw 'Visual C++ toolchain missing' }
+          $vcvars = Join-Path $install 'VC\Auxiliary\Build\vcvars64.bat'
+          $values = & cmd.exe /d /c ('"' + $vcvars + '" >nul && set')
+          if ($LASTEXITCODE -ne 0) { throw 'Visual C++ environment failed' }
+          foreach ($value in $values) {
+            if ($value -match '^([^=]+)=(.*)$') {
+              # Available to the build below without printing the environment.
+              [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
+            }
+          }
+          $flags = @()
+          foreach ($prefix in @($env:GITHUB_WORKSPACE, $env:USERPROFILE)) {
+            $replacement = if ($prefix -eq $env:GITHUB_WORKSPACE) { 'govorun-source' } else { 'build-home' }
+            foreach ($form in (@($prefix, $prefix.Replace('\', '/'), $prefix.ToLowerInvariant(), $prefix.Replace('\', '/').ToLowerInvariant()) | Select-Object -Unique)) {
+              $flags += "--remap-path-prefix=$form=$replacement"
+            }
+          }
+          $env:CARGO_ENCODED_RUSTFLAGS = $flags -join [char]0x1f
+          & ./desktop/scripts/build-windows.ps1
+          git diff --exit-code -- desktop/package-lock.json desktop/src-tauri/Cargo.lock
+          if ($LASTEXITCODE -ne 0) { throw 'Build changed dependency locks' }
+      - name: Reject original build paths in the executable
+        shell: pwsh
+        run: |
+          $bytes = [IO.File]::ReadAllBytes('desktop/target/release/Govorun.exe')
+          foreach ($encoding in @([Text.Encoding]::UTF8, [Text.Encoding]::Unicode)) {
+            $text = $encoding.GetString($bytes)
+            foreach ($prefix in @($env:GITHUB_WORKSPACE, $env:USERPROFILE)) {
+              foreach ($form in @($prefix, $prefix.Replace('\', '/'))) {
+                if ($text.IndexOf($form, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                  throw 'Original build path remains in the executable; do not sign'
+                }
+              }
+            }
+          }
+      - name: Record the source version
+        id: metadata
+        shell: pwsh
+        run: |
+          $version = (Get-Content desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          "version=$version" >> $env:GITHUB_OUTPUT
+      - name: Upload only the application's EXE
+        id: unsigned
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: signpath-test-input-${{ github.run_id }}
+          path: desktop/target/release/Govorun.exe
+          if-no-files-found: error
+          retention-days: 3
+
+  sign-test:
+    needs: build
+    if: github.repository == 'amidexe/govorun-lite' && github.ref == 'refs/heads/main'
+    runs-on: windows-2025
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+    # Fresh runner: no checkout, npm, compilation, user machine or other signing keys.
+    steps:
+      - name: Check the dedicated CI credential
+        shell: pwsh
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        run: |
+          if (!$env:SIGNPATH_API_TOKEN) { throw 'SIGNPATH_API_TOKEN is not configured' }
+      - name: Request a test signature
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: 2ec4c26d-4a2d-4959-8dcf-78ffedbe6cb1
+          project-slug: govorun-lite
+          signing-policy-slug: test-signing
+          artifact-configuration-slug: windows-application-zip
+          github-artifact-id: ${{ needs.build.outputs.artifact_id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-test
+          parameters: |
+            version: ${{ toJSON(needs.build.outputs.version) }}
+      - name: Keep the test result (never publish to a release or updater)
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: windows-test-signed-not-for-distribution-${{ github.run_id }}
+          path: signed-test/Govorun.exe
+          if-no-files-found: error
+          retention-days: 3

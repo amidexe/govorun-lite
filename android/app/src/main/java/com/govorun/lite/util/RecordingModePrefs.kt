@@ -32,4 +32,12 @@ internal object RecordingModePrefs {
         write(context, REPEAT_TAP)
     }
 
+    /** «Удержание — без улучшения текста»: a dictation held on the bubble or on «−» inserts what was recognized, for a quick message. */
+    fun isHoldPlain(context: Context): Boolean =
+        GovorunPreferences.of(context, StorageKeys.PREFS_FILE).getBoolean(StorageKeys.Key.HOLD_PLAIN, false)
+
+    fun setHoldPlain(context: Context, plain: Boolean) {
+        GovorunPreferences.of(context, StorageKeys.PREFS_FILE).edit().putBoolean(StorageKeys.Key.HOLD_PLAIN, plain).apply()
+    }
+
 }

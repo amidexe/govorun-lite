@@ -1,6 +1,6 @@
 {
   "name": "govorun-desktop",
-  "version": "2.1.112",
+  "version": "2.1.116",
   "private": true,
   "type": "module",
   "scripts": {

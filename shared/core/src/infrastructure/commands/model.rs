@@ -72,6 +72,9 @@ pub(super) enum BusinessCommand {
     },
     StyleTextAdmission {
         units: Vec<u16>,
+        /// "digest": the price of Говорун.Эхо's итоги, answered even for a text they refuse.
+        #[serde(default)]
+        request_class: Option<String>,
     },
     CreditLease {
         state: Option<crate::credit_lease::State>,
