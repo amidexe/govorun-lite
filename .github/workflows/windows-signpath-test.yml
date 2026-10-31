@@ -31,6 +31,8 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          # Native dependencies embed __FILE__; keep their cache outside the user profile.
+          $env:CARGO_HOME = Join-Path $env:RUNNER_TEMP 'govorun-cargo'
           rustup toolchain install 1.98.1 --profile minimal
           if ($LASTEXITCODE -ne 0) { throw 'Rust installation failed' }
           rustup override set 1.98.1
@@ -62,15 +64,20 @@ jobs:
         shell: pwsh
         run: |
           $bytes = [IO.File]::ReadAllBytes('desktop/target/release/Govorun.exe')
+          $blocked = @()
           foreach ($encoding in @([Text.Encoding]::UTF8, [Text.Encoding]::Unicode)) {
             $text = $encoding.GetString($bytes)
             foreach ($prefix in @($env:GITHUB_WORKSPACE, $env:USERPROFILE)) {
+              $scope = if ($prefix -eq $env:GITHUB_WORKSPACE) { 'workspace' } else { 'profile' }
               foreach ($form in @($prefix, $prefix.Replace('\', '/'))) {
                 if ($text.IndexOf($form, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
-                  throw 'Original build path remains in the executable; do not sign'
+                  $blocked += "$scope/$($encoding.WebName)"
                 }
               }
             }
+          }
+          if ($blocked.Count) {
+            throw ('Original build path remains; do not sign: ' + (($blocked | Select-Object -Unique) -join ', '))
           }
       - name: Record the source version
         id: metadata
