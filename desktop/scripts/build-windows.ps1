@@ -1,4 +1,4 @@
-﻿param()
+﻿param([switch]$PrepareExternalSigning)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -45,9 +45,36 @@ try {
     $config = @{identifier='com.govorun.app';productName='Говорун';
         plugins=@{updater=@{pubkey=$key}};
         bundle=@{targets=@('nsis');createUpdaterArtifacts=$false;resources=$resources}}
+    if($PrepareExternalSigning){
+        if($env:CARGO_TARGET_DIR -cne (Join-Path $desktop 'target')){throw 'External signing requires the repository-local target directory'}
+        . "$PSScriptRoot\windows-signpath-package.ps1"
+        $external=Join-Path $output 'external-signing'
+        New-Item -ItemType Directory -Path $external|Out-Null
+        $version=(Get-Content "$desktop\src-tauri\tauri.conf.json" -Raw|ConvertFrom-Json).version
+        Write-GovorunNsisSigningHook "$external\full-hook.nsh" 'Capture' 'full' $version
+        $config.bundle.useLocalToolsDir=$true
+        $config.bundle.windows=@{nsis=@{installerHooks="$external\full-hook.nsh"}}
+    }
     $configPath = Join-Path $output 'local-tauri-bundle.json'
     $config | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 $configPath
     Invoke-Build 'npm.cmd' @('exec', '--', 'tauri', 'build', '--ci', '--features', 'custom-protocol', '--config', $configPath)
+    if($PrepareExternalSigning){
+        Save-GovorunNsisRecipe 'full'
+        # Same host and installer identity; omit only the separately retained model.
+        $leanResources=@{}
+        foreach($path in $resources.Keys){if($path -ne "$output\native"){$leanResources[$path]=$resources[$path]}}
+        foreach($entry in Get-ChildItem "$output\native"){
+            if($entry.Name -ne 'Models'){$leanResources[$entry.FullName]='native/'+$entry.Name+$(if($entry.PSIsContainer){'/'}else{''})}
+        }
+        Write-GovorunNsisSigningHook "$external\update-hook.nsh" 'Capture' 'update' $version
+        $config.bundle.resources=$leanResources
+        $config.bundle.windows.nsis.installerHooks="$external\update-hook.nsh"
+        $leanConfig=Join-Path $output 'local-tauri-update.json'
+        $config|ConvertTo-Json -Depth 8|Set-Content -Encoding utf8 $leanConfig
+        Invoke-Build 'npm.cmd' @('exec','--','tauri','bundle','--ci','--features','custom-protocol','--config',$leanConfig,'--bundles','nsis')
+        Save-GovorunNsisRecipe 'update'
+        Complete-GovorunExternalSigningPreparation $version
+    }
     Write-Host "PASS local build: $output"
 } finally {
     Pop-Location

@@ -229,4 +229,4 @@ pwsh -File desktop/scripts/build-windows.ps1
 
 ---
 
-[govorun.club](https://govorun.club) · [Условия и политика](https://govorun.club/legal) · [Тема на 4PDA](https://4pda.to/forum/index.php?showtopic=1121176) · [Говорун 1 — только офлайн](https://github.com/amidexe/govorun-lite/releases/tag/v1.0.15)
+[govorun.club](https://govorun.club) · [Условия и политика](https://govorun.club/legal) · [Code signing policy](CODE_SIGNING_POLICY.md) · [Тема на 4PDA](https://4pda.to/forum/index.php?showtopic=1121176) · [Говорун 1 — только офлайн](https://github.com/amidexe/govorun-lite/releases/tag/v1.0.15)
