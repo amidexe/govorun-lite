@@ -10,12 +10,16 @@ $GovorunPackagingRoot=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 function Write-GovorunNsisSigningHook([string]$Path,[string]$Phase,[string]$Variant,[string]$Version,[string]$SignedRoot='') {
     if($Phase -notin @('Capture','Import') -or $Variant -notin @('full','update')){throw 'Invalid signing phase'}
     $root=$GovorunPackagingRoot
+    # A Windows PowerShell child of pwsh inherits incompatible module paths.
+    # Keep NSIS callbacks in the same PowerShell installation as the build.
+    $shell=Join-Path $PSHOME $(if($PSVersionTable.PSEdition -eq 'Core'){'pwsh.exe'}else{'powershell.exe'})
+    if(!(Test-Path -LiteralPath $shell -PathType Leaf)){throw 'Packaging PowerShell host missing'}
     $capture="$root\desktop\release\windows\external-signing\capture\$Variant"
     $arguments="-Mode $Phase -File `"%1`" -UnsignedDirectory `"$capture`" -Version $Version"
     if($Phase -eq 'Capture'){$arguments+=" -Application `"$root\desktop\target\release\Govorun.exe`""}
     else{$arguments+=" -SignedDirectory `"$SignedRoot\$Variant`" -Python `"$Python`""}
     $body="!include `"$root\desktop\src-tauri\installer\cleanup.nsh`"`r`n"+
-        "!uninstfinalize 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$PSScriptRoot\windows-signpath-hook.ps1`" $arguments' = 0`r`n"
+        "!uninstfinalize '`"$shell`" -NoProfile -ExecutionPolicy Bypass -File `"$PSScriptRoot\windows-signpath-hook.ps1`" $arguments' = 0`r`n"
     [IO.File]::WriteAllText($Path,$body,[Text.UTF8Encoding]::new($true))
 }
 
