@@ -1,6 +1,8 @@
 package com.govorun.lite.api
 
 internal object ContinuousRecognitionProfile {
+    fun isFile(profile: Int): Boolean = profile and RecognitionApi.CONTINUOUS_PROFILE_MASK == RecognitionApi.CONTINUOUS_PROFILE_FILE
+
     fun minimumSilenceSeconds(
         profile: Int,
         defaultSeconds: Float,

@@ -221,7 +221,7 @@ class RecognitionService : Service() {
             ContinuousSession(
                 identity.uid, identity.packageName, safeSessionId, pcmStream, minimumSilenceSeconds, safeCallback,
                 ContinuousRecognitionProfile.wordTimestampsRequested(profile),
-                ContinuousRecognitionProfile.dictationSignalRequested(profile),
+                ContinuousRecognitionProfile.dictationSignalRequested(profile), ContinuousRecognitionProfile.isFile(profile),
             )
         if (!registerExternal(session)) {
             pcmStream.closeQuietly()
@@ -373,7 +373,7 @@ class RecognitionService : Service() {
         private val minimumSilenceSeconds: Float,
         private val callback: IContinuousRecognitionCallback,
         private val wordTimestamps: Boolean = false,
-        dictationSignal: Boolean = false,
+        dictationSignal: Boolean = false, private val prepared: Boolean = false,
     ) : RecognitionProviderSession {
         override var recognitionLease: RecognitionSessionArbiter.Lease? = null
         private val terminal = AtomicBoolean(false)
@@ -413,7 +413,7 @@ class RecognitionService : Service() {
                             },
                             onTimedResult = if (wordTimestamps) ::deliverTimed else null,
                             hold = hold,
-                            yieldToDictation = recordingWait,
+                            yieldToDictation = recordingWait, prepared = prepared,
                         ).also { pipeline = it }.run()
                         finishStopped()
                     } catch (_: CancellationException) {

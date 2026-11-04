@@ -9,6 +9,9 @@ object RecognitionApi {
 
     const val CONTINUOUS_PROFILE_DEFAULT = 0
     const val CONTINUOUS_PROFILE_TASK_FLOW = 1
+    // A complete recording: quiet boundaries split passes, without treating VAD misses as silence.
+    const val CONTINUOUS_PROFILE_FILE = 2
+    const val CAPABILITY_FILE_AUDIO_COVERAGE = 1 shl 6
     const val CAPABILITY_CONTINUOUS_PROFILES = 1
     const val CAPABILITY_PRIMARY_APP_PREEMPTION = 1 shl 1
     const val CAPABILITY_LONG_FORM_FILES = 1 shl 2
@@ -24,7 +27,7 @@ object RecognitionApi {
             CAPABILITY_LONG_FORM_FILES or
             CAPABILITY_WORD_TIMESTAMPS or
             CAPABILITY_SHARED_ENGINE or
-            CAPABILITY_DICTATION_SIGNAL
+            CAPABILITY_DICTATION_SIGNAL or CAPABILITY_FILE_AUDIO_COVERAGE
     // OR-ed into the profile of recognizeContinuousWithProfile to receive onFinalResultTimed.
     const val CONTINUOUS_FLAG_WORD_TIMESTAMPS = 1 shl 16
     const val CONTINUOUS_FLAG_DICTATION_SIGNAL = 1 shl 17

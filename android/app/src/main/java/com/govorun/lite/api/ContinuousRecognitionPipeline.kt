@@ -48,15 +48,19 @@ internal class ContinuousRecognitionPipeline(
 
     suspend fun run() =
         withContext(Dispatchers.IO) {
-            val vad = VadRecorder.createSessionVad(context, minimumSilenceSeconds)
+            val vad = if (prepared) null else VadRecorder.createSessionVad(context, minimumSilenceSeconds)
             val transcriber = OfflineTranscriber.getInstance(context)
             try {
-                vad.reset()
+                vad?.reset()
                 onReady()
                 ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { input ->
                     coroutineScope {
                         val segments = Channel<Segment>(SEGMENT_QUEUE_CAPACITY)
-                        val reader = launch { readSegments(input, vad, segments) }
+                        val reader = launch {
+                            if (vad != null) readSegments(input, vad, segments) else try {
+                                FilePcmPasses.read(input) { pcm, start -> segments.send(Segment(pcm, start)) }
+                            } finally { segments.close() }
+                        }
                         var sequence = 0L
                         try {
                             for (segment in segments) {
@@ -106,7 +110,7 @@ internal class ContinuousRecognitionPipeline(
                     }
                 }
             } finally {
-                runCatching { vad.release() }
+                runCatching { vad?.release() }
             }
         }
 
@@ -182,32 +186,13 @@ internal class ContinuousRecognitionPipeline(
                 val pcm = segmenter.rest()
                 var from = 0
                 while (from < pcm.size) {
-                    val to = quietestCut(pcm, from)
+                    val to = FilePcmPasses.quietestCut(pcm, from)
                     segments.send(Segment(pcm.copyOfRange(from, to), restStartSample + from / BYTES_PER_SAMPLE))
                     from = to
                 }
             }
             segments.close()
         }
-    }
-
-    /** Ends a pass at the quietest 20 ms in its last 5 s, so a cut rarely splits a word. */
-    private fun quietestCut(pcm: ByteArray, from: Int): Int {
-        val limit = from + MAX_PASS_BYTES
-        if (limit >= pcm.size) return pcm.size
-        var best = limit
-        var bestEnergy = Long.MAX_VALUE
-        var start = limit - CUT_SEARCH_BYTES
-        while (start + CUT_STEP_BYTES <= limit) {
-            var energy = 0L
-            for (i in start until start + CUT_STEP_BYTES step BYTES_PER_SAMPLE) {
-                val sample = (pcm[i].toInt() and 0xFF) or (pcm[i + 1].toInt() shl 8)
-                energy += kotlin.math.abs(sample.toShort().toInt())
-            }
-            if (energy < bestEnergy) { bestEnergy = energy; best = start + CUT_STEP_BYTES / 2 }
-            start += CUT_STEP_BYTES
-        }
-        return best - best % BYTES_PER_SAMPLE
     }
 
     private fun InputStream.readWindow(target: ByteArray): Int {
@@ -230,9 +215,6 @@ internal class ContinuousRecognitionPipeline(
         const val WINDOW_BYTES = VAD_WINDOW_SAMPLES * BYTES_PER_SAMPLE
         const val BYTES_PER_MILLISECOND = SAMPLE_RATE * BYTES_PER_SAMPLE / 1_000
         const val MIN_TAIL_BYTES = SAMPLE_RATE * BYTES_PER_SAMPLE / 4
-        const val MAX_PASS_BYTES = RecognitionApi.MAX_PASS_SECONDS * SAMPLE_RATE * BYTES_PER_SAMPLE
-        const val CUT_SEARCH_BYTES = 5 * SAMPLE_RATE * BYTES_PER_SAMPLE
-        const val CUT_STEP_BYTES = SAMPLE_RATE * BYTES_PER_SAMPLE / 50
         // Live phrases go first in PhraseQueue and never pile up; for a file a few phrases of read-ahead
         // are enough, and every open session holds this many phrases of PCM.
         const val SEGMENT_QUEUE_CAPACITY = 4
