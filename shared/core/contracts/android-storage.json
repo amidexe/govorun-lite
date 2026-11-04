@@ -18,6 +18,7 @@
       "default": "app.document"
     },
     "govorun_ui_v2": {"default": "app.document"},
+    "govorun_product_notices": {"default": "app.document"},
     "govorun_local_diagnostic_journal_v1": {"default": "diagnostics.journal"},
     "govorun_stylization_diagnostics_v2": {"default": "diagnostics.journal"},
     "recognition_api_authorization_v1": {"default": "recognitionApi.document"},

@@ -56,13 +56,15 @@ pub(crate) fn evaluate(command: Command) -> Result<Value> {
         Command::Prepare { text, original, marker, fallback, has_outcome_pass, latency_known } => {
             let text = String::from_utf16(&text).map_err(|_| Error::InvalidRequest)?;
             let characters = style_text::count(&original)?;
-            let insert = !text.trim().is_empty();
-            let rendered = if insert && (characters >= MINIMUM || marker == Marker::LegacyText) {
+            let layout = crate::dictionary_replacement::is_layout(&text);
+            let insert = !text.trim().is_empty() || layout;
+            let marked = text.trim_matches(|c: char| c.is_whitespace() && !matches!(c, '\n' | '\t'));
+            let rendered = if insert && !layout && (characters >= MINIMUM || marker == Marker::LegacyText) {
                 match marker {
                     Marker::Off => text,
-                    Marker::Microphone => format!("{SYMBOL} {}", text.trim()),
-                    Marker::Text => format!("{}\n{SIGNATURE}", text.trim()),
-                    Marker::LegacyText => format!("{}\n[текст распознан с голоса]", text.trim()),
+                    Marker::Microphone => format!("{SYMBOL} {marked}"),
+                    Marker::Text => format!("{marked}\n{SIGNATURE}"),
+                    Marker::LegacyText => format!("{}\n[текст распознан с голоса]", marked),
                 }
             } else { text };
             let report = has_outcome_pass && latency_known;

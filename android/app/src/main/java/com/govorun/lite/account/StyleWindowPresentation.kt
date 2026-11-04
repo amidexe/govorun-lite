@@ -17,7 +17,7 @@ internal data class StyleWindowPresentation(
     val prepareInBackground: Boolean,
     val processingReadiness: StyleProcessingReadiness,
     val quota: StyleQuotaPresentation? = null,
-    /** The own limits of Govorun's products besides dictation (Говорун.Эхо, later others). */
+    /** The own limits of Govorun's products besides dictation (Говорун Эхо, later others). */
     val products: List<ProductWindow> = emptyList(),
 )
 

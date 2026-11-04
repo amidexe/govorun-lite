@@ -30,9 +30,6 @@ internal class BubbleVisibilityController(
     @Volatile
     private var alwaysShow = false
 
-    @Volatile
-    private var silence = false
-
     private var foregroundPackage: String? = null
     private val keyguard = service.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
     private val showHandler = Handler(Looper.getMainLooper())
@@ -72,7 +69,6 @@ internal class BubbleVisibilityController(
         if (visibilityChanged && !shouldShow) stopRecording()
         isImeVisible = shouldShow
         val effectiveVisibility = when {
-            silence -> View.GONE
             alwaysShow && !locked && !passwordField -> View.VISIBLE
             shouldShow -> View.VISIBLE
             else -> View.GONE
@@ -82,21 +78,14 @@ internal class BubbleVisibilityController(
             service,
             "Service: bubbleShow=$shouldShow ime=$imeVisible locked=$locked " +
                 "password=$passwordField search=$searchField appFiltered=$appFiltered " +
-                "alwaysShow=$alwaysShow silence=$silence foreground=$foregroundPackage",
+                "alwaysShow=$alwaysShow foreground=$foregroundPackage",
         )
     }
 
     fun isAlwaysShowEnabled() = alwaysShow
 
-    fun isSilenceEnabled() = silence
-
     fun toggleAlwaysShow() {
         alwaysShow = !alwaysShow
-        applyNow()
-    }
-
-    fun toggleSilence() {
-        silence = !silence
         applyNow()
     }
 
@@ -138,7 +127,6 @@ internal class BubbleVisibilityController(
         val locked = keyguard.isKeyguardLocked
         val passwordField = InputFieldFilter.isPasswordField(editorInfo())
         val visibility = when {
-            silence -> View.GONE
             locked || passwordField -> View.GONE
             alwaysShow -> View.VISIBLE
             isImeVisible -> View.VISIBLE

@@ -102,7 +102,7 @@ private data class ApprovedApp(
     val packageName: String,
     val icon: Drawable?,
     val recognition: Boolean = true,
-    /** Говорун.Эхо: the one app that may record by the volume key on the lock screen. */
+    /** Говорун Эхо: the one app that may record by the volume key on the lock screen. */
     val echo: Boolean = false,
     val volumeKey: Boolean = false,
     /** The person once pressed a smart function in the app, so its own tasks (итоги of a new note) go by themselves. */

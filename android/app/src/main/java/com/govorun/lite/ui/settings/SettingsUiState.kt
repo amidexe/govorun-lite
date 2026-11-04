@@ -7,6 +7,7 @@ import com.govorun.lite.model.settings.UiThemeMode
 import com.govorun.lite.model.settings.VoiceMarkerMode
 
 data class SettingsUiState(
+    val headsetMicrophone: Boolean = false,
     val selfHosted: Boolean = false,
     val themeMode: UiThemeMode,
     val dynamicColor: Boolean,
@@ -87,6 +88,7 @@ sealed interface SettingsEvent {
     data object OpenBenchmark : SettingsEvent
     data object OpenAuthorizedApps : SettingsEvent
     data object OpenAccessibility : SettingsEvent
+    data object OpenAbout : SettingsEvent
     data object OpenJournal : SettingsEvent
     data object ConfirmDisableService : SettingsEvent
     data object ClearDiagnostics : SettingsEvent
@@ -106,6 +108,7 @@ sealed interface SettingsEvent {
             this !is OpenAuthorizedApps &&
             this !is OpenAccessibility &&
             this !is OpenJournal &&
+            this !is OpenAbout &&
             this !is CopyDiagnostics &&
             this !is ConfirmDisableService
 }

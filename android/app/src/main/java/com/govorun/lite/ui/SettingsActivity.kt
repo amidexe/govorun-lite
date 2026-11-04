@@ -46,7 +46,7 @@ class SettingsActivity : ComponentActivity() {
         settings = AndroidSettingsModule.create(this)
         setContent {
             GovorunTheme {
-                SettingsScreen(uiState, ::handleEvent)
+                SettingsScreen(uiState, openNetwork = intent.getBooleanExtra(EXTRA_NETWORK, false), onEvent = ::handleEvent)
             }
         }
         lifecycleScope.launch {
@@ -87,6 +87,7 @@ class SettingsActivity : ComponentActivity() {
             SettingsEvent.OpenAppFilter -> open(AppFilterActivity::class.java)
             SettingsEvent.OpenBenchmark -> open(BenchmarkActivity::class.java)
             SettingsEvent.OpenAuthorizedApps -> open(AuthorizedAppsActivity::class.java)
+            SettingsEvent.OpenAbout -> open(AboutActivity::class.java)
             SettingsEvent.OpenAccessibility ->
                 AccessibilityHelper.openAccessibilitySettings(this)
             SettingsEvent.OpenJournal -> Unit // Nested navigation is owned by SettingsScreen.
@@ -133,5 +134,7 @@ class SettingsActivity : ComponentActivity() {
             else SubscriptionActivity::class.java,
         )
     }
+
+    companion object { const val EXTRA_NETWORK = "open_network" }
 
 }

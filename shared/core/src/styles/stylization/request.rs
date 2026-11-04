@@ -38,14 +38,12 @@ struct Payload {
     profanity_filter_enabled: bool,
     client_reliability: Option<Batch>,
     style_passes: Vec<String>,
-    /// Говорун.Эхо's note, set only by Android's Echo entry: "note" (light laid out as a note) or "header" (name and
-    /// description over any style). Every other client leaves it out.
-    echo_note: Option<String>,
-    /// "note" with an Echo note only: the server's note window instead of the length table. "digest" with the mark
-    /// "digest" only: Echo's итоги of a long note, their own length and price.
+    text_operation: Option<String>,
+    /// Shared workload classes: "note" for a short text task, "digest" for a long one.
+    /// The server's operation catalog decides which class an operation accepts.
     request_class: Option<String>,
-    /// The product the request is for, as Govorun's entry labelled it ("echo"); absent for a dictation. A note mark
-    /// always comes with its product (crate::style_text::product).
+    /// The product labelled by Govorun's entry ("echo"); absent for dictation.
+    /// Product text operations must carry this label (crate::style_text::product).
     product: Option<String>,
 }
 impl Request {
@@ -95,13 +93,10 @@ impl Request {
         {
             return Err(Error::InvalidRequest);
         }
-        let digest = Some(crate::style_text::DIGEST);
-        if payload.echo_note.as_deref().is_some_and(|mark| {
-            !(mark == "header" || (mark == "note" || Some(mark) == digest) && payload.style == "light")
-        }) || payload.request_class.as_deref().is_some_and(|class| {
-            !(class == "note" && payload.echo_note.is_some() && payload.echo_note.as_deref() != digest
-                || Some(class) == digest && payload.echo_note.as_deref() == digest)
-        }) || payload.echo_note.as_deref() == digest && payload.request_class.as_deref() != digest {
+        let operation = payload.text_operation.as_deref();
+        if operation.is_some_and(|name| !crate::style_text::valid_operation(name))
+            || operation.is_some() != payload.request_class.is_some()
+            || payload.request_class.as_deref().is_some_and(|class| !matches!(class, "note" | "digest")) {
             return Err(Error::InvalidRequest);
         }
         if let Some(batch) = payload.client_reliability {

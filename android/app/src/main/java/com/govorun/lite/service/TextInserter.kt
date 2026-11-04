@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.accessibility.AccessibilityNodeInfo
 import com.govorun.lite.stats.AndroidStatsRecorder
 import com.govorun.lite.stats.StatsStore
-import com.govorun.lite.transcriber.Dictionary
 import com.govorun.lite.util.AppLog
 
 /**
@@ -46,28 +45,25 @@ internal class TextInserter(
     private val onConfirmed: () -> Unit = {},
 ) {
 
-    fun insert(rawText: String): Boolean {
-        if (rawText.isBlank()) return false
-        val replaced = Dictionary.applyReplacements(service, rawText)
+    fun insert(text: String): Boolean {
+        // Delivery has admitted this payload; a dictionary command can be only a newline/tab.
+        if (text.isEmpty()) return false
         // Before the attempts: the text that "all paths failed" would drop stays copyable.
-        LastDictation.remember(service, replaced)
-        if (replaced != rawText) {
-            AppLog.log(service, "Dictionary applied (raw=${rawText.length} → result=${replaced.length})")
-        }
+        LastDictation.remember(service, text)
 
-        if (inputMethodBridge.tryCommit(replaced)) {
+        if (inputMethodBridge.tryCommit(text)) {
             onConfirmed()
-            AndroidStatsRecorder.create(service).addWords(StatsStore.countWords(replaced))
+            AndroidStatsRecorder.create(service).addWords(StatsStore.countWords(text))
             return true
         }
         // commitText didn't land (IC null or zombie). Walk the accessibility
         // tree and write directly via ACTION_SET_TEXT.
-        if (setTextOnFocusedEditable(replaced)) {
+        if (setTextOnFocusedEditable(text)) {
             onConfirmed()
-            AndroidStatsRecorder.create(service).addWords(StatsStore.countWords(replaced))
+            AndroidStatsRecorder.create(service).addWords(StatsStore.countWords(text))
             return true
         } else {
-            AppLog.log(service, "Paste: all paths failed — dropped len=${replaced.length}")
+            AppLog.log(service, "Paste: all paths failed — dropped len=${text.length}")
             return false
         }
     }

@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
     private var uiState by mutableStateOf(HomeUiState.loading())
     private var showJustFinished = false
     private var refreshJob: Job? = null
+    private var openNetworkRequest by mutableStateOf(0)
     private var refreshRequested = false
     private var continueStylization = false
     private var styleJustEnabled by mutableStateOf(false)
@@ -93,6 +94,8 @@ class MainActivity : ComponentActivity() {
         savedInstanceState?.getString("notificationConsentScope")?.let {
             pendingNotificationConsent = NotificationConsentRequest(it, savedInstanceState.getLong("notificationConsentRevision"))
         }
+        if (intent.getBooleanExtra(EXTRA_OPEN_NETWORK, false)) openNetworkRequest++
+        intent.removeExtra(EXTRA_OPEN_NETWORK)
         snapshotReader = HomeSnapshotReader(this)
         showJustFinished = intent.getBooleanExtra(EXTRA_JUST_FINISHED, false)
         intent.removeExtra(EXTRA_JUST_FINISHED)
@@ -114,6 +117,7 @@ class MainActivity : ComponentActivity() {
                 }
                 HomeScreen(
                     state = uiState,
+                    openNetworkRequest = openNetworkRequest,
                     onlineServicePaused = onlinePaused,
                     network = network ?: NetworkPolicy.Choice(),
                     styleJustEnabled = styleJustEnabled,
@@ -216,6 +220,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_NETWORK, false)) openNetworkRequest++
+        intent.removeExtra(EXTRA_OPEN_NETWORK)
         if (intent.getBooleanExtra(EXTRA_CONTINUE_STYLIZATION, false)) continueStylization = true
         intent.removeExtra(EXTRA_CONTINUE_STYLIZATION)
     }
@@ -241,18 +247,12 @@ class MainActivity : ComponentActivity() {
     private fun handleEvent(event: HomeEvent) {
         when (event) {
             HomeEvent.OpenSettings -> startActivity(Intent(this, SettingsActivity::class.java))
-            HomeEvent.OpenAbout -> startActivity(Intent(this, AboutActivity::class.java))
             is HomeEvent.SetOffline -> NetworkPolicy.setOffline(this, event.enabled)
             HomeEvent.OpenSubscription ->
                 startActivity(Intent(this, SubscriptionActivity::class.java))
-            HomeEvent.RetryConnection -> when (NetworkPolicy.activeRefusal(this)) {
-                com.govorun.lite.network.NetworkRefusal.OFFLINE -> NetworkPolicy.setOffline(this, false)
-                com.govorun.lite.network.NetworkRefusal.ROAMING ->
-                    startActivity(Intent(this, SettingsActivity::class.java))
-                null -> {
-                    GovorunAccountRepository.refreshAccount()
-                    if (GovorunAccountRepository.state.value.signedIn) lifecycleScope.launch { BillingRepository.load() }
-                }
+            HomeEvent.RetryConnection -> if (NetworkPolicy.activeRefusal(this) == null) {
+                GovorunAccountRepository.refreshAccount()
+                if (GovorunAccountRepository.state.value.signedIn) lifecycleScope.launch { BillingRepository.load() }
             }
             HomeEvent.OpenStylization ->
                 startActivity(Intent(this, StylizationActivity::class.java))
@@ -434,6 +434,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        const val EXTRA_OPEN_NETWORK = "open_network"
         const val EXTRA_JUST_FINISHED = "just_finished"
         const val EXTRA_CONTINUE_STYLIZATION = "continue_stylization"
     }

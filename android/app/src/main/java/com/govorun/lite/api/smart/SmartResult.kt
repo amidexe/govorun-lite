@@ -11,7 +11,7 @@ import org.json.JSONObject
  * and length rule as a dictation, with the style the person set for Echo in «Стили для приложений». The answer is the improved
  * text, or why there is none, in words Echo can act on.
  */
-internal object SmartImprove {
+internal object SmartResult {
     const val IMPROVE_OFF = "improve_off"
     const val TOO_SHORT = "too_short"
     const val TOO_LONG = "too_long"
@@ -72,8 +72,6 @@ internal object SmartImprove {
      */
     fun styles(context: android.content.Context): org.json.JSONArray {
         val array = org.json.JSONArray()
-        // «Заметка» first: a name, a description and the text laid out, as only Govorun's own server makes it.
-        array.put(JSONObject().put("value", com.govorun.lite.stylization.EchoNoteMark.NOTE_STYLE).put("title", context.getString(com.govorun.lite.R.string.echo_note_style)))
         listOf(com.govorun.lite.model.stylization.TextStyle.LIGHT, com.govorun.lite.model.stylization.TextStyle.FORMAL, com.govorun.lite.model.stylization.TextStyle.CONCISE).forEach {
             array.put(JSONObject().put("value", it.apiId).put("title", context.getString(it.titleRes)))
         }

@@ -14,6 +14,7 @@ sealed interface SettingsChange {
     data class SetVolumeKey(val enabled: Boolean) : SettingsChange
     data class SetHoldPlain(val plain: Boolean) : SettingsChange
     data class SetPositionLocked(val enabled: Boolean) : SettingsChange
+    data class SetHeadsetMicrophone(val enabled: Boolean) : SettingsChange
     data class SetPause(val value: String) : SettingsChange
     data class SetVoiceMarkerMode(val mode: VoiceMarkerMode) : SettingsChange
     data class SetHideInSearch(val enabled: Boolean) : SettingsChange

@@ -38,18 +38,22 @@ internal fun SubscriptionConnectionScreen(
         ) {
             BillingCard {
                 Column(verticalArrangement = Arrangement.spacedBy(ProductTokens.Spacing.Md)) {
-                    Text(
-                        if (busy && account.networkAvailable) "Проверяем доступ…"
-                        else account.connectionMessage.orEmpty(),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(if (busy && account.networkAvailable) "Диктовка работает офлайн. Дождитесь проверки доступа."
-                        else account.connectionHint, style = MaterialTheme.typography.bodyMedium)
+                    val refusal = account.networkRefusal.takeUnless { account.networkAvailable }
+                    if (refusal != null) NetworkStatus(com.govorun.lite.account.networkRefusalMessage(refusal))
+                    else {
+                        Text(
+                            if (busy && account.networkAvailable) "Проверяем доступ…"
+                            else account.connectionMessage.orEmpty(),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(if (busy && account.networkAvailable) "Дождитесь проверки доступа."
+                            else account.connectionHint, style = MaterialTheme.typography.bodyMedium)
+                    }
                     if (state.checkoutPurchasePending) {
                         Text("Статус начатой оплаты пока не проверен. Повторять оплату не нужно.",
                             style = MaterialTheme.typography.bodyMedium)
                     }
-                    OutlinedButton(onClick = onRetry, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+                    if (refusal == null) OutlinedButton(onClick = onRetry, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                         Text(if (busy) "Проверяем…" else "Повторить")
                     }
                 }

@@ -25,6 +25,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.govorun.lite.ui.NetworkStatus
+import com.govorun.lite.account.networkRefusalMessage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -84,26 +86,30 @@ internal fun StylePickerCard(
                 expanded = expanded,
                 onToggle = { expanded = !expanded },
             )
-            if (servicePaused) {
-                Text("Улучшение текста временно недоступно. Обычная диктовка работает.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = ProductTokens.Spacing.Lg, vertical = ProductTokens.Spacing.Sm))
-            }
-            if (!servicePaused && !offer.processingFailed) offer.processingMessage?.let { message ->
-                Text(message, style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = ProductTokens.Spacing.Lg, vertical = ProductTokens.Spacing.Sm))
-            }
-            offer.pauseMessage?.let { message ->
-                Column(modifier = Modifier.padding(ProductTokens.Spacing.Lg)) {
-                    // The pause in a headline, then a calm second line: dictation itself keeps working.
-                    val lines = message.split('\n', limit = 2)
-                    Text(lines[0], style = MaterialTheme.typography.bodyMedium)
-                    Text(lines.getOrNull(1) ?: "Диктовка работает как обычно.", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    TextButton(onClick = { onEvent(HomeEvent.OpenSubscription) }) {
-                        Text("Подписка и лимиты")
+            if (offer.networkRefusal != null) {
+                NetworkStatus(networkRefusalMessage(offer.networkRefusal), Modifier.padding(horizontal = ProductTokens.Spacing.Lg))
+            } else {
+                if (servicePaused) {
+                    Text("Улучшение текста временно недоступно. Обычная диктовка работает.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = ProductTokens.Spacing.Lg, vertical = ProductTokens.Spacing.Sm))
+                }
+                if (!servicePaused && !offer.processingFailed) offer.processingMessage?.let { message ->
+                    Text(message, style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = ProductTokens.Spacing.Lg, vertical = ProductTokens.Spacing.Sm))
+                }
+                offer.pauseMessage?.let { message ->
+                    Column(modifier = Modifier.padding(ProductTokens.Spacing.Lg)) {
+                        // The pause in a headline, then a calm second line: dictation itself keeps working.
+                        val lines = message.split('\n', limit = 2)
+                        Text(lines[0], style = MaterialTheme.typography.bodyMedium)
+                        Text(lines.getOrNull(1) ?: "Диктовка работает как обычно.", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        TextButton(onClick = { onEvent(HomeEvent.OpenSubscription) }) {
+                            Text("Подписка и лимиты")
+                        }
                     }
                 }
             }
@@ -125,7 +131,7 @@ internal fun StylePickerCard(
                     StyleSettingsAction(offer.selfHosted) { onEvent(HomeEvent.OpenStylization) }
                 }
             }
-            if (!servicePaused && offer.processingFailed) offer.processingMessage?.let { message ->
+            if (offer.networkRefusal == null && !servicePaused && offer.processingFailed) offer.processingMessage?.let { message ->
                 CompactDivider()
                 Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
                     SettingsInfoRow(
@@ -242,7 +248,7 @@ private fun StyleControls(
                 enabled = !offer.selfHosted,
                 selected = false,
                 onClick = onAdd,
-                label = { Text("+") },
+                label = { Text("+", style = MaterialTheme.typography.labelMedium) },
                 shape = RoundedCornerShape(ProductTokens.Radius.Md),
             )
         }
@@ -252,6 +258,7 @@ private fun StyleControls(
             label = {
                 Text(
                     stringResource(R.string.main_styles_disabled),
+                    style = MaterialTheme.typography.labelMedium,
                 )
             },
             shape = RoundedCornerShape(ProductTokens.Radius.Md),
@@ -261,7 +268,7 @@ private fun StyleControls(
                 enabled = offer.canEnableDirectly,
                 selected = offer.enabled,
                 onClick = { onEvent(HomeEvent.SelectSelfHostedGeneral) },
-                label = { Text("Свой сервер") },
+                label = { Text("Свой сервер", style = MaterialTheme.typography.labelMedium) },
                 shape = RoundedCornerShape(ProductTokens.Radius.Md),
             )
         }
@@ -386,14 +393,15 @@ internal fun SubscriptionCard(
                             style = MaterialTheme.typography.titleMedium,
                         )
                         if (!offer.selfHosted) StyleBetaNotice(compact = true)
-                        Text(
+                        if (offer.networkRefusal != null) NetworkStatus(networkRefusalMessage(offer.networkRefusal))
+                        else Text(
                             offer.accessLabel,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
                 }
-                Button(
+                if (offer.networkRefusal == null) Button(
                     enabled = offer.actionEnabled,
                     onClick = { onEvent(offer.accessEvent) },
                     modifier = Modifier.align(Alignment.End),
@@ -423,12 +431,13 @@ private fun StyleIntroduction(offer: StylizationOfferState, onEvent: (HomeEvent)
             Text("Улучшение текста", style = MaterialTheme.typography.titleMedium)
         }
         StyleBetaNotice(compact = true)
-        Text(
+        if (offer.networkRefusal != null) NetworkStatus(networkRefusalMessage(offer.networkRefusal))
+        else Text(
             offer.accessLabel,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
-        Button(
+        if (offer.networkRefusal == null) Button(
             enabled = offer.actionEnabled,
             onClick = { onEvent(offer.accessEvent) },
             modifier = Modifier.align(Alignment.End),

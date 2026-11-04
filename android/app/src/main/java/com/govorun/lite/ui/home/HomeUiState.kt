@@ -16,6 +16,7 @@ data class HomeUiState(
     val showStarterGuidance: Boolean = false,
     val lastDictation: String? = null,
     val lastDictationOriginal: String? = null,
+    val newProducts: Boolean = false,
 ) {
     companion object {
         fun loading() = HomeUiState(
@@ -52,6 +53,7 @@ internal fun dictionaryStatusLabel(state: DictionarySummaryState): String =
 data class StylizationOfferState(
     val signedIn: Boolean = false,
     val retryConnection: Boolean = false,
+    val networkRefusal: com.govorun.lite.network.NetworkRefusal? = null,
     val pauseMessage: String? = null,
     val visible: Boolean = false,
     val status: String = "Проверяем доступность…",
@@ -136,7 +138,6 @@ enum class SetupIssue {
 
 sealed interface HomeEvent {
     data object OpenSettings : HomeEvent
-    data object OpenAbout : HomeEvent
     data object OpenSubscription : HomeEvent
     data object RetryConnection : HomeEvent
     data object OpenStylization : HomeEvent

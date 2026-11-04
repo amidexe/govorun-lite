@@ -36,10 +36,10 @@ internal fun homeAccessPresentation(
     )
     account.connectionMessage != null -> HomeAccessPresentation(
         active = false,
-        label = "${account.connectionMessage}. Диктовка работает офлайн.",
+        label = account.connectionMessage.orEmpty(),
         actionTitle = when (account.networkRefusal.takeUnless { account.networkAvailable }) {
-            NetworkRefusal.OFFLINE -> "Включить сеть"
-            NetworkRefusal.ROAMING -> "Настройки"
+            NetworkRefusal.OFFLINE -> ""
+            NetworkRefusal.ROAMING -> ""
             null -> "Повторить"
         },
         actionHint = account.connectionHint,

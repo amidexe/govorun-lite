@@ -1,5 +1,6 @@
 package com.govorun.lite.ui.settings
 
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,14 @@ internal fun DictationSettings(
 ) {
     ServiceControlSettings(state.serviceEnabled, onEvent)
     SettingsSection("Распознавание") {
+        ChoiceValueRow(
+            title = "Микрофон",
+            summary = "Для следующей записи. Если гарнитура недоступна, используется телефон",
+            selected = state.headsetMicrophone,
+            choices = listOf(SettingChoice(false, "Телефон"), SettingChoice(true, "Гарнитура, если подключена")),
+            onSelected = { onEvent(SettingsEvent.Change(SettingsChange.SetHeadsetMicrophone(it))) },
+        )
+        SettingsDivider()
         ChoiceValueRow(
             title = "Пауза после речи",
             summary = "Длинная пауза помогает говорить медленнее, не разрывая фразу",
@@ -80,7 +89,12 @@ internal fun DictationSettings(
 internal fun AfterRecordingSettings(
     state: SettingsUiState,
     onEvent: (SettingsEvent) -> Unit,
+    openNetwork: Boolean = false,
 ) {
+    val networkRow = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    androidx.compose.runtime.LaunchedEffect(openNetwork) {
+        if (openNetwork) { androidx.compose.runtime.withFrameNanos { }; networkRow.bringIntoView() }
+    }
     processingSettingsSections.forEach { section ->
         SettingsSection(section.title) {
             section.entries.forEachIndexed { index, entry ->
@@ -89,6 +103,7 @@ internal fun AfterRecordingSettings(
             }
         }
     }
+    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.bringIntoViewRequester(networkRow)) {
     SettingsSection("Сеть") {
         SettingsSwitchRow(
             title = "Офлайн в роуминге",
@@ -96,6 +111,7 @@ internal fun AfterRecordingSettings(
             checked = state.noNetworkInRoaming,
             onCheckedChange = { onEvent(SettingsEvent.Change(SettingsChange.SetNoNetworkInRoaming(it))) },
         )
+    }
     }
 }
 
@@ -175,6 +191,8 @@ internal fun ApplicationSettings(
         )
     }
     SettingsSection("О приложении") {
+        SettingsLinkRow(title = "О программе", onClick = { onEvent(SettingsEvent.OpenAbout) })
+        SettingsDivider()
         SettingsLinkRow(
             title = "Диагностика",
             summary = "События работы и причины неполадок",

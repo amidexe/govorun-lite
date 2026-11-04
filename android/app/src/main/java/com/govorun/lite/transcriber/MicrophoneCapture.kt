@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -41,19 +42,37 @@ class MicrophoneCapture internal constructor(
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) return null
             val bytes = VadRecorder.VAD_WINDOW_SIZE * 2
+            val reading = AtomicBoolean(true)
+            val route = try { RecordingMicrophone(context, com.govorun.lite.util.MicrophonePrefs.headset(context)) }
+                catch (_: RuntimeException) { return null }
+            val reader = MicrophoneReader(
+                open = { route.open(bytes) { !reading.get() || !scope.isActive } },
+                accepts = route::accepts, fallback = route::recover,
+                readDevice = { device, target, offset, count -> device.read(target, offset, count) },
+                stopDevice = { it.stop() }, releaseDevice = { it.release() },
+            )
+            return MicrophoneCapture(BufferedPcmCapture(scope, bytes, reading::get, reader::read),
+                reading, reader::stop, { try { reader.close() } finally { route.close() } })
+        }
+
+        @SuppressLint("MissingPermission")
+        internal fun openDevice(bytes: Int, input: AudioDeviceInfo): AudioRecord? {
+            val minimum = AudioRecord.getMinBufferSize(VadRecorder.SAMPLE_RATE,
+                AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+            if (minimum <= 0) return null
             val device = try {
                 AudioRecord(MediaRecorder.AudioSource.MIC, VadRecorder.SAMPLE_RATE,
                     AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
-                    AudioRecord.getMinBufferSize(VadRecorder.SAMPLE_RATE,
-                        AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT).coerceAtLeast(bytes * 8))
-            } catch (_: Exception) { return null }
+                    minimum.coerceAtLeast(bytes * 8))
+            } catch (_: RuntimeException) { return null }
             try {
-                if (device.state != AudioRecord.STATE_INITIALIZED) { device.release(); return null }
-                device.startRecording()
-            } catch (_: Exception) { device.release(); return null }
-            val reading = AtomicBoolean(true)
-            return MicrophoneCapture(BufferedPcmCapture(scope, bytes, reading::get, device::read),
-                reading, device::stop, device::release)
+                if (device.state == AudioRecord.STATE_INITIALIZED && device.setPreferredDevice(input)) {
+                    device.startRecording()
+                    if (device.recordingState == AudioRecord.RECORDSTATE_RECORDING) return device
+                }
+            } catch (_: RuntimeException) { /* Device disappeared or Android refused it. */ }
+            device.release()
+            return null
         }
     }
 }

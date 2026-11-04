@@ -18,6 +18,7 @@ internal fun SelfHostedServerScreen(
     accepted: Boolean,
     testing: Boolean,
     status: String,
+    networkRefusal: com.govorun.lite.network.NetworkRefusal? = null,
     onChange: (SelfHostedServerSettings) -> Unit,
     onConsent: (Boolean) -> Unit,
     onConnect: () -> Unit,
@@ -101,10 +102,13 @@ internal fun SelfHostedServerScreen(
                             Checkbox(accepted, onConsent, enabled = !testing)
                             Text(SelfHostedConsent.ACKNOWLEDGEMENT, style = MaterialTheme.typography.bodyMedium)
                         }
-                        if (status.isNotEmpty()) Text(status, style = MaterialTheme.typography.bodyMedium)
-                        Button(onConnect, enabled = accepted && settings.isComplete && !testing,
-                            modifier = Modifier.fillMaxWidth()) {
-                            Text(if (testing) "Проверяем…" else if (connected && settings.isComplete) "Применить и проверить" else "Подключить")
+                        if (networkRefusal != null) NetworkStatus(com.govorun.lite.account.networkRefusalMessage(networkRefusal))
+                        else {
+                            if (status.isNotEmpty()) Text(status, style = MaterialTheme.typography.bodyMedium)
+                            Button(onConnect, enabled = accepted && settings.isComplete && !testing,
+                                modifier = Modifier.fillMaxWidth()) {
+                                Text(if (testing) "Проверяем…" else if (connected && settings.isComplete) "Применить и проверить" else "Подключить")
+                            }
                         }
                         if (testing) TextButton(onCancel) { Text("Отменить проверку") }
                         if (connected) TextButton(onDisconnect, enabled = !testing) { Text("Отключить свой сервер") }

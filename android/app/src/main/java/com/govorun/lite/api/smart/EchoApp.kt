@@ -4,7 +4,7 @@ import com.govorun.lite.BuildConfig
 import com.govorun.lite.api.CallerIdentity
 
 /**
- * Говорун.Эхо, the one app the smart functions serve: the person's account, its day of credits and the server's prompts are not
+ * Говорун Эхо, the one app the smart functions serve: the person's account, its day of credits and the server's prompts are not
  * offered to other apps, which get the offline recognition API only. Echo is known by its package and its release signature, so
  * no window asks the person about it again; a debug Govorun knows the debug Echo by its package, as the two are built together.
  */

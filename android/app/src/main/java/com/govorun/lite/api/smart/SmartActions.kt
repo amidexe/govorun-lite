@@ -28,8 +28,10 @@ internal object SmartActions {
             // «Офлайн» lives in the home menu, «Офлайн в роуминге» in Settings, as Govorun's own card does.
             SmartApi.ACTION_STYLIZATION -> Intent(context, com.govorun.lite.ui.StylizationActivity::class.java)
             SmartApi.ACTION_NETWORK -> when (NetworkPolicy.activeRefusal(context)) {
-                NetworkRefusal.ROAMING -> Intent(context, SettingsActivity::class.java)
+                NetworkRefusal.ROAMING -> Intent(context, SettingsActivity::class.java).putExtra(SettingsActivity.EXTRA_NETWORK, true)
                 else -> Intent(context, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    .putExtra(MainActivity.EXTRA_OPEN_NETWORK, true)
             }
             SmartApi.ACTION_AUTHORIZE, SmartApi.ACTION_VOLUME_KEY -> {
                 val scope = if (action == SmartApi.ACTION_VOLUME_KEY) RecognitionApi.SCOPE_VOLUME_KEY else RecognitionApi.SCOPE_SMART_FUNCTIONS

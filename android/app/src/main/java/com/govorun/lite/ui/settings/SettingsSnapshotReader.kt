@@ -44,6 +44,7 @@ class SettingsSnapshotReader(context: Context) {
             holdPlain = RecordingModePrefs.isHoldPlain(appContext),
             positionLocked = Prefs.isBubblePositionLocked(appContext),
             pause = Prefs.getPauseLength(appContext),
+            headsetMicrophone = com.govorun.lite.util.MicrophonePrefs.headset(appContext),
             stylizationSummary = stylizationSummary(),
             accessSummary = settingsAccessSummary(account),
             voiceMarkerMode = VoiceMarkerPrefs.read(appContext),

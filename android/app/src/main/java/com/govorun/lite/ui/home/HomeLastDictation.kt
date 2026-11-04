@@ -79,11 +79,11 @@ internal fun LastDictationCard(improved: String, original: String? = null) {
 
 @Composable
 private fun DictationVersion(label: String, text: String) {
-    // The copy icon lines up with the header's: the header row uses the narrower Lg side padding.
+    // Copy actions align with the shared card header.
     Column(
         Modifier.padding(
             start = ProductTokens.Spacing.Section,
-            end = ProductTokens.Spacing.Lg,
+            end = ProductTokens.Spacing.Section,
             bottom = ProductTokens.Spacing.Section,
         ),
     ) {
@@ -96,7 +96,7 @@ private fun DictationVersion(label: String, text: String) {
             )
             CopyButton(text, "Скопировать: ${label.lowercase()}")
         }
-        Column(Modifier.padding(end = ProductTokens.Spacing.Section - ProductTokens.Spacing.Lg)) { DictationPreview(text) }
+        DictationPreview(text)
     }
 }
 

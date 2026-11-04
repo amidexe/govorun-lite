@@ -132,25 +132,25 @@ fun ProductTheme(
     MaterialTheme(colors, ProductShapes, typography, content)
 }
 
-/** DayPlan's type scale: Material 3 roles in Geist, captions at 12–13 sp so notes and summaries stay readable. */
+/** Approved Govorun scale. Ordinary UI stays regular; emphasis is an explicit local decision. */
 fun productTypography(fontFamily: FontFamily): Typography {
-    fun style(weight: FontWeight, size: Int, height: Int) = productTextStyle(fontFamily, weight, size.sp, height.sp)
+    fun style(size: Int, height: Int) = productTextStyle(fontFamily, FontWeight.Normal, size.sp, height.sp)
     return Typography(
-        displayLarge = style(FontWeight.SemiBold, 30, 36),
-        displayMedium = style(FontWeight.SemiBold, 26, 32),
-        displaySmall = style(FontWeight.SemiBold, 22, 28),
-        headlineLarge = style(FontWeight.SemiBold, 22, 28),
-        headlineMedium = style(FontWeight.SemiBold, 20, 26),
-        headlineSmall = style(FontWeight.SemiBold, 18, 24),
-        titleLarge = style(FontWeight.SemiBold, 17, 22),
-        titleMedium = style(FontWeight.SemiBold, 15, 20),
-        titleSmall = style(FontWeight.SemiBold, 14, 18),
-        bodyLarge = style(FontWeight.Normal, 15, 21),
-        bodyMedium = style(FontWeight.Normal, 14, 20),
-        bodySmall = style(FontWeight.Normal, 13, 18),
-        labelLarge = style(FontWeight.Medium, 13, 18),
-        labelMedium = style(FontWeight.Medium, 12, 16),
-        labelSmall = style(FontWeight.Medium, 11, 14),
+        displayLarge = style(30, 36),
+        displayMedium = style(26, 32),
+        displaySmall = style(22, 28),
+        headlineLarge = style(22, 28),
+        headlineMedium = style(20, 26),
+        headlineSmall = style(18, 24),
+        titleLarge = style(17, 22),
+        titleMedium = style(15, 20),
+        titleSmall = style(14, 18),
+        bodyLarge = style(15, 21),
+        bodyMedium = style(14, 20),
+        bodySmall = style(13, 18),
+        labelLarge = style(13, 18),
+        labelMedium = style(12, 16),
+        labelSmall = style(11, 14),
     )
 }
 

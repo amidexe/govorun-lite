@@ -58,7 +58,7 @@ async fn execute<P: Ports>(ports: &mut P) -> Result<(), Failure> {
     current(ports)?;
     let original = ports.dictionary(recognition.text).await;
     current(ports)?;
-    if original.trim().is_empty() {
+    if original.trim().is_empty() && !crate::dictionary_replacement::is_layout(&original) {
         ports.fallback();
         return Ok(());
     }
@@ -120,7 +120,7 @@ async fn execute<P: Ports>(ports: &mut P) -> Result<(), Failure> {
         .ok_or(Failure::Effect("dictation_invalid_delivery"))?;
     current(ports)?;
     let inserted = if insert {
-        ports.paste(format!("{text} ")).await
+        ports.paste(if text.ends_with(['\n', '\t']) { text.into() } else { format!("{text} ") }).await
     } else {
         false
     };
@@ -149,6 +149,9 @@ async fn execute<P: Ports>(ports: &mut P) -> Result<(), Failure> {
 }
 
 async fn process<P: Ports>(text: &str, ports: &mut P) -> Result<Delivery, Failure> {
+    if crate::dictionary_replacement::is_layout(text) {
+        return Ok(Delivery { text: text.into(), fallback: false, response: None, record_completion: true });
+    }
     let mut state = Value::Null;
     let begin = ports.facts("begin", text, 0).await?;
     let mut frame = step(&mut state, begin)?;

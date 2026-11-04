@@ -20,7 +20,7 @@ internal enum class VolumeKeyRoute { PASS, DICTATE, APP }
 /**
  * Volume-down held (an experiment, both parts off by default). Only Govorun has accessibility; it listens to the key and lends it.
  * With «Диктовка по удержанию «−»» on, where its bubble is shown a hold dictates exactly as holding the bubble does. On the lock
- * screen a hold records in Говорун.Эхо when the person gave it the key in «API для приложений»; that switch alone decides it. A
+ * screen a hold records in Говорун Эхо when the person gave it the key in «API для приложений»; that switch alone decides it. A
  * short press, a call, an alarm or music: the key stays an ordinary volume key.
  */
 internal object VolumeKeyRules {

@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * An app's smart task that Govorun keeps until its answer is collected (protocol 2). The app hands it in once; Govorun tries it
+ * An app's smart task that Govorun keeps until its answer is collected (protocol 3). The app hands it in once; Govorun tries it
  * again when what stopped it is gone and tells the app when it changed, so no app keeps a queue, retries or Govorun's codes.
  * The app's text stays only while the task waits; after the answer only a digest of it is kept, so the same task with the same
  * text is answered from here and never paid twice.
@@ -15,19 +15,20 @@ internal data class SmartJob(
     val kind: String,
     /** A digest of the kind, style and text: the same task with another text is another task. */
     val hash: String,
-    /** The app's `{"text", "style"?}`; null once the task has its answer. */
+    /** The app's `{"operation", "text", "requestClass", "style"}`; null once the task has its answer. */
     val input: String?,
     /** The person pressed the function: only such a task waits for the person's own step. */
     val asked: Boolean,
     /** What it waits for (a Govorun code: no_network, limit_today, not_signed_in…); null once answered. */
     val wait: String? = null,
-    /** The answer for the app: `{"text"}`, `{"digest"}`, or `{"code"}` when it ended without one. */
+    /** The answer for the app: `{"text"}` or `{"code"}` when it ended without one. */
     val answer: String? = null,
     /** Waiting: when it is tried again ([PERSON]: on the person's step only). Answered: when it is forgotten. */
     val atMs: Long = 0,
     val tries: Int = 0,
 ) {
     val waiting: Boolean get() = answer == null
+    val longText: Boolean get() = kind == SmartApi.TEXT_TASK && input != null && JSONObject(input).optString("requestClass") == "digest"
     /** It ended without a text: Govorun's code is the answer. */
     val failed: Boolean get() = answer != null && JSONObject(answer).has("code")
 
@@ -53,14 +54,16 @@ internal data class SmartJob(
 
         /** One bad entry is left out, never the others. */
         fun parse(text: String): List<SmartJob> = runCatching { JSONArray(text) }.getOrNull()?.let { array ->
-            (0 until array.length()).mapNotNull { runCatching { of(array.getJSONObject(it)) }.getOrNull() }
+            (0 until array.length()).mapNotNull { runCatching { of(array.getJSONObject(it)).takeIf { it.kind == SmartApi.TEXT_TASK } }.getOrNull() }
         }.orEmpty()
 
         /** Govorun's words for a wait, as the app shows them; the person's own steps name the step. */
         fun waitWords(code: String): String = SmartState.entries.firstOrNull { it.wire == code }?.message?.takeIf { it.isNotEmpty() }
             ?: when (code) {
-                SmartImprove.STYLIZATION_TERMS -> "Примите условия улучшения текста в Говоруне"
-                SmartImprove.LIMIT_PERIOD -> "Лимит периода исчерпан"
+                SmartResult.STYLIZATION_TERMS -> "Примите условия улучшения текста в Говоруне"
+                SmartResult.LIMIT_PERIOD -> "Лимит периода исчерпан"
+                ClientNetworkPolicy.OFFLINE -> "Включён «Офлайн» в Эхо"
+                ClientNetworkPolicy.ROAMING -> "Включён «Офлайн в роуминге» в Эхо"
                 SmartApi.BUSY -> "Ждёт своей очереди"
                 SmartApi.TIMEOUT -> "Сервис не ответил вовремя. Говорун повторит сам"
                 SmartApi.SERVER_ERROR -> "Сервис не обработал запрос. Говорун повторит сам"

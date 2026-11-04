@@ -26,18 +26,29 @@ pub(crate) fn admit_class(units: Vec<u16>, class: Option<&str>) -> Result<Value>
 
 pub(crate) const DIGEST: &str = "digest";
 
+/// Generic operations use the existing pricing classes; their exact class is checked again by the server catalog.
+pub(crate) fn digest_payload(payload: &Value) -> bool {
+    payload.get("textOperation").is_some() && payload["requestClass"] == DIGEST
+}
+
+pub(crate) fn valid_operation(name: &str) -> bool {
+    let bytes = name.as_bytes();
+    (2..=64).contains(&bytes.len()) && bytes[0].is_ascii_lowercase()
+        && bytes.iter().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_.-".contains(b))
+}
+
 /// Dictation's label: a request Govorun's entry put no product on is Govorun's own dictation.
 pub(crate) const DICTATION: &str = "dictation";
 
 /// The product a request is for: the label Govorun's entry put on it ("echo" for Говорун.Эхо's notes), dictation when
-/// none. A note mark with no product, or a malformed label, is refused, so another product's request never counts as
+/// none. A text operation with no product, or a malformed label, is refused, so another product's request never counts as
 /// a dictation.
 pub(crate) fn product(payload: &Value) -> Result<&str> {
     let label = match payload.get("product") {
         None => DICTATION,
         Some(value) => value.as_str().filter(|label| valid_product(label)).ok_or(Error::InvalidRequest)?,
     };
-    if label == DICTATION && payload.get("echoNote").is_some() {
+    if label == DICTATION && payload.get("textOperation").is_some() {
         return Err(Error::InvalidRequest);
     }
     Ok(label)

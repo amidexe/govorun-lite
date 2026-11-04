@@ -347,7 +347,7 @@ impl Stylization {
         self.current(epoch)?;
         let required = crate::style_text::admit_class(payload["text"].as_str()
             .ok_or(Error::InvalidRequest)?.encode_utf16().collect(),
-            (payload["echoNote"] == crate::style_text::DIGEST).then_some(crate::style_text::DIGEST))?["requiredCredits"]
+            crate::style_text::digest_payload(&payload).then_some(crate::style_text::DIGEST))?["requiredCredits"]
             .as_u64().ok_or(Error::InvalidResponse)? as usize;
         let result = self
             .foreground

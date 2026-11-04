@@ -5,6 +5,7 @@ internal object StorageKeys {
     const val PREFS_FILE = "govorun_lite_prefs"
 
     object Key {
+        const val HEADSET_MICROPHONE = "headset_microphone"
         const val HAPTICS_ENABLED = "haptics_enabled"
         const val VOLUME_KEY_ENABLED = "volume_key_enabled"
         /** «Удержание — без улучшения текста»; named in 2.0.41, when it covered the volume key alone. */

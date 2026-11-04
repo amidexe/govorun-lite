@@ -158,7 +158,7 @@ class LiteAccessibilityService : AccessibilityService() {
                 dictationTiming?.process(text)
                 stylizationCoordinator.process(text, mode, target).also { dictationTiming?.result(it.text.length) }
             },
-            insert = ::pasteText,
+            insert = ::insertPreparedText,
             reportClientOutcome = { outcomePass, outcome, latencyBucket ->
                 scope.launch(Dispatchers.IO) {
                     stylizationCoordinator.reportClientOutcome(
@@ -172,7 +172,8 @@ class LiteAccessibilityService : AccessibilityService() {
         )
     }
 
-    private fun pasteText(text: String) = attemptTextInsertion(
+    private fun pasteText(text: String) = insertPreparedText(com.govorun.lite.transcriber.Dictionary.applyReplacements(this, text))
+    private fun insertPreparedText(text: String) = attemptTextInsertion(
         insert = { textInserter.insert(text) },
         reportFailure = { Log.w(TAG, "Paste: editor operation failed (${it.javaClass.simpleName})") },
     )
@@ -463,11 +464,6 @@ class LiteAccessibilityService : AccessibilityService() {
     fun isAlwaysShowEnabled(): Boolean = visibilityController.isAlwaysShowEnabled()
 
     fun toggleAlwaysShow() = visibilityController.toggleAlwaysShow()
-
-    /** Quick Settings Tile read-out for the silence tile. */
-    fun isSilenceEnabled(): Boolean = visibilityController.isSilenceEnabled()
-
-    fun toggleSilence() = visibilityController.toggleSilence()
 
     fun applyBubbleSideFromPrefs() { bubbleOverlay?.applySide() }
 

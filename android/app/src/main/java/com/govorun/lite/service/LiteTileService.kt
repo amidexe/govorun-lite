@@ -1,29 +1,14 @@
 package com.govorun.lite.service
 
 import android.app.PendingIntent
-import android.content.Intent
 import android.os.Build
-import android.provider.Settings
+import android.graphics.drawable.Icon
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import com.govorun.lite.R
 
-/**
- * Quick Settings Tile — three behaviours rolled into one tap target:
- *
- *  1. Service alive + bubble visible → tap hides the bubble (manual override).
- *  2. Service alive + bubble hidden  → tap shows it again.
- *  3. Service dead (killed by OEM / disabled by user) → tap routes the user
- *     to system Accessibility settings, where they can flip our service
- *     back on. We can't programmatically re-enable an AccessibilityService
- *     for security reasons, so this is the best a tile can do.
- *
- * Useful for: people who find the bubble distracting in some apps and want
- * a quick on/off without digging into Settings; users on aggressive OEMs
- * (Tecno HiOS, OxygenOS) where the service occasionally dies and the tile
- * gives a one-tap path back into the Accessibility screen instead of
- * opening our app and hunting for the right row.
- */
+/** Pins the floating button without the keyboard; a second tap restores its normal rules.
+ * The missing AccessibilityService needs the user's permission in system settings. */
 class LiteTileService : TileService() {
 
     override fun onStartListening() {
@@ -62,6 +47,9 @@ class LiteTileService : TileService() {
     private fun refreshTileState() {
         val tile = qsTile ?: return
         val service = LiteAccessibilityService.instance
+        tile.label = getString(R.string.tile_label)
+        tile.icon = Icon.createWithResource(this, R.drawable.ic_bird_24)
+        tile.contentDescription = "${getString(R.string.app_name)}: ${tile.label}"
         when {
             service == null -> {
                 tile.state = Tile.STATE_INACTIVE
@@ -78,6 +66,7 @@ class LiteTileService : TileService() {
                 tile.subtitle = getString(R.string.tile_subtitle_default)
             }
         }
+        tile.stateDescription = tile.subtitle
         tile.updateTile()
     }
 }

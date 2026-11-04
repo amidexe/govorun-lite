@@ -44,7 +44,7 @@ internal class StylizationCoordinator(
         val ticket = StyleProcessingFeedback.begin(ports.sessionGeneration(), ports.selfHostedSelected(), product = product != null)
         try {
             SharedStylizationExecutor(ports).process(recognizedText, inputMode, packageName,
-                digest = styleValue == EchoNoteMark.DIGEST_STYLE, product = product != null).also {
+                digest = kotlin.coroutines.coroutineContext[TextOperation]?.requestClass == "digest", product = product != null).also {
                 if (it.skipReason != null) StyleProcessingFeedback.cancel(ticket)
                 else StyleProcessingFeedback.finish(ticket,
                     if (it.usedFallback) it.fallbackReason ?: StylizationFallbackReason.REQUEST_FAILED else null)
@@ -94,9 +94,7 @@ internal class StylizationCoordinator(
         override fun officialConfigured() = BuildConfig.OFFICIAL_STYLES_API_URL.isNotBlank()
         override fun hasInternet() = hasInternet(appContext)
         override fun resolveStyle(packageName: String?): StylizationSelection {
-            // Echo's «Заметка» and итоги are Govorun's light; the server tells them apart by the note mark.
-            val resolved = StylizationStylePreferences.resolve(appContext, packageName,
-                styleValue?.let { if (EchoNoteMark.light(it)) com.govorun.lite.model.stylization.TextStyle.LIGHT.apiId else it })
+            val resolved = StylizationStylePreferences.resolve(appContext, packageName, styleValue)
             return StylizationSelection(resolved.enabled, resolved.style,
                 resolved.customPreset?.instruction ?: if (resolved.style == TextStyle.CUSTOM) {
                     Prefs.getStylizationCustomInstruction(appContext)
@@ -106,10 +104,8 @@ internal class StylizationCoordinator(
         override suspend fun request(text: String, mode: StylizationInputMode,
                                      selection: StylizationSelection, characters: Int): StylizationResponse = try {
             DiagnosticAttempt.current?.recordRequestCharacters(text.length)
-            // Another product's request carries its label, and Echo's note its mark, to the core and the server; a
-            // dictation (no product, no styleValue) sends nothing new.
-            kotlinx.coroutines.withContext((styleValue?.let(EchoNoteMark::of) ?: kotlin.coroutines.EmptyCoroutineContext) +
-                (product?.let(::ProductLabel) ?: kotlin.coroutines.EmptyCoroutineContext)) {
+            // A product label selects the existing product allowance; the operation context is forwarded unchanged.
+            kotlinx.coroutines.withContext(product?.let(::ProductLabel) ?: kotlin.coroutines.EmptyCoroutineContext) {
                 client.stylize(text, selection.style, mode, selection.instruction,
                     selection.options.punctuation, selection.options.emojiEnabled,
                     selection.options.profanityFilterEnabled, selection.options.resolvedEmojiMode,

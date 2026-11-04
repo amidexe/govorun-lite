@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +37,7 @@ fun ProductScaffold(
     onBack: (() -> Unit)? = null,
     navigationAction: ProductTopAction? = null,
     actions: List<ProductTopAction> = emptyList(),
+    navigationBadge: String? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
@@ -50,12 +55,13 @@ fun ProductScaffold(
                             )
                         }
                     } else if (navigationAction != null) {
-                        IconButton(onClick = navigationAction.onClick) {
-                            Icon(
-                                navigationAction.icon,
-                                contentDescription = navigationAction.description,
-                                modifier = Modifier.size(ProductTokens.Size.TopBarNavigationIcon),
-                            )
+                        IconButton(onClick = navigationAction.onClick, modifier = Modifier.semantics {
+                            if (navigationBadge != null) stateDescription = navigationBadge
+                        }) {
+                            BadgedBox(badge = { if (navigationBadge != null) Badge(containerColor = MaterialTheme.colorScheme.primary) }) {
+                                Icon(navigationAction.icon, contentDescription = navigationAction.description,
+                                    modifier = Modifier.size(ProductTokens.Size.TopBarNavigationIcon))
+                            }
                         }
                     }
                 },

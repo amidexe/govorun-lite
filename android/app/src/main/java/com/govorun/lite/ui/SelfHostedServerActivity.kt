@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -34,7 +35,9 @@ class SelfHostedServerActivity : ComponentActivity() {
         status = if (connected && !accepted) "Подтвердите передачу данных, чтобы продолжить" else ""
         setContent {
             GovorunTheme {
+                val account by com.govorun.lite.account.GovorunAccountRepository.state.collectAsState()
                 SelfHostedServerScreen(settings, connected, accepted, testing, status,
+                    networkRefusal = account.networkRefusal.takeUnless { account.networkAvailable },
                     onChange = { next ->
                         if (next.recipient != settings.recipient) {
                             accepted = false
@@ -84,11 +87,11 @@ class SelfHostedServerActivity : ComponentActivity() {
         // Saved but not checked: the person's refusal keeps even the own server off the network.
         when (com.govorun.lite.network.NetworkPolicy.activeRefusal(this)) {
             com.govorun.lite.network.NetworkRefusal.OFFLINE -> {
-                status = "Включён «Офлайн»: Говорун не выходит в интернет. Выключите его в меню, чтобы проверить сервер"
+                status = ""
                 return
             }
             com.govorun.lite.network.NetworkRefusal.ROAMING -> {
-                status = "Телефон в роуминге, включён «Офлайн в роуминге». Проверьте сервер позже или выключите эту настройку"
+                status = ""
                 return
             }
             null -> Unit

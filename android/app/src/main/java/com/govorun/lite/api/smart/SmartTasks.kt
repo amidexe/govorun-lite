@@ -3,7 +3,6 @@ package com.govorun.lite.api.smart
 import com.govorun.lite.account.AccountSessionChangedException
 import com.govorun.lite.account.SecureStorageUnavailableException
 import com.govorun.lite.shared.SharedBusinessException
-import com.govorun.lite.stylization.EchoNoteMark
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -16,10 +15,10 @@ import java.security.MessageDigest
 
 /** The effects Echo may ask for; the Android port reaches Govorun's own text improvement. */
 internal interface SmartPorts {
-    /** The text through Govorun's own text improvement for app [owner]: `{"text"}` or `{"code"}` ([SmartImprove]). */
-    suspend fun improve(owner: String, text: String, style: String?): JSONObject
-    /** What итоги of [text] cost, from the core's rule and Echo's day: nothing leaves the phone. */
-    fun digestPrice(text: String): JSONObject
+    suspend fun textTask(owner: String, text: String, operation: String, requestClass: String, style: String?): JSONObject
+    /** Local quote through the same class admission rules; no model request. */
+    fun price(text: String, requestClass: String): JSONObject
+
 }
 
 /** Exactly one answer per call; the service turns it into the client's callback. */
@@ -39,12 +38,13 @@ internal interface SmartJobHost {
     /** A try started; a host may observe its lifetime. */
     fun started() {}
     /** Android grants background execution before an attempt may use its network. Tests need no platform grant. */
+    fun refusal(owner: String): String? = null
     fun ready(): Boolean = true
     fun waitReason(): String = SmartApi.BUSY
 }
 
 /**
- * Echo's «Улучшить через Говорун» and итоги as tasks Govorun keeps (protocol 2). The app hands a task in once and hears its
+ * Opaque product text tasks Govorun keeps (protocol 3). The app hands a task in once and hears its
  * answer, «принято» (`queued`, with Govorun's words for why it waits) or a final refusal. A waiting task is tried again when its
  * cause is gone: a network, the server back, the next UTC day, or the person's own step in Govorun, which only a task the person
  * pressed waits for. A task outlives Echo and Govorun's process, is paid once, and its text is dropped once it has its answer.
@@ -58,6 +58,7 @@ internal class SmartTasks(
     private class Running(val hash: String, val replies: MutableList<SmartReply>) {
         lateinit var job: Job
         @Volatile var cancelled = false
+        @Volatile var paused: String? = null
     }
 
     private val lock = Any()
@@ -69,24 +70,32 @@ internal class SmartTasks(
     }
 
     fun run(owner: String, taskId: String, kind: String, inputJson: String, reply: SmartReply) {
-        if (kind != SmartApi.IMPROVE && kind != SmartApi.DIGEST && kind != SmartApi.DIGEST_PRICE) {
+        if (kind == SmartApi.COLLECT) { collect(owner, taskId, reply); return }
+        if (kind !in setOf(SmartApi.TASK_PRICE, SmartApi.TEXT_TASK)) {
             return reply.error(SmartRefusal.of(SmartState.UNAVAILABLE))
         }
         if (inputJson.toByteArray(Charsets.UTF_8).size > SmartApi.MAX_INPUT_BYTES) {
-            return reply.error(SmartRefusal.of(SmartImprove.TOO_LONG))
+            return reply.error(SmartRefusal.of(SmartResult.TOO_LONG))
         }
         val input = runCatching { JSONObject(inputJson) }.getOrNull()
         val text = input?.optString("text").orEmpty()
         if (input == null || text.isBlank() || !validId(taskId)) {
             return reply.error(SmartRefusal.of(SmartApi.REJECTED_INPUT))
         }
-        if (kind == SmartApi.DIGEST_PRICE) return reply.result(ports.digestPrice(text).toString())
-        // A note sent with no style is still Echo's: «Заметка», the first of Govorun's styles for Echo.
-        val style = if (kind == SmartApi.DIGEST) EchoNoteMark.DIGEST_STYLE
-            else input.optString("style").takeIf { it.isNotBlank() } ?: EchoNoteMark.NOTE_STYLE
+        val operation = input.optString("operation")
+        val requestClass = input.optString("requestClass")
+        if (
+                !operation.matches(Regex("[a-z][a-z0-9_.-]{1,63}")) || requestClass !in setOf("note", "digest") ||
+                input.keys().asSequence().any { it !in setOf("text", "operation", "requestClass", "style", "asked") }
+            ) return reply.error(SmartRefusal.of(SmartApi.REJECTED_INPUT))
+        if (kind == SmartApi.TASK_PRICE) return reply.result(ports.price(text, requestClass).toString())
+        val style = input.optString("style").takeIf { it.isNotBlank() } ?: "light"
         // Every task says whether the person pressed it.
         val asked = input.opt("asked") as? Boolean ?: return reply.error(SmartRefusal.of(SmartApi.REJECTED_INPUT))
-        val job = SmartJob(owner, taskId, kind, hash(kind, style, text), JSONObject().put("text", text).put("style", style).toString(), asked)
+        val body = JSONObject().put("text", text).put("style", style)
+        body.put("operation", operation).put("requestClass", requestClass)
+        val identityStyle = "$operation\u0000$requestClass\u0000$style"
+        val job = SmartJob(owner, taskId, kind, hash(kind, identityStyle, text), body.toString(), asked)
         val now = clock()
         val key = owner to taskId
         var answer: String? = null
@@ -107,11 +116,16 @@ internal class SmartTasks(
                 }
                 else -> {
                     // The same task waiting is tried at once (the app asks again: its cause may be gone); a pressed one stays pressed.
-                    val next = if (known != null && known.hash == job.hash) known.copy(asked = known.asked || asked) else job
+                    val next = if (known != null && known.hash == job.hash && known.waiting) known.copy(asked = known.asked || asked) else job
                     when {
                         jobs.values.count { it.owner == owner && it.waiting } >= MAX_WAITING_PER_APP && known == null ->
                             return reply.error(SmartRefusal(SmartApi.SERVER_ERROR,
                                 "Достигнут лимит ожидающих задач. Дождитесь завершения предыдущих", BUSY_WAIT_MILLIS))
+                        host.refusal(owner) != null -> {
+                            queued = next.copy(wait = host.refusal(owner), atMs = SmartJob.PERSON)
+                            jobs[key] = queued!!
+                            save()
+                        }
                         !host.ready() -> {
                             queued = next.copy(wait = host.waitReason(), atMs = now)
                             jobs[key] = queued!!
@@ -119,7 +133,7 @@ internal class SmartTasks(
                         }
                         // One итоги at a time and a few tries per app: the rest waits its turn here.
                         running.keys.count { it.first == owner } >= SmartApi.MAX_TASKS_PER_APP ||
-                            kind == SmartApi.DIGEST && running.keys.any { it.first == owner && jobs[it]?.kind == SmartApi.DIGEST } -> {
+                            job.longText && running.keys.any { it.first == owner && jobs[it]?.longText == true } -> {
                             queued = next.copy(wait = SmartApi.BUSY, atMs = now + TURN_MILLIS)
                             jobs[key] = queued!!
                             save()
@@ -151,24 +165,56 @@ internal class SmartTasks(
                 host.schedule(nextTimed())
                 return
             }
-            val digests = running.keys.filter { jobs[it]?.kind == SmartApi.DIGEST }.map { it.first }.toMutableSet()
+            val digests = running.keys.filter { jobs[it]?.longText == true }.map { it.first }.toMutableSet()
             jobs.entries.filter { (key, job) ->
-                key !in running && job.waiting && job.input != null &&
+                key !in running && job.waiting && job.input != null && host.refusal(job.owner) == null &&
                     (job.atMs <= now || person && job.atMs == SmartJob.PERSON ||
                         network && job.wait == SmartState.NO_NETWORK.wire)
             }.forEach { (key, job) ->
                 if (running.keys.count { it.first == job.owner } >= SmartApi.MAX_TASKS_PER_APP) return@forEach
-                if (job.kind == SmartApi.DIGEST && !digests.add(job.owner)) return@forEach
+                if (job.longText && !digests.add(job.owner)) return@forEach
                 start(key, job, mutableListOf())
             }
         }
         host.schedule(nextTimed())
     }
 
+    /** Pause in place: same task identity/input, completed answers and already consumed accounting survive. */
+    fun networkChanged() {
+        val stop = synchronized(lock) {
+            val cancellations = mutableListOf<Running>()
+            jobs.replaceAll { key, job ->
+                if (!job.waiting) job else {
+                    val reason = host.refusal(job.owner)
+                    if (reason != null) {
+                        running[key]?.let { it.paused = reason; cancellations.add(it) }
+                        job.copy(wait = reason, atMs = SmartJob.PERSON)
+                    } else if (job.wait in setOf(ClientNetworkPolicy.OFFLINE, ClientNetworkPolicy.ROAMING, SmartState.NO_NETWORK.wire)) {
+                        job.copy(wait = null, atMs = clock())
+                    } else job
+                }
+            }
+            save()
+            cancellations
+        }
+        stop.forEach { it.job.cancel() }
+        wake()
+    }
+
     /** The app's tasks as its list shows them. */
     fun list(owner: String): String = synchronized(lock) {
         prune(clock())
         JSONArray().apply { jobs.values.filter { it.owner == owner }.forEach { put(it.listed()) } }.toString()
+    }
+
+    /** Local read only: missing/expired never becomes a new request; waiting is not woken by polling. */
+    fun collect(owner: String, taskId: String, reply: SmartReply) {
+        if (!validId(taskId)) return reply.error(SmartRefusal.of(SmartApi.REJECTED_INPUT))
+        val known = synchronized(lock) { prune(clock()); jobs[owner to taskId] }
+            ?: return reply.error(SmartRefusal.of(SmartApi.RESULT_MISSING))
+        val answer = known.answer
+        if (answer != null) deliver(reply, answer)
+        else reply.error(SmartRefusal(SmartApi.QUEUED, SmartJob.waitWords(known.wait ?: SmartApi.BUSY)))
     }
 
     /** Whether any task is being tried now. */
@@ -207,7 +253,7 @@ internal class SmartTasks(
         save()
         task.job = scope.launch(start = CoroutineStart.LAZY) {
             val outcome = try {
-                withTimeout(IMPROVE_MILLIS) { attempt(job) }
+                withTimeout(TASK_MILLIS) { attempt(job) }
             } catch (cancelled: CancellationException) {
                 Result.failure(Refused(SmartRefusal.of(
                     if (cancelled is kotlinx.coroutines.TimeoutCancellationException) SmartApi.TIMEOUT else SmartApi.CANCELLED)))
@@ -223,17 +269,9 @@ internal class SmartTasks(
 
     private suspend fun attempt(job: SmartJob): Result<String> {
         val input = JSONObject(checkNotNull(job.input))
-        val digest = job.kind == SmartApi.DIGEST
-        val answer = ports.improve(job.owner, input.getString("text"), input.getString("style"))
-        return when {
-            !answer.has("text") -> Result.failure(Refused(SmartRefusal.of(answer.optString("code", SmartApi.SERVER_ERROR))))
-            !digest -> Result.success(JSONObject().put("text", answer.getString("text")).toString())
-            // Итоги come back in the server's shape (a name, main points, lists); anything else (the note itself) is no answer,
-            // and it was paid, so it is tried once more only.
-            else -> runCatching { JSONObject(answer.getString("text")).also { it.getString("nazvanie"); it.getJSONArray("glavnoe") } }.fold(
-                { Result.success(JSONObject().put("digest", it).toString()) },
-                { Result.failure(Refused(SmartRefusal.of(SmartApi.MODEL_ANSWER))) })
-        }
+        val answer = ports.textTask(job.owner, input.getString("text"), input.getString("operation"), input.getString("requestClass"), input.getString("style"))
+        return if (answer.has("text")) Result.success(JSONObject().put("text", answer.getString("text")).toString())
+        else Result.failure(Refused(SmartRefusal.of(answer.optString("code", SmartApi.SERVER_ERROR))))
     }
 
     private fun settle(key: Pair<String, String>, job: SmartJob, task: Running, outcome: Result<String>) {
@@ -247,7 +285,7 @@ internal class SmartTasks(
         else replies.forEach { it.error(SmartRefusal(SmartApi.QUEUED, SmartJob.waitWords(checkNotNull(next.wait)))) }
         // A try nobody waited on: the app hears that its task changed.
         if (replies.isEmpty()) host.changed(job.owner, job.taskId)
-        if (job.kind == SmartApi.DIGEST) wake() else host.schedule(nextTimed())
+        if (job.longText || task.paused != null) wake() else host.schedule(nextTimed())
     }
 
     /** Called under the lock: what the try's [outcome] leaves of the task, kept for the app. */
@@ -257,6 +295,9 @@ internal class SmartTasks(
                 { json -> job.copy(input = null, wait = null, answer = json,
                     atMs = now + if (task.replies.isEmpty()) FORGET_MILLIS else REMEMBER_MILLIS) },
                 { error ->
+                    val paused = task.paused ?: host.refusal(job.owner)
+                    if (paused != null) return@fold job.copy(wait = host.refusal(job.owner),
+                        atMs = if (host.refusal(job.owner) == null) now else SmartJob.PERSON)
                     val code = (error as? Refused)?.refusal?.code ?: SmartApi.SERVER_ERROR
                     // A failure is told for a short while only, so a new press tries again.
                     retryAt(code, job.asked, job.tries, now)?.let { job.copy(wait = code, atMs = it, tries = job.tries + 1) }
@@ -284,9 +325,9 @@ internal class SmartTasks(
     /** The earliest timed try, null when nothing waits on a time. */
     private fun nextTimed(): Long? = synchronized(lock) {
         jobs.filter { (key, job) ->
-            job.waiting && job.atMs != SmartJob.PERSON && key !in running &&
+            job.waiting && job.atMs != SmartJob.PERSON && key !in running && host.refusal(job.owner) == null &&
                 running.keys.count { it.first == job.owner } < SmartApi.MAX_TASKS_PER_APP &&
-                (job.kind != SmartApi.DIGEST || running.keys.none { it.first == job.owner && jobs[it]?.kind == SmartApi.DIGEST })
+                (!job.longText || running.keys.none { it.first == job.owner && jobs[it]?.longText == true })
         }.values.minOfOrNull { it.atMs }
     }
 
@@ -305,7 +346,7 @@ internal class SmartTasks(
 
     companion object {
         /** Govorun's core gives a note 130 s; a try ends after 140 s. */
-        const val IMPROVE_MILLIS = 140_000L
+        const val TASK_MILLIS = 140_000L
         /** How long an answer the app collected stays here for the app to ask again. */
         const val REMEMBER_MILLIS = 15 * 60_000L
         /** How long an answer waits for the app to collect it. */
@@ -323,7 +364,7 @@ internal class SmartTasks(
 
         private val SERVER = setOf(SmartState.UNAVAILABLE.wire, SmartApi.SERVER_ERROR, SmartApi.TIMEOUT, SmartApi.BUSY, SmartApi.CANCELLED)
         private val PERSON = setOf(SmartState.NOT_SIGNED_IN.wire, SmartState.NEEDS_ACCESS.wire, SmartState.OFFLINE.wire,
-            SmartState.ROAMING.wire, SmartImprove.STYLIZATION_TERMS, SmartImprove.LIMIT_PERIOD)
+            SmartState.ROAMING.wire, SmartResult.STYLIZATION_TERMS, SmartResult.LIMIT_PERIOD)
 
         /**
          * When a task that ended with [code] is tried again; null when it never would get another answer (a text too short or
@@ -336,7 +377,6 @@ internal class SmartTasks(
             in SERVER -> now + SERVER_BACKOFF_MS[tries.coerceAtMost(SERVER_BACKOFF_MS.size - 1)]
             in PERSON -> if (asked) SmartJob.PERSON else null
             // A paid answer that is no итоги: once more, then it ends.
-            SmartApi.MODEL_ANSWER -> if (tries == 0) now + SERVER_BACKOFF_MS[0] else null
             else -> null
         }
 

@@ -30,6 +30,7 @@ pub fn decide(error: Error) -> Decision {
         | Error::StorageUnavailable
         | Error::StorageInvalid => "account_state_changed",
         Error::StyleIssuance { .. } => "style_pass_issue_failed",
+        Error::Http(422) => "invalid_response",
         Error::StyleRequestTooLarge | Error::Http(413) => "text_too_long",
         Error::StyleService(ServiceFailure::Busy) | Error::Http(429) => "server_busy",
         Error::StyleService(ServiceFailure::Timeout) | Error::StyleTransport(Failure::Deadline)

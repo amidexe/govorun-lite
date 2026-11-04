@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.first
 
 /**
- * Govorun's bridge for Говорун.Эхо, and for no other app ([EchoApp]): status, Govorun's screens and «Улучшить через Говорун».
+ * Govorun's bridge for Говорун Эхо, and for no other app ([EchoApp]): status, Govorun's screens and «Улучшить через Говорун».
  * The caller's package must match its Binder UID, be Echo by its signature and have the access to recognition the person gave
  * it. getStatus is answered from memory; an improvement leaves only from runTask, through Govorun's own text improvement.
  */
@@ -50,15 +50,12 @@ class SmartService : Service() {
             val volumeKey = org.json.JSONObject()
                 .put("granted", identity?.let { authorizations.hasScope(it, com.govorun.lite.api.RecognitionApi.SCOPE_VOLUME_KEY) } == true)
                 .put("enabled", com.govorun.lite.util.VolumeKeyPrefs.isEnabled(this@SmartService))
-            // «improve»: this Govorun can improve Echo's notes through its own text improvement (2.0.39+).
-            // «capabilities»: what Echo may rely on; «noteClass» — a note runs in its own window, outlives Echo and is paid once.
-            // Echo's own limit is shown in Govorun's account only; Echo hears of it when a note is refused.
-            return org.json.JSONObject(SmartRuntime.status(this@SmartService, allowed).json()).put("volumeKey", volumeKey).put("improve", allowed)
+            // One text-task capability; operation names and response shapes belong to the server and Echo.
+            return org.json.JSONObject(SmartRuntime.status(this@SmartService, allowed).json()).put("volumeKey", volumeKey).put("textTasks", allowed)
                 .apply {
                     if (allowed) {
-                        put("styles", SmartImprove.styles(this@SmartService))
-                        put("capabilities", org.json.JSONArray().put(SmartApi.CAPABILITY_IMPROVE).put(SmartApi.CAPABILITY_NOTE_CLASS)
-                            .put(SmartApi.CAPABILITY_DIGEST).put(SmartApi.CAPABILITY_JOBS))
+                        put("styles", SmartResult.styles(this@SmartService))
+                        put("capabilities", org.json.JSONArray().put(SmartApi.CAPABILITY_TEXT_TASKS).put(ClientNetworkPolicy.CAPABILITY))
                         // The person once pressed a smart function in the app: its own tasks may go (protocol 2).
                         put("smart", identity?.let { authorizations.hasScope(it, RecognitionApi.SCOPE_SMART_FUNCTIONS) } == true)
                     }
@@ -67,7 +64,7 @@ class SmartService : Service() {
 
         override fun createAction(clientPackage: String?, action: String?): PendingIntent {
             val identity = caller(clientPackage) ?: throw SecurityException("Calling package does not match Binder UID")
-            if (!EchoApp.matches(identity)) throw SecurityException("The smart functions are Говорун.Эхо's only")
+            if (!EchoApp.matches(identity)) throw SecurityException("The smart functions are Говорун Эхо's only")
             return SmartActions.create(this@SmartService, identity, action.orEmpty(), authorizations)
         }
 
@@ -84,9 +81,22 @@ class SmartService : Service() {
             // Echo closing does not stop the task: Govorun keeps it until Echo collects the answer (SmartTasks).
             val reply = callback?.let(::CallbackReply) ?: return
             if (identity == null) return reply.error(SmartRefusal.of(SmartState.NOT_AUTHORIZED))
+            if (kind == ClientNetworkPolicy.KIND) {
+                return try {
+                    SmartRuntime.networkPolicy(this@SmartService).set(identity.packageName, inputJson.orEmpty())
+                    reply.result("{}")
+                } catch (_: Exception) { reply.error(SmartRefusal.of(SmartState.UNAVAILABLE)) }
+            }
+            if (kind == SmartApi.COLLECT) {
+                // Receiving paid work is local, also while offline or with automatic functions disabled.
+                // In particular it must never approve the app's smart scope again.
+                tasks.collect(identity.packageName, id, reply)
+                return
+            }
+            if (kind !in setOf(SmartApi.TEXT_TASK, SmartApi.TASK_PRICE)) return reply.error(SmartRefusal.of(SmartApi.REJECTED_INPUT))
             // The person's own press is their yes to the app's smart functions; the app's own task needs that yes first.
             val asked = runCatching { org.json.JSONObject(inputJson.orEmpty()).get("asked") as Boolean }.getOrNull()
-            if (kind != SmartApi.DIGEST_PRICE) {
+            if (kind != SmartApi.TASK_PRICE) {
                 // Every task says whether the person pressed it.
                 if (asked == null) return reply.error(SmartRefusal.of(SmartApi.REJECTED_INPUT))
                 val enabled = authorizations.hasScope(identity, RecognitionApi.SCOPE_SMART_FUNCTIONS)

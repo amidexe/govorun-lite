@@ -48,8 +48,10 @@ internal class ConfiguredStylizationClient(
             .put("emojiEnabled", emojiEnabled).put("emojiMode", emojiMode.apiId)
             .put("profanityFilterEnabled", profanityFilterEnabled)
         if (instruction != null) payload.put("instruction", instruction)
-        kotlinx.coroutines.currentCoroutineContext()[EchoNoteMark]?.let { payload.put("echoNote", it.value) }
         kotlinx.coroutines.currentCoroutineContext()[ProductLabel]?.let { payload.put("product", it.value) }
+        kotlinx.coroutines.currentCoroutineContext()[TextOperation]?.let {
+            payload.put("textOperation", it.name).put("requestClass", it.requestClass)
+        }
         val connectionId = kotlinx.coroutines.currentCoroutineContext()[PreparedStylesConnection]?.requestId()
         val result = GovorunAccountRepository.sharedAccountCommand(org.json.JSONObject()
             .put("operation", "stylizationProcess")

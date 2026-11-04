@@ -43,7 +43,7 @@ private fun NavigationIcon(icon: ImageVector) {
     Icon(
         imageVector = icon,
         contentDescription = null,
-        modifier = Modifier.size(ProductTokens.Size.SlotIcon),
+        modifier = Modifier.size(ProductTokens.Size.ActiveIcon),
         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
             alpha = ProductTokens.Alpha.MutedIcon,
         ),

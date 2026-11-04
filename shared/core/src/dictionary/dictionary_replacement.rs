@@ -7,6 +7,7 @@ struct Rule {
     compiled: OnceLock<Regex>,
     to: String,
     yo: bool,
+    layout: bool,
 }
 
 impl Rule {
@@ -47,11 +48,13 @@ fn compile(raw: &str) -> Result<Arc<Compiled>> {
             .map(str::trim)
             .filter(|s| !s.is_empty())
         {
+            let layout = layout_value(&entry.to);
             rules.push(Rule {
-                source: regex::escape(from),
+                source: format!("{}{}", regex::escape(from), if layout.is_some() { "[.,!?;:…]*" } else { "" }),
                 compiled: OnceLock::new(),
-                to: entry.to.clone(),
+                to: layout.clone().unwrap_or_else(|| entry.to.clone()),
                 yo: from.to_lowercase() == "ё" && entry.to.to_lowercase() == "е",
+                layout: layout.is_some(),
             });
         }
     }
@@ -75,6 +78,7 @@ pub(crate) fn apply(raw: &str, text: &str, enabled: bool) -> Result<String> {
     }
     let compiled = compile(raw)?;
     let mut result = text.to_owned();
+    let mut layout_applied = false;
     let mut candidates = compiled.candidates.matches(&result);
     for (index, rule) in compiled.rules.iter().enumerate() {
         if !candidates.matched(index) {
@@ -86,6 +90,7 @@ pub(crate) fn apply(raw: &str, text: &str, enabled: bool) -> Result<String> {
             replace(rule, &result)?
         };
         if next != result {
+            layout_applied |= rule.layout;
             // Earlier substitutions can introduce a later rule's source.
             candidates = compiled.candidates.matches(&next);
             result = next;
@@ -93,7 +98,7 @@ pub(crate) fn apply(raw: &str, text: &str, enabled: bool) -> Result<String> {
     }
     let mut previous_space = false;
     Ok(result
-        .trim()
+        .trim_matches(|c: char| c.is_whitespace() && !(layout_applied && matches!(c, '\n' | '\t')))
         .chars()
         .filter(|c| {
             let keep = *c != ' ' || !previous_space;
@@ -112,16 +117,39 @@ fn replace(rule: &Rule, text: &str) -> Result<String> {
         if before.is_some_and(char::is_alphanumeric) || after.is_some_and(char::is_alphanumeric) {
             continue;
         }
-        if result.len() + found.start() - offset + rule.to.len() > MAX_RESULT_BYTES {
+        let (mut start, mut end) = (found.start(), found.end());
+        if rule.layout {
+            start = offset + text[offset..start].trim_end_matches(horizontal_space).len();
+            end = text.len() - text[end..].trim_start_matches(horizontal_space).len();
+        }
+        if result.len() + start - offset + rule.to.len() > MAX_RESULT_BYTES {
             return Err(Error::ResponseTooLarge);
         }
-        result.push_str(&text[offset..found.start()]);
+        result.push_str(&text[offset..start]);
         result.push_str(&rule.to);
-        offset = found.end();
+        offset = end;
     }
     if result.len() + text.len() - offset > MAX_RESULT_BYTES {
         return Err(Error::ResponseTooLarge);
     }
     result.push_str(&text[offset..]);
     Ok(result)
+}
+
+fn horizontal_space(c: char) -> bool { c.is_whitespace() && !matches!(c, '\r' | '\n') }
+
+// Decode only a whole formatting replacement. Existing paths and arbitrary text
+// containing backslashes retain their literal meaning and stored representation.
+fn layout_value(value: &str) -> Option<String> {
+    let mut result = String::new();
+    let mut chars = value.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' { return None; }
+        result.push(match chars.next()? { 'n' => '\n', 't' => '\t', _ => return None });
+    }
+    (!result.is_empty()).then_some(result)
+}
+
+pub(crate) fn is_layout(text: &str) -> bool {
+    !text.is_empty() && text.chars().all(|c| matches!(c, '\n' | '\t'))
 }

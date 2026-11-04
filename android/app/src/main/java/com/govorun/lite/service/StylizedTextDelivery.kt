@@ -20,6 +20,7 @@ internal class StylizedTextDelivery(
     private val recordInsertionFailure: () -> Unit,
     private val collectAttempt: suspend (suspend () -> Unit) -> Unit = { it() },
     private val rememberOriginal: (String) -> Unit = {},
+    private val applyDictionary: (String) -> String = { it },
 ) {
     suspend fun deliver(
         text: String,
@@ -28,15 +29,18 @@ internal class StylizedTextDelivery(
         packageName: String? = null,
         plain: Boolean = false,
     ) = collectAttempt {
-        val result = if (plain) StylizationResult(text, skipReason = StylizationSkipReason.STYLIZATION_DISABLED)
-            else safelyProcess(text, inputMode, packageName)
-        val plan = SharedDictationDelivery.prepare(result.text, text,
+        currentCoroutineContext().ensureActive()
+        val original = applyDictionary(text)
+        if (original.isEmpty()) return@collectAttempt
+        val result = if (plain) StylizationResult(original, skipReason = StylizationSkipReason.STYLIZATION_DISABLED)
+            else safelyProcess(original, inputMode, packageName)
+        val plan = SharedDictationDelivery.prepare(result.text, original,
             if (appendVoiceMarker) voiceMarkerMode() else "off",
             result.usedFallback, result.outcomePass != null, result.latencyBucket != "unknown")
         currentCoroutineContext().ensureActive()
         val inserted = plan.insert && attemptTextInsertion(insert = { insert(plan.text) })
         // The inserter has just remembered the improved text; keep what was said beside it.
-        if (plan.insert && !result.usedFallback && result.text != text) rememberOriginal(text)
+        if (plan.insert && !result.usedFallback && result.text != original) rememberOriginal(original)
         val effects = if (inserted) plan.success else plan.failure
         if (effects.recordFailure) recordInsertionFailure()
         val outcomePass = result.outcomePass

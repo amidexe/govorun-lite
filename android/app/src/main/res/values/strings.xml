@@ -294,7 +294,7 @@
     <string name="dict_title">Словарь и автозамены</string>
     <string name="dict_help_action">Справка</string>
     <string name="dict_help_dialog_title">Как заполнять</string>
-    <string name="dict_help_dialog_body">Каждое правило с новой строки в формате «ключ=значение». Регистр не важен.\n\nСтрока без знака «=» — слово будет вырезано из распознанного текста.\nСтрока, начинающаяся с «#» — комментарий, не учитывается.\n\nПравила применяются по порядку — длинные и более конкретные пишите выше. Если буква «ё» вам не нужна, правило «ё=е» заменит её во всех словах.\n\nГоворун может слышать одно и то же слово по-разному (например, «джимэйл», «джимейл», «гмайл») — добавляйте все варианты звучания.\n\nСовет: можно попросить ChatGPT, Gemini, Claude или YandexGPT составить словарь под вашу профессию или хобби в формате «ключ=значение». Скопируйте результат и вставьте сюда долгим тапом по полю редактора.</string>
+    <string name="dict_help_dialog_body">Каждое правило с новой строки в формате «ключ=значение». Регистр не важен.\n\nСтрока без знака «=» — слово будет вырезано из распознанного текста.\nСтрока, начинающаяся с «#» — комментарий, не учитывается.\n\nПеренос строки: «новая строка=\\n». Пустая строка: «новый абзац=\\n\\n». Табуляция: «отступ=\\t». Справа от «=» пишите обратную косую черту и букву n или t, без кавычек. Для этих замен значение целиком состоит из обозначений \\n и \\t; внутри обычного текста они не преобразуются.\n\nПравила применяются по порядку — длинные и более конкретные пишите выше. Если буква «ё» вам не нужна, правило «ё=е» заменит её во всех словах.\n\nГоворун может слышать одно и то же слово по-разному (например, «джимэйл», «джимейл», «гмайл») — добавляйте все варианты звучания.\n\nСовет: можно попросить ChatGPT, Gemini, Claude или YandexGPT составить словарь под вашу профессию или хобби в формате «ключ=значение». Скопируйте результат и вставьте сюда долгим тапом по полю редактора.</string>
     <string name="dict_help_dialog_close">Понятно</string>
     <string name="dict_editor_hint">ключ=значение</string>
     <!-- Pre-filled when the dictionary is empty. Self-documents the format
@@ -356,14 +356,10 @@
     <string name="stats_reset_message">Счётчик слов и время диктовки обнулятся. Это нельзя отменить.</string>
     <string name="stats_reset_action">Сбросить</string>
 
-    <string name="tile_label">Говорун: всегда</string>
-    <string name="tile_subtitle_always">Птичка показана всегда</string>
-    <string name="tile_subtitle_default">Стандартный режим</string>
+    <string name="tile_label">Всегда на экране</string>
+    <string name="tile_subtitle_always">Постоянный показ</string>
+    <string name="tile_subtitle_default">Обычный режим</string>
     <string name="tile_subtitle_service_off">Включите в специальных возможностях</string>
-
-    <string name="tile_silence_label">Говорун</string>
-    <string name="tile_silence_subtitle_on">Птичка временно выключена</string>
-    <string name="tile_silence_subtitle_off">Птичка работает</string>
 
     <!-- App filter screen -->
     <string name="title_app_filter">Где показывать птичку</string>
@@ -372,7 +368,7 @@
     <string name="app_filter_desc_blacklist">Скрывать птичку в отмеченных приложениях</string>
     <string name="app_filter_desc_whitelist">Показывать птичку только в отмеченных приложениях</string>
     <string name="hint_search_app">Найти приложение</string>
-    <string name="app_filter_tile_note">Быстрая настройка «Говорун: всегда» показывает птичку в любом приложении независимо от выбранного правила</string>
+    <string name="app_filter_tile_note">Быстрая настройка «Всегда на экране» показывает птичку в любом приложении независимо от выбранного правила</string>
 
     <!-- Settings row for app filter -->
     <string name="settings_app_filter_title">Выбрать приложения</string>
@@ -428,4 +424,9 @@
     <string name="benchmark_rtf_hint">×10 означает что 10 сек аудио обрабатывается за 1 сек. Чем больше число — тем быстрее устройство.</string>
     <string name="benchmark_running_hint">Идёт тест — не выходите из приложения</string>
     <string name="echo_note_style">Заметка</string>
+    <string name="echo_product_title">Говорун Эхо</string>
+    <string name="echo_product_companion">Дополнение к Говоруну</string>
+    <string name="echo_product_description">Умные голосовые заметки.\nРасшифровка и краткое содержание.</string>
+    <string name="echo_product_url" translatable="false">https://govorun.club/echo</string>
+    <string name="echo_product_link_error">Не удалось открыть страницу. Проверьте, установлен ли браузер.</string>
 </resources>

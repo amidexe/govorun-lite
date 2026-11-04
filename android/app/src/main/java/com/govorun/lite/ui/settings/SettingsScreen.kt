@@ -38,9 +38,10 @@ private enum class SettingsTab(
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
+    openNetwork: Boolean = false,
     onEvent: (SettingsEvent) -> Unit,
 ) {
-    var selectedName by rememberSaveable { mutableStateOf(SettingsTab.DICTATION.name) }
+    var selectedName by rememberSaveable { mutableStateOf(if (openNetwork) SettingsTab.AFTER_RECORDING.name else SettingsTab.DICTATION.name) }
     var journalOpen by rememberSaveable { mutableStateOf(false) }
     var confirmReset by rememberSaveable { mutableStateOf(false) }
     var confirmStatisticsReset by rememberSaveable { mutableStateOf(false) }
@@ -77,7 +78,7 @@ fun SettingsScreen(
         when (selected) {
             SettingsTab.DICTATION -> item { DictationSettings(state, onEvent) }
             SettingsTab.BIRD -> item { AppearanceSettings(state, onEvent) }
-            SettingsTab.AFTER_RECORDING -> item { AfterRecordingSettings(state, onEvent) }
+            SettingsTab.AFTER_RECORDING -> item { AfterRecordingSettings(state, onEvent, openNetwork) }
             SettingsTab.APPLICATION -> item {
                 ApplicationSettings(state) {
                     when (it) {

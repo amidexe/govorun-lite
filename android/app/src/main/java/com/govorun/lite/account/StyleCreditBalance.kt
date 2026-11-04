@@ -22,7 +22,7 @@ data class ActiveStyleLimitPresentation(
     val todayLimit: Int? = null,
     val periodLeft: Int? = null,
     val periodLimit: Int? = null,
-    /** The lines of Govorun's other products (Говорун.Эхо, later others), each with its own limit, as the card has them. */
+    /** The lines of Govorun's other products (Говорун Эхо, later others), each with its own limit, as the card has them. */
     val products: List<ProductLimitPresentation> = emptyList(),
     /** When the day and the period renew, in one quiet line. */
     val resetLine: String? = null,

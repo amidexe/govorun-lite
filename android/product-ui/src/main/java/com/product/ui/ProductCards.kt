@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,9 +21,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.CaretDown
@@ -58,15 +61,20 @@ fun FeedSectionHeader(
     count: Int? = null,
     expanded: Boolean? = null,
     onToggle: (() -> Unit)? = null,
-    horizontalPadding: Dp = ProductTokens.Spacing.Lg,
+    horizontalPadding: Dp = ProductTokens.Spacing.Section,
     trailingTextColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val interaction = remember { MutableInteractionSource() }
+    val fontScale = LocalDensity.current.fontScale
+    val summaryBelow = fontScale > 1.2f
+    val rowHeight = if (summaryBelow) maxOf(ProductTokens.Size.Row,
+        ((MaterialTheme.typography.titleSmall.lineHeight.value + MaterialTheme.typography.labelSmall.lineHeight.value) * fontScale).dp
+    ) else ProductTokens.Size.Row
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = ProductTokens.Size.Row)
+            .height(rowHeight)
             .then(
                 if (onToggle != null) {
                     Modifier.clickable(
@@ -80,7 +88,7 @@ fun FeedSectionHeader(
             )
             .padding(horizontal = horizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(ProductTokens.Spacing.Md),
+        horizontalArrangement = Arrangement.spacedBy(ProductTokens.Spacing.Sm),
     ) {
         expanded?.let {
             Icon(
@@ -92,40 +100,35 @@ fun FeedSectionHeader(
                 ),
             )
         }
-        icon?.let {
+        // At enlarged text sizes the disclosure already identifies the control.
+        // Give the decorative icon's space to the full title and keep actions reachable.
+        icon?.takeUnless { summaryBelow && expanded != null }?.let {
             Icon(
                 it,
                 contentDescription = null,
-                modifier = Modifier.size(ProductTokens.Size.SlotIcon),
+                modifier = Modifier.size(ProductTokens.Size.ActiveIcon),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                     alpha = ProductTokens.Alpha.MutedIcon,
                 ),
             )
         }
-        Text(
-            title,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        trailingText?.let {
+        Column(Modifier.weight(1f)) {
             Text(
-                it,
-                style = MaterialTheme.typography.labelSmall,
-                color = trailingTextColor,
+                title, style = MaterialTheme.typography.titleSmall,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface,
             )
+            if (summaryBelow) trailingText?.let { HeaderSupportingText(it, trailingTextColor) }
         }
-        count?.let {
-            Text(
-                it.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                    alpha = ProductTokens.Alpha.MutedIcon,
-                ),
-            )
-        }
+        if (!summaryBelow) trailingText?.let { HeaderSupportingText(it, trailingTextColor) }
+        count?.let { HeaderSupportingText(it.toString(), MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = ProductTokens.Alpha.MutedIcon)) }
         actions()
     }
+}
+
+@Composable
+private fun HeaderSupportingText(text: String, color: Color) {
+    Text(text, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
 @Composable

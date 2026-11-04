@@ -18,11 +18,16 @@ import kotlinx.coroutines.launch
 internal object SmartRuntime {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     @Volatile private var tasks: SmartTasks? = null
+    @Volatile private var networkPolicy: ClientNetworkPolicy? = null
+    fun networkPolicy(context: Context): ClientNetworkPolicy = networkPolicy ?: synchronized(this) {
+        networkPolicy ?: ClientNetworkPolicy(context) { tasks?.networkChanged() }.also { networkPolicy = it }
+    }
     private const val JOBS_FILE = "smart-jobs.json"
 
     fun tasks(context: Context): SmartTasks = tasks ?: synchronized(this) {
         tasks ?: run {
             val app = context.applicationContext
+            networkPolicy(app)
             SmartTasks(AndroidSmartPorts(app, scope), scope, host = AndroidJobHost(app)).also {
                 tasks = it
                 watchPerson(app, it)
@@ -86,7 +91,10 @@ internal object SmartRuntime {
         }
 
         override fun load(): List<SmartJob> =
-            runCatching { SmartJob.parse(file.readFully().toString(Charsets.UTF_8)) }.getOrDefault(emptyList())
+            runCatching { SmartJob.parse(file.readFully().toString(Charsets.UTF_8)) }.getOrDefault(emptyList()).also { jobs ->
+                // The existing completion receiver wakes the caller to refresh its device-local choices first.
+                jobs.filter { it.waiting }.forEach { changed(it.owner, it.taskId) }
+            }
 
         override fun save(jobs: List<SmartJob>) {
             if (jobs.isEmpty()) return file.delete()
@@ -108,6 +116,8 @@ internal object SmartRuntime {
                 .putExtra(SmartApi.EXTRA_TASK_ID, taskId))
         }
 
+        override fun refusal(owner: String) = networkPolicy(app).refusal(owner)
+
         override fun ready() = SmartJobsWake.running()
         override fun waitReason() = if (NetworkPolicy.activeRefusal(app) != null || NetworkAvailability.hasUsableNetwork(app))
             SmartApi.BUSY else SmartState.NO_NETWORK.wire
@@ -125,7 +135,12 @@ internal object SmartRuntime {
 }
 
 private class AndroidSmartPorts(private val context: Context, private val scope: CoroutineScope) : SmartPorts {
-    override suspend fun improve(owner: String, text: String, style: String?): org.json.JSONObject {
+    override suspend fun textTask(owner: String, text: String, operation: String, requestClass: String, style: String?): org.json.JSONObject =
+        kotlinx.coroutines.withContext(com.govorun.lite.stylization.TextOperation(operation, requestClass)) {
+            execute(owner, text, style ?: "light")
+        }
+
+    private suspend fun execute(owner: String, text: String, style: String?): org.json.JSONObject {
         val coordinator = com.govorun.lite.stylization.StylizationCoordinator(context)
         val mode = com.govorun.lite.model.stylization.StylizationInputMode.CONFIRM
         // Govorun's own label for the app's request, from the app it knows, never from what the app sent.
@@ -148,14 +163,18 @@ private class AndroidSmartPorts(private val context: Context, private val scope:
                 com.govorun.lite.model.stylization.StylizationClientOutcome.entries.single { it.apiId == outcome }, result.latencyBucket)
         }
         val line = com.govorun.lite.account.GovorunAccountRepository.state.value.productWindow(product)
-        return SmartImprove.answer(result, periodSpent = line != null && line.limitTotal > 0 && line.remainingTotal <= 0,
+        if (kotlin.coroutines.coroutineContext[com.govorun.lite.stylization.TextOperation] != null &&
+            result.fallbackReason == com.govorun.lite.model.stylization.StylizationFallbackReason.INVALID_RESPONSE) {
+            return org.json.JSONObject().put("code", SmartApi.REJECTED_INPUT)
+        }
+        return SmartResult.answer(result, periodSpent = line != null && line.limitTotal > 0 && line.remainingTotal <= 0,
             refusal = com.govorun.lite.network.NetworkPolicy.activeRefusal(context),
             signedIn = com.govorun.lite.account.GovorunAccountRepository.state.value.signedIn)
     }
 
-    override fun digestPrice(text: String): org.json.JSONObject {
+    override fun price(text: String, requestClass: String): org.json.JSONObject {
         val price = com.govorun.lite.shared.SharedBusiness.evaluate(org.json.JSONObject()
-            .put("operation", "styleTextAdmission").put("requestClass", "digest")
+            .put("operation", "styleTextAdmission").put("requestClass", requestClass)
             .put("units", org.json.JSONArray(text.map { it.code })))
         val credits = price.getInt("requiredCredits")
         // Echo's own day, the same numbers Govorun's limits card shows for Эхо; Echo says only what share of it итоги take.

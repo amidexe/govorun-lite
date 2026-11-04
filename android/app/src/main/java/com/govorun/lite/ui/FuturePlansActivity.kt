@@ -9,29 +9,35 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Duotone
-import com.adamglin.phosphoricons.duotone.ShareNetwork
-import com.adamglin.phosphoricons.duotone.Star
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ShareNetwork
+import com.adamglin.phosphoricons.regular.ChatCircleText
 import com.govorun.lite.R
 import com.govorun.lite.ui.design.GovorunTheme
 import com.product.ui.FeedCard
-import com.product.ui.ProductDivider
 import com.product.ui.ProductScaffold
 import com.product.ui.ProductTokens
-import com.product.ui.SettingsLinkRow
-import com.product.ui.SettingsSection
 import com.product.ui.productScreenPadding
 
 /**
@@ -90,45 +96,37 @@ private fun ReviewScreen(
             item {
                 FeedCard {
                     Column(
-                        modifier = Modifier.padding(ProductTokens.Spacing.Screen),
+                        modifier = Modifier.fillMaxWidth().padding(ProductTokens.Spacing.Screen),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(ProductTokens.Spacing.Lg),
                     ) {
-                        Icon(
-                            PhosphorIcons.Duotone.Star,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                        Text(
-                            "Ваш отзыв помогает Говоруну расти",
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                        Text(
-                            "Если приложение экономит вам время, расскажите об этом в RuStore. " +
-                                "Отзывы помогают другим людям найти Говоруна и подсказывают, " +
-                                "что действительно стоит улучшать.",
+                        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                            Icon(PhosphorIcons.Regular.ChatCircleText, contentDescription = null,
+                                modifier = Modifier.padding(12.dp).size(28.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                        Text("Ваш отзыв помогает Говоруну расти",
+                            style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+                        Text("Если Говорун экономит вам время, расскажите об этом в RuStore. " +
+                            "Отзывы помогают другим найти приложение, а нам — понять, что стоит улучшить.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                            textAlign = TextAlign.Center)
+                        Spacer(Modifier.height(ProductTokens.Spacing.Sm))
+                        Button(onClick = onReview, modifier = Modifier.fillMaxWidth()) {
+                            Text("Оставить отзыв в RuStore")
+                        }
                     }
                 }
             }
             item {
-                SettingsSection("Помочь проекту") {
-                    SettingsLinkRow(
-                        PhosphorIcons.Duotone.Star,
-                        "Оставить отзыв в RuStore",
-                        "Это займёт пару минут и очень поможет",
-                        onClick = onReview,
-                    )
-                    ProductDivider()
-                    SettingsLinkRow(
-                        PhosphorIcons.Duotone.ShareNetwork,
-                        "Рассказать о Говоруне",
-                        "Поделиться приложением с друзьями",
-                        onClick = onShare,
-                    )
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    TextButton(onClick = onShare) {
+                        Icon(PhosphorIcons.Regular.ShareNetwork, contentDescription = null,
+                            modifier = Modifier.size(ProductTokens.Size.ActiveIcon))
+                        Spacer(Modifier.width(ProductTokens.Spacing.Lg))
+                        Text("Поделиться приложением")
+                    }
                 }
             }
         }

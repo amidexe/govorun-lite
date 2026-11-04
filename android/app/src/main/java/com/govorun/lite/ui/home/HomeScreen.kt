@@ -40,7 +40,6 @@ import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.Clock
 import com.adamglin.phosphoricons.regular.List
-import com.adamglin.phosphoricons.regular.GearSix
 import com.adamglin.phosphoricons.regular.Microphone
 import com.adamglin.phosphoricons.regular.Warning
 import com.product.ui.FeedSectionHeader as ProductFeedSectionHeader
@@ -63,20 +62,20 @@ internal fun HomeScreen(
     styleJustEnabled: Boolean = false,
     onlineServicePaused: Boolean = false,
     network: NetworkPolicy.Choice = NetworkPolicy.Choice(),
+    openNetworkRequest: Int = 0,
     onEvent: (HomeEvent) -> Unit,
 ) {
     val consentVisible = hasInlineStylizationConsent()
-    HomeDrawerLayout(state.account, network, onEvent) { openDrawer ->
+    val productsNotice = if (state.newProducts) "Есть новый продукт" else null
+    HomeDrawerLayout(state.account, network, onEvent, openNetworkRequest, productsNotice) { openDrawer ->
         ProductScaffold(
             title = "Говорун",
+            navigationBadge = productsNotice,
             navigationAction = ProductTopAction(
                 PhosphorIcons.Regular.List,
                 "Меню",
                 openDrawer,
             ),
-            actions = listOf(ProductTopAction(PhosphorIcons.Regular.GearSix, "Настройки") {
-                onEvent(HomeEvent.OpenSettings)
-            }),
         ) { innerPadding ->
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),

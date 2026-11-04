@@ -162,7 +162,7 @@ impl Foreground {
         let text = payload["text"].as_str().ok_or(Error::InvalidRequest)?;
         // Another product's request (Говорун.Эхо's note and its итоги) runs in its own window and stays outside the
         // dictation pause: it neither waits for it nor opens or closes it.
-        let digest = payload["echoNote"] == crate::style_text::DIGEST;
+        let digest = crate::style_text::digest_payload(&payload);
         let admission = crate::style_text::admit_class(text.encode_utf16().collect(),
             digest.then_some(crate::style_text::DIGEST))?;
         let mut payload = payload;

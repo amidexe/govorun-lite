@@ -127,6 +127,7 @@ class HomeSnapshotReader(context: Context) {
             else -> "Проверяем доступность…"
         }
         return HomeUiState(
+            newProducts = com.govorun.lite.ui.ProductNotice.unseen(appContext),
             ready = ready,
             headline = headline,
             supportingText = supporting,
@@ -139,6 +140,7 @@ class HomeSnapshotReader(context: Context) {
                 visible = HomePreferences.showDictionaryOnHome(appContext),
             ),
             stylization = StylizationOfferState(
+                networkRefusal = accountState.networkRefusal.takeUnless { accountState.networkAvailable },
                 signedIn = accountState.signedIn,
                 visible = shouldShowOnlineAccessOnHome(ready, accessVisible),
                 starterAvailable = accountState.starterGrant.eligible,

@@ -130,7 +130,7 @@ private fun WeekSummary(state: StatisticsState) {
                 )
                 Text(
                     summary.todayWords.wordsLabel(),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
         }

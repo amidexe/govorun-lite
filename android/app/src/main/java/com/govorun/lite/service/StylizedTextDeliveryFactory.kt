@@ -9,6 +9,7 @@ import com.govorun.lite.stylization.StylizationDiagnosticReason
 import com.govorun.lite.stylization.StylizationDiagnosticsStore
 import com.govorun.lite.stylization.DiagnosticAttempt
 import com.govorun.lite.util.VoiceMarkerPrefs
+import com.govorun.lite.transcriber.Dictionary
 
 internal fun createStylizedTextDelivery(
     context: Context,
@@ -22,10 +23,9 @@ internal fun createStylizedTextDelivery(
     reportClientOutcome = reportClientOutcome,
     showFallback = showFallback,
     voiceMarkerMode = { VoiceMarkerPrefs.deliveryMarker(context) },
+    applyDictionary = { Dictionary.applyReplacements(context, it) },
     collectAttempt = { action -> DiagnosticAttempt.collect(context, action) },
-    rememberOriginal = { original ->
-        LastDictation.attachOriginal(context, com.govorun.lite.transcriber.Dictionary.applyReplacements(context, original))
-    },
+    rememberOriginal = { LastDictation.attachOriginal(context, it) },
     recordInsertionFailure = {
         StylizationDiagnosticsStore.record(
             context,

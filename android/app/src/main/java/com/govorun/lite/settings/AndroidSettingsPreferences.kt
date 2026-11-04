@@ -34,6 +34,7 @@ internal class AndroidSettingsPreferences(context: Context) : SettingsPreference
             is SettingsChange.SetVolumeKey -> VolumeKeyPrefs.setEnabled(context, change.enabled)
             is SettingsChange.SetHoldPlain -> RecordingModePrefs.setHoldPlain(context, change.plain)
             is SettingsChange.SetPositionLocked -> Prefs.setBubblePositionLocked(context, change.enabled)
+            is SettingsChange.SetHeadsetMicrophone -> com.govorun.lite.util.MicrophonePrefs.setHeadset(context, change.enabled)
             is SettingsChange.SetPause -> Prefs.setPauseLength(context, change.value)
             is SettingsChange.SetVoiceMarkerMode -> VoiceMarkerPrefs.write(context, change.mode)
             is SettingsChange.SetHideInSearch -> Prefs.setHideInSearchEnabled(context, change.enabled)
@@ -62,6 +63,7 @@ internal class AndroidSettingsPreferences(context: Context) : SettingsPreference
         Prefs.setHapticsEnabled(context, false)
         Prefs.setHideInSearchEnabled(context, false)
         Prefs.resetBubbleY(context)
+        com.govorun.lite.util.MicrophonePrefs.setHeadset(context, true)
         Prefs.setPauseLength(context, Prefs.PAUSE_DEFAULT)
         HomePreferences.setShowDictionaryOnHome(
             context,

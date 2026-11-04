@@ -3,7 +3,8 @@ def androidSource = rootProject.file('settings.gradle.kts').canonicalFile.parent
 def sharedSource = new File(androidSource.parentFile, 'shared')
 def builder = new File(androidSource, 'scripts/build-shared-core.py')
 def sharedInputs = files(new File(sharedSource, 'Cargo.toml'), new File(sharedSource, 'Cargo.lock'),
-    fileTree(new File(sharedSource, 'core')) { include 'Cargo.toml', 'src/**/*.rs' },
+    fileTree(new File(sharedSource, 'core')) { include 'Cargo.toml', 'src/**/*.rs', 'contracts/**/*.json' },
+    fileTree(new File(sharedSource, 'document-store')) { include 'Cargo.toml', 'src/**/*.rs' },
     fileTree(new File(sharedSource, 'styles-http')) { include 'Cargo.toml', 'src/**/*.rs' },
     fileTree(new File(sharedSource, 'jvm-bridge')) { include 'Cargo.toml', 'src/**/*.rs' }, builder)
 def configurations = [:]
